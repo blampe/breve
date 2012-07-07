@@ -18,41 +18,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#import "slBreveCreatures.h"
-#import <unistd.h>
+#import <Cocoa/Cocoa.h>
+#import "slBreveSaver.h"
 
-@implementation slBreveCreatures
-
-- (void)loadSettings {
-	brEval result;
-	
-	if(!viewEngine) 
-		return;
+@interface slBreveWalker : slBreveSaver
+{
 }
 
-- (const char*)getSimName {
-    return "Creatures.tz";
-}   
-
-- (const char*)getDefaultsName {
-	return "breveCreatures";
-}
-
-
-- (IBAction)resetEvolution:(id)sender {
-    char *str;
-
-    str = (char*)[[NSString stringWithFormat: @"%@/breveCreatures.xml", outputDirectory] cString];
-
-    if(str) unlink(str);
-
-	// make sure that the XML file does not get recreated.
-
-	[self callControllerMethod: @"disable-save"];
-}
-
-- (NSString*)getNibName {
-    return @"breveCreatures.nib";
-}   
+- (IBAction)resetEvolution:(id)sender;
 
 @end

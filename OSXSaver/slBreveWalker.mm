@@ -18,10 +18,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#import "slBreveCreatures.h"
+#import "slBreveWalker.h"
 #import <unistd.h>
 
-@implementation slBreveCreatures
+@implementation slBreveWalker
 
 - (void)loadSettings {
 	brEval result;
@@ -31,18 +31,18 @@
 }
 
 - (const char*)getSimName {
-    return "Creatures.tz";
+    return "SuperWalker.tz";
 }   
 
 - (const char*)getDefaultsName {
-	return "breveCreatures";
+	return "breveWalker";
 }
 
 
 - (IBAction)resetEvolution:(id)sender {
     char *str;
 
-    str = (char*)[[NSString stringWithFormat: @"%@/breveCreatures.xml", outputDirectory] cString];
+    str = (char*)[[NSString stringWithFormat: @"%@/breveWalker.xml", outputDirectory] cString];
 
     if(str) unlink(str);
 
@@ -52,7 +52,7 @@
 }
 
 - (NSString*)getNibName {
-    return @"breveCreatures.nib";
+    return @"breveWalker.nib";
 }   
 
 @end
