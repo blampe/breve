@@ -136,7 +136,10 @@
 		if(err) {
 			NSLog([NSString stringWithFormat:@"Error creating pixel format:%s", CGLErrorString(err)]);
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
 			ShowMenuBar();
+#endif
+
 			CGDisplaySwitchToMode(displayID, savedMode);
 			[self fadeIn];
 			CGDisplayRelease(displayID);
@@ -150,7 +153,9 @@
 		if(err) {
 			NSLog([NSString stringWithFormat:@"Error creating context:%s", CGLErrorString(err)]);
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
 			ShowMenuBar();
+#endif
 			CGDisplaySwitchToMode(displayID, savedMode);
 			[self fadeIn];
 			CGDisplayRelease(displayID);
@@ -171,7 +176,10 @@
 		if(err) {
 			NSLog([NSString stringWithFormat:@"Error going full screen: %s", CGLErrorString(err)]);
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
 			ShowMenuBar();
+#endif
+
 			CGDisplaySwitchToMode(displayID, savedMode);
 			[self fadeIn];
 			CGDisplayRelease(displayID);
@@ -185,7 +193,10 @@
 		if(err) {
 			NSLog([NSString stringWithFormat:@"Error setting current context: %s", CGLErrorString(err)]);
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
 			ShowMenuBar();
+#endif
+
 			CGDisplaySwitchToMode(displayID, savedMode);
 			[self fadeIn];
 			CGDisplayRelease(displayID);
@@ -196,7 +207,9 @@
 		if(err) return NULL;
 	}
 	
-	HideMenuBar();
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
+  HideMenuBar();
+#endif
 	glViewport(0, 0, width, height);
 	
 	//Fade back in.
@@ -293,7 +306,10 @@
 
 	if(showCursor == NO) [self showCursor];
 
-	ShowMenuBar();
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
+  ShowMenuBar();
+#endif
+
 	CGDisplaySwitchToMode(displayID, savedMode);
 	CGLClearDrawable(context);
 	CGLDestroyContext(context);
@@ -313,7 +329,10 @@
 	CGDisplaySwitchToMode(displayID, savedMode);
 	CGLClearDrawable(context);
 	CGDisplayRelease(displayID);
-	ShowMenuBar();
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
+  ShowMenuBar();
+#endif
+
 
 	if(showCursor == NO) [self showCursor];
 
@@ -327,7 +346,9 @@
 	CGDisplaySwitchToMode(displayID, newMode);
 	CGLSetCurrentContext(context);
 	CGLSetFullScreen(context);
-	HideMenuBar();
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
+  HideMenuBar();
+#endif
 
 	if(showCursor == NO) [self hideCursor];
 
