@@ -247,17 +247,18 @@
 */
 
 - (void)drawRect:(NSRect)r {
-  viewEngine->lock();
 
 	[[self openGLContext] makeCurrentContext];
 
 	drawing = 1;
 
 	if(viewEngine) {
+    viewEngine->lock();
 	   	if(!fullScreen) {
         viewEngine->draw();
 			if(theMovie) [theMovie addFrameFromRGBPixels: [self updateRGBPixels]];
 		}
+    viewEngine->unlock();
 	} else {
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
@@ -267,7 +268,6 @@
 
 	drawing = 0;
 
-  viewEngine->unlock();
 }
 
 - (void)drawFullScreen {
