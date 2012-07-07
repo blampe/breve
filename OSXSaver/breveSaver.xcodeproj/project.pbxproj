@@ -84,7 +84,7 @@
 /* Begin PBXFileReference section */
 		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		4818572A05CABEEB00C48BE6 /* breveSwarm-info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "breveSwarm-info.plist"; sourceTree = "<group>"; };
-		4818574E05CABEEB00C48BE6 /* breveWalker-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "breveWalker-Info.plist"; sourceTree = "<group>"; };
+		4818574E05CABEEB00C48BE6 /* breveCreatures-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "breveCreatures-Info.plist"; sourceTree = "<group>"; };
 		4818574F05CABEEB00C48BE6 /* breveCreatures.saver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = breveCreatures.saver; sourceTree = BUILT_PRODUCTS_DIR; };
 		4818575605CABFE300C48BE6 /* classes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = classes; path = ../lib/classes; sourceTree = SOURCE_ROOT; };
 		4842D87207F9A72700140407 /* libbreve.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbreve.a; path = ../lib/libbreve.a; sourceTree = SOURCE_ROOT; };
@@ -208,7 +208,7 @@
 				089C167CFE841241C02AAC07 /* Resources */,
 				19C28FB8FE9D52D311CA2CBB /* Products */,
 				4818572A05CABEEB00C48BE6 /* breveSwarm-info.plist */,
-				4818574E05CABEEB00C48BE6 /* breveWalker-Info.plist */,
+				4818574E05CABEEB00C48BE6 /* breveCreatures-Info.plist */,
 				48B9BDBD05EA6004002C7A42 /* breveResearcher-Info.plist */,
 				489DE21806B5587400740D0A /* brevePainter-Info.plist */,
 			);
@@ -520,7 +520,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
-				INFOPLIST_FILE = "breveWalker-Info.plist";
+				INFOPLIST_FILE = "breveCreatures-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Screen Savers";
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
@@ -553,7 +553,7 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
-				INFOPLIST_FILE = "breveWalker-Info.plist";
+				INFOPLIST_FILE = "breveCreatures-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Screen Savers";
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
