@@ -83,7 +83,6 @@
 		F1F871E615A8BFF6004B8041 /* classes in Resources */ = {isa = PBXBuildFile; fileRef = 4818575605CABFE300C48BE6 /* classes */; };
 		F1F871E715A8BFF6004B8041 /* simulation.gif in Resources */ = {isa = PBXBuildFile; fileRef = 4868E6F6091423CC0045591F /* simulation.gif */; };
 		F1F871E815A8BFF6004B8041 /* app_icon.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 4868E6FC091423F80045591F /* app_icon.tiff */; };
-		F1F871EA15A8BFF6004B8041 /* slBreveCreatures.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5175CBE0169B97E010BE436 /* slBreveCreatures.mm */; };
 		F1F871EB15A8BFF6004B8041 /* slBreveSaver.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5D8673C01169F20010BE436 /* slBreveSaver.mm */; };
 		F1F871ED15A8BFF6004B8041 /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F871DA15A8BD99004B8041 /* libcurl.dylib */; };
 		F1F871EE15A8BFF6004B8041 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F871D615A8B987004B8041 /* libexpat.dylib */; };
@@ -103,9 +102,10 @@
 		F1F871FC15A8BFF6004B8041 /* libgslcblas.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4842D8FC07F9CAC100140407 /* libgslcblas.a */; };
 		F1F871FD15A8BFF6004B8041 /* libpython.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BB26B20B2285DF006FA9E9 /* libpython.dylib */; };
 		F1F8720B15A8C0CB004B8041 /* slBreveWalker.h in Headers */ = {isa = PBXBuildFile; fileRef = F1F8720915A8C0CB004B8041 /* slBreveWalker.h */; };
-		F1F8720C15A8C0CB004B8041 /* slBreveWalker.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1F8720A15A8C0CB004B8041 /* slBreveWalker.mm */; };
 		F1F8720D15A8C172004B8041 /* breveWalker.nib in Resources */ = {isa = PBXBuildFile; fileRef = F1F8720415A8C07D004B8041 /* breveWalker.nib */; };
 		F1F8720E15A8C186004B8041 /* SuperWalker.tz in Resources */ = {isa = PBXBuildFile; fileRef = F1F8720715A8C0A0004B8041 /* SuperWalker.tz */; };
+		F1F8723F15A8C2DC004B8041 /* slBreveCreatures.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5175CBE0169B97E010BE436 /* slBreveCreatures.mm */; };
+		F1F8724015A8C2E2004B8041 /* slBreveWalker.mm in Sources */ = {isa = PBXBuildFile; fileRef = F1F8720A15A8C0CB004B8041 /* slBreveWalker.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -564,7 +564,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4818573905CABEEB00C48BE6 /* slBreveSaver.mm in Sources */,
-				F1F8720C15A8C0CB004B8041 /* slBreveWalker.mm in Sources */,
+				F1F8723F15A8C2DC004B8041 /* slBreveCreatures.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -590,8 +590,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F1F871EA15A8BFF6004B8041 /* slBreveCreatures.mm in Sources */,
 				F1F871EB15A8BFF6004B8041 /* slBreveSaver.mm in Sources */,
+				F1F8724015A8C2E2004B8041 /* slBreveWalker.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
