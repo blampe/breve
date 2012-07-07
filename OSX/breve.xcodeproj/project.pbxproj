@@ -250,19 +250,6 @@
 		2A37F4ABFDCFA73011CA2CEA /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				F5BD20A60397BEC801980AE4 /* slLogView.h */,
-				F5BD20A70397BEC801980AE4 /* slLogView.mm */,
-				F5BD20A80397BEC801980AE4 /* slMovieRecord.h */,
-				F5BD20A90397BEC801980AE4 /* slMovieRecord.mm */,
-				F5BD20AA0397BEC801980AE4 /* slObjectOutline.h */,
-				F5BD20AB0397BEC801980AE4 /* slObjectOutline.mm */,
-				F5BD20AC0397BEC801980AE4 /* slObjectOutlineItem.h */,
-				2A37F4AEFDCFA73011CA2CEA /* slBreveSourceDocument.h */,
-				2A37F4ACFDCFA73011CA2CEA /* slBreveSourceDocument.mm */,
-				F5BD20AD0397BEC801980AE4 /* slObjectOutlineItem.mm */,
-				F5BD20AE0397BEC801980AE4 /* slQuickparser.l */,
-				F5BD20B10397BEC801980AE4 /* slTextView.h */,
-				F5BD20B20397BEC801980AE4 /* slTextView.mm */,
 				2A37F4B0FDCFA73011CA2CEA /* main.m */,
 				F5BD20C00397BFC001980AE4 /* slBreve.h */,
 				F5BD20C10397BFC001980AE4 /* slBreve.mm */,
@@ -270,22 +257,35 @@
 				F5BD20C30397BFC001980AE4 /* slBreveApplication.mm */,
 				F5BD20C40397BFC001980AE4 /* slBreveEngine.h */,
 				F5BD20C50397BFC001980AE4 /* slBreveEngine.mm */,
-				48D1C0D4046331F80093F8AA /* slGraphWindowView.h */,
-				48D1C0D5046331F80093F8AA /* slGraphWindowView.mm */,
-				48D1C0BC04632D760093F8AA /* slGraphWindowController.h */,
-				48D1C0BD04632D760093F8AA /* slGraphWindowController.mm */,
 				F5BD20C60397BFC001980AE4 /* slBreveGLView.h */,
 				F5BD20C70397BFC001980AE4 /* slBreveGLView.mm */,
 				F5BD20CA0397BFC001980AE4 /* slBreveNibLoader.h */,
 				F5BD20CB0397BFC001980AE4 /* slBreveNibLoader.mm */,
 				F5BD20D10397BFC001980AE4 /* slBrevePrefs.h */,
 				F5BD20D20397BFC001980AE4 /* slBrevePrefs.mm */,
+				2A37F4AEFDCFA73011CA2CEA /* slBreveSourceDocument.h */,
+				2A37F4ACFDCFA73011CA2CEA /* slBreveSourceDocument.mm */,
 				F5BD20D30397BFC001980AE4 /* slCommandTextField.h */,
 				F5BD20D40397BFC001980AE4 /* slCommandTextField.mm */,
 				F5BD20D50397BFC001980AE4 /* slDemoMenu.h */,
 				F5BD20D60397BFC001980AE4 /* slDemoMenu.mm */,
 				F5BD20D70397BFC001980AE4 /* slFullScreen.h */,
 				F5BD20D80397BFC001980AE4 /* slFullScreen.mm */,
+				48D1C0BC04632D760093F8AA /* slGraphWindowController.h */,
+				48D1C0BD04632D760093F8AA /* slGraphWindowController.mm */,
+				48D1C0D4046331F80093F8AA /* slGraphWindowView.h */,
+				48D1C0D5046331F80093F8AA /* slGraphWindowView.mm */,
+				F5BD20A60397BEC801980AE4 /* slLogView.h */,
+				F5BD20A70397BEC801980AE4 /* slLogView.mm */,
+				F5BD20A80397BEC801980AE4 /* slMovieRecord.h */,
+				F5BD20A90397BEC801980AE4 /* slMovieRecord.mm */,
+				F5BD20AA0397BEC801980AE4 /* slObjectOutline.h */,
+				F5BD20AB0397BEC801980AE4 /* slObjectOutline.mm */,
+				F5BD20AC0397BEC801980AE4 /* slObjectOutlineItem.h */,
+				F5BD20AD0397BEC801980AE4 /* slObjectOutlineItem.mm */,
+				F5BD20AE0397BEC801980AE4 /* slQuickparser.l */,
+				F5BD20B10397BEC801980AE4 /* slTextView.h */,
+				F5BD20B20397BEC801980AE4 /* slTextView.mm */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -397,7 +397,11 @@
 			isa = PBXProject;
 			buildConfigurationList = 48C9358C094B452400B48959 /* Build configuration list for PBXProject "breve" */;
 			compatibilityVersion = "Xcode 2.4";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* OSX2 */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -455,7 +459,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This is a shell script that attempts to complete the entire\n# breve build process for Mac OS X, including the configure\n# step, the building of the breve libraries, and the building \n# of the final breve.app with the proper external libraries.\n\n### first do the configure, if neccessary\n\nif [ ! -f \"ConfigureLibraryList\" ]; then\n\techo \"ConfigureLibraryList not found!  Running configure...\"\n\t(cd ..; ./configure)\nfi\n\n### now build the breve engine libraries\n\n(cd ..; make lib/libbreve.a)\n\n### use the libraries provided by \"configure\" to build the \n### OS X application using xcodebuild\n\n### The ncurses library is required for command-line breve, but not \n### the OSX build.  Unforunately, it also breaks backwards compatabilty \n### for the OSX build, so we have to remove it from the library list\n\nexport LIBS=`cat ConfigureLibraryList | sed 's/-lncurses//' | sed 's/-ltermcap//'`\n\nxcodebuild -activeconfiguration -target real_breve.app BREVE_VERSION=$BREVE_VERSION";
+			shellScript = "# This is a shell script that attempts to complete the entire\n# breve build process for Mac OS X, including the configure\n# step, the building of the breve libraries, and the building \n# of the final breve.app with the proper external libraries.\n\n### first do the configure, if neccessary\n\nif [ ! -f \"ConfigureLibraryList\" ]; then\n\techo \"ConfigureLibraryList not found!  Running configure...\"\n\t(cd ..; ./configure)\nfi\n\n### now build the breve engine libraries\n\n(cd ..; make lib/libbreve.a)\n\n### use the libraries provided by \"configure\" to build the \n### OS X application using xcodebuild\n\n### The ncurses library is required for command-line breve, but not \n### the OSX build.  Unforunately, it also breaks backwards compatabilty \n### for the OSX build, so we have to remove it from the library list\n\nexport LIBS=`cat ConfigureLibraryList | sed 's/-lncurses//' | sed 's/-ltermcap//'`\n\nxcodebuild -target real_breve.app BREVE_VERSION=$BREVE_VERSION";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -543,13 +547,18 @@
 		48C93583094B452400B48959 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ADDITIONAL_SDKS = /Developer/SDKs/MacOSX10.4u.sdk/;
+				ADDITIONAL_SDKS = macosx;
+				ARCHS = (
+					i386,
+					x86_64,
+				);
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				GCC_VERSION = 4.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OPTIMIZATION_CFLAGS = "-O0 -g";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
@@ -568,10 +577,15 @@
 		48C93584094B452400B48959 /* Deployment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ADDITIONAL_SDKS = /Developer/SDKs/MacOSX10.4u.sdk/;
+				ADDITIONAL_SDKS = macosx;
+				ARCHS = (
+					i386,
+					x86_64,
+				);
 				COPY_PHASE_STRIP = YES;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				GCC_VERSION = 4.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -589,6 +603,7 @@
 		48C93588094B452400B48959 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
 				CC_VERSION = 3.x;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = NO;
@@ -605,6 +620,7 @@
 					MACOSX,
 					"BREVE_VERSION=$(BREVE_VERSION)",
 				);
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_PEDANTIC = NO;
 				GCC_WARN_SHADOW = NO;
@@ -623,15 +639,14 @@
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
-					/Users/jk/dev/breve/lib,
-					/usr/lib/gcc/darwin/3.3,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OPTIMIZATION_CFLAGS = "-O0 -g";
 				OTHER_CFLAGS = "$(CPPFLAGS)";
 				OTHER_LDFLAGS = "$(LIBS)";
 				PRODUCT_NAME = breve;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk";
+				SDKROOT = macosx;
 				SECTORDER_FLAGS = "";
 				UNSTRIPPED_PRODUCT = YES;
 				WARNING_CFLAGS = "-Wmost";
@@ -643,6 +658,7 @@
 		48C93589094B452400B48959 /* Deployment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
 				CC_VERSION = 3.x;
 				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = NO;
@@ -658,6 +674,7 @@
 					MACOSX,
 					"BREVE_VERSION=$(BREVE_VERSION)",
 				);
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_PEDANTIC = NO;
 				GCC_WARN_SHADOW = NO;
@@ -676,14 +693,13 @@
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
-					/Users/jk/dev/breve/lib,
-					/usr/lib/gcc/darwin/3.3,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OTHER_CFLAGS = "$(CPPFLAGS)";
 				OTHER_LDFLAGS = "$(LIBS)";
 				PRODUCT_NAME = breve;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk";
+				SDKROOT = macosx;
 				SECTORDER_FLAGS = "";
 				UNSTRIPPED_PRODUCT = YES;
 				WARNING_CFLAGS = "-Wmost";
@@ -710,10 +726,15 @@
 		48F0A4DC09CCE98700B52C28 /* Deployment-Universal */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ADDITIONAL_SDKS = "";
+				ADDITIONAL_SDKS = macosx;
+				ARCHS = (
+					i386,
+					x86_64,
+				);
 				COPY_PHASE_STRIP = YES;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				GCC_VERSION = 4.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -732,6 +753,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ADDITIONAL_SDKS = "";
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
 				CC_VERSION = 3.x;
 				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = NO;
@@ -747,6 +769,7 @@
 					MACOSX,
 					"BREVE_VERSION=$(BREVE_VERSION)",
 				);
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_PEDANTIC = NO;
 				GCC_WARN_SHADOW = NO;
@@ -765,14 +788,13 @@
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
-					/Users/jk/dev/breve/lib,
-					/usr/lib/gcc/darwin/3.3,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.4;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OTHER_CFLAGS = "$(CPPFLAGS)";
 				OTHER_LDFLAGS = "$(LIBS)";
 				PRODUCT_NAME = breve;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk";
+				SDKROOT = macosx;
 				SECTORDER_FLAGS = "";
 				UNSTRIPPED_PRODUCT = YES;
 				WARNING_CFLAGS = "-Wmost";
