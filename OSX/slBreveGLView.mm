@@ -247,7 +247,7 @@
 */
 
 - (void)drawRect:(NSRect)r {
-	brEngineLock(viewEngine);
+  viewEngine->lock();
 
 	[[self openGLContext] makeCurrentContext];
 
@@ -255,7 +255,7 @@
 
 	if(viewEngine) {
 	   	if(!fullScreen) {
-			camera->renderScene( world, drawCrosshair );
+        viewEngine->draw();
 			if(theMovie) [theMovie addFrameFromRGBPixels: [self updateRGBPixels]];
 		}
 	} else {
@@ -267,12 +267,12 @@
 
 	drawing = 0;
 
-	brEngineUnlock(viewEngine);
+  viewEngine->unlock();
 }
 
 - (void)drawFullScreen {
 	if(fullScreen && viewEngine) {
-		brEngineLock(viewEngine);
+		viewEngine->lock();
 		CGLSetCurrentContext([fullScreenView context]);
 
 		if(firstFullScreen) {
@@ -281,10 +281,10 @@
 			camera->setRecompile();
 		}
 
-		camera->renderScene( world, drawCrosshair );
+    viewEngine->draw();
 		firstFullScreen = 0;
 		CGLFlushDrawable([fullScreenView context]);
-		brEngineUnlock(viewEngine);
+		viewEngine->unlock();
 	}
 }
 
@@ -396,7 +396,7 @@
 		return;
 	}
 
-	brEngineLock(viewEngine);
+	viewEngine->lock();
 	switch(key) {
 		case NSUpArrowFunctionKey:
 			brSpecialKeyCallback(viewEngine, "up", 1);
@@ -414,7 +414,7 @@
 			brKeyCallback(viewEngine, key, 1);
 			break;
 	}
-	brEngineUnlock(viewEngine);
+	viewEngine->unlock();
 }
 
 - (void)keyUp:(NSEvent *)theEvent {
@@ -427,7 +427,7 @@
 	if([str length] != 1) return;
 	key = [str characterAtIndex: 0];
 
-	brEngineLock(viewEngine);
+	viewEngine->lock();
 	switch(key) {
 		case NSUpArrowFunctionKey:
 			brSpecialKeyCallback(viewEngine, "up", 0);
@@ -445,7 +445,7 @@
 			brKeyCallback(viewEngine, key, 0);
 			break;
 	}
-	brEngineUnlock(viewEngine);
+	viewEngine->unlock();
 }
 
 - (unsigned char*)updateRGBPixels {
@@ -525,7 +525,7 @@
 		if(!strcmp(menuEntry->title, "")) {
 			[menu addItem: [NSMenuItem separatorItem]];
 		} else {
-			menuItem = [menu addItemWithTitle: [NSString stringWithCString: menuEntry->title] action: @selector(contextualMenu:) keyEquivalent: @""];
+			menuItem = [menu addItemWithTitle: [NSString stringWithCString: menuEntry->title encoding:NSUTF8StringEncoding] action: @selector(contextualMenu:) keyEquivalent: @""];
 	
 			[menuItem setTag: n];
 	

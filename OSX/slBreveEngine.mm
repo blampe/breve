@@ -106,7 +106,7 @@ int slMakeCurrentContext();
 	classPath = (char*)[[NSString stringWithFormat: @"%@/classes", bundlePath] cString];
 	pluginPath = (char*)[[NSString stringWithFormat: @"%@/plugins", bundlePath] cString];
 
-	_engine = brEngineNew();
+  _engine = new brEngine();
 
 	brEngineSetSoundCallback(_engine, soundCallback);
 	brEngineSetDialogCallback(_engine, dialogCallback);
@@ -118,20 +118,20 @@ int slMakeCurrentContext();
 
 	gDisplayView = displayView;
 
-	brEngineSetInterfaceInterfaceTypeCallback(_engine, interfaceVersionCallback);
+  _engine->interfaceTypeCallback = interfaceVersionCallback;
 	brEngineSetInterfaceSetStringCallback(_engine, interfaceSetStringCallback);
 	brEngineSetInterfaceSetNibCallback(_engine, setNibCallback);
 
-	brEngineSetGetSavenameCallback(_engine, getSaveNameCallback);
-	brEngineSetGetLoadnameCallback(_engine, getLoadNameCallback);
+  _engine->getSavename = getSaveNameCallback;
+  _engine->getLoadname = getLoadNameCallback;
 	brEngineSetPauseCallback(_engine, pauseCallback);
 	brEngineSetUnpauseCallback(_engine, unpauseCallback);
 	brEngineSetUpdateMenuCallback(_engine, updateMenu);
 
-	brAddSearchPath(_engine, classPath);
-	brAddSearchPath(_engine, pluginPath);
-	brAddSearchPath(_engine, (char*)[bundlePath cString]);
-	brAddSearchPath(_engine, (char*)[NSHomeDirectory() cString]);
+  _engine->addSearchPath(classPath);
+	_engine->addSearchPath(pluginPath);
+	_engine->addSearchPath((char*)[bundlePath cStringUsingEncoding:NSUTF8StringEncoding]);
+	_engine->addSearchPath((char*)[NSHomeDirectory() cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	_steveData = (stSteveData*)brInitFrontendLanguages( _engine );
 }
@@ -141,7 +141,7 @@ int slMakeCurrentContext();
 
 	while( [ displayView drawing ] );
 
-	brEngineFree( _engine );
+	delete _engine;
 
 	_engine = NULL;
 
@@ -157,9 +157,9 @@ int slMakeCurrentContext();
 
 	if(!name) name = "<untitled>";
 	else {
-		NSString *inputDir = [[NSString stringWithCString: name] stringByDeletingLastPathComponent];
+		NSString *inputDir = [[NSString stringWithCString: name encoding:NSUTF8StringEncoding] stringByDeletingLastPathComponent];
 
-		if(useSimDirForOutput) brEngineSetIOPath(_engine, (char*)[inputDir cString]);
+		if(useSimDirForOutput) brEngineSetIOPath(_engine, (char*)[inputDir cStringUsingEncoding:NSUTF8StringEncoding]);
 	}
 
 	[displayView setEngine: _engine fullscreen: full];
@@ -202,7 +202,7 @@ int slMakeCurrentContext();
 	if(saved) result = brLoadSavedSimulation( _engine, buffer, name, saved );
 	else result = brLoadSimulation( _engine, buffer, name );
 
-	controller = brEngineGetController( _engine);
+	controller = _engine->getController();
 
 	if(filename) slFree( name );
 
@@ -313,10 +313,10 @@ int slMakeCurrentContext();
 					mouse = [[[displayView window] contentView] convertPoint: mouse toView: displayView];
 				}
 
-				brEngineSetMouseLocation(_engine, (int)mouse.x, (int)mouse.y);
+        _engine->setMouseLocation((int)mouse.x, (int)mouse.y);
 			}
 
-			if((result = brEngineIterate(_engine)) != EC_OK) {
+			if((result = _engine->iterate()) != EC_OK) {
 				[_engineLock unlock];
 
 				if([displayView isFullScreen]) [displayView stopFullScreen];
@@ -437,7 +437,7 @@ int slMakeCurrentContext();
 
 	if( !_engine ) return NULL;
 
-	controller = brEngineGetController(_engine);
+	controller = _engine->getController();
 
 	method = brMethodFind(controller->object, "get-selection", NULL, 0);
  
@@ -459,29 +459,29 @@ int slMakeCurrentContext();
 - (void)interfaceActionTag:(int)tag stringValue:(NSString*)s {
 	if( _engine ) {
 		[_engineLock lock];
-		brInterfaceCallback(_engine, tag, (char*)[s cString]);
+		brInterfaceCallback(_engine, tag, (char*)[s cStringUsingEncoding:NSUTF8StringEncoding]);
 		[_engineLock unlock];
 	}
 }
 
 /* +++ CALLBACKS +++ */
 
-char *getLoadNameCallback() {
+const char *getLoadNameCallback() {
 	NSString *s;
 
 	s = [(id)gInterfaceController loadNameForTypes: [NSArray arrayWithObjects: @"xml", @"tzxml", @"tzb", NULL] withAccView: NULL];
 
-	if(s) return slStrdup((char*)[s cString]);
+	if(s) return slStrdup((char*)[s cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	return NULL;
 }
 
-char *getSaveNameCallback() {
+const char *getSaveNameCallback() {
 	NSString *s;
 
 	s = [(id)gInterfaceController saveNameForType: @"tzxml" withAccView: NULL];
 
-	if(s) return slStrdup((char*)[s cString]);
+	if(s) return slStrdup((char*)[s cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	return NULL;
 }
@@ -490,10 +490,10 @@ int dialogCallback(char *title, char *message, char *b1, char *b2) {
 	  NSString *ts, *ms, *b1s, *b2s;
 	  int result;
 
-	  ts = [NSString stringWithCString: title];
-	  ms = [NSString stringWithCString: message];
-	  b1s = [NSString stringWithCString: b1];
-	  b2s = [NSString stringWithCString: b2];
+	  ts = [NSString stringWithCString: title encoding:NSUTF8StringEncoding];
+	  ms = [NSString stringWithCString: message encoding:NSUTF8StringEncoding];
+	  b1s = [NSString stringWithCString: b1 encoding:NSUTF8StringEncoding];
+	  b2s = [NSString stringWithCString: b2 encoding:NSUTF8StringEncoding];
 
 	  result = NSRunAlertPanel(ts, ms, b1s, b2s, NULL);
 
@@ -507,13 +507,13 @@ int soundCallback() {
 	return 0;
 }
 
-char *interfaceVersionCallback() {
+const char *interfaceVersionCallback() {
 	return "cocoa/2.4";
 }
 
 int interfaceSetStringCallback(char *string, int tag) {
 	if(simNib)
-		return [simNib setString: [NSString stringWithCString: string] forObjectWithTag: tag];
+		return [simNib setString: [NSString stringWithCString: string encoding:NSUTF8StringEncoding] forObjectWithTag: tag];
 
 	return 0;
 }
@@ -529,7 +529,7 @@ int unpauseCallback() {
 }
 
 void setNibCallback(char *n) {
-	simNib = [[slBreveNibLoader alloc] initWithNib: [NSString stringWithCString: n] andEngine: mySelf];
+	simNib = [[slBreveNibLoader alloc] initWithNib: [NSString stringWithCString: n encoding:NSUTF8StringEncoding] andEngine: mySelf];
 }
 
 void *newWindowCallback(char *string, void *graph) {
@@ -539,7 +539,7 @@ void *newWindowCallback(char *string, void *graph) {
 
     [NSBundle loadNibNamed: @"slGraphWindow.nib" owner: windowController];
 
-    [[windowController window] setTitle: [NSString stringWithCString: string]];
+    [[windowController window] setTitle: [NSString stringWithCString: string encoding:NSUTF8StringEncoding]];
     [[windowController graphView] setGraph: graph];
 
     return windowController;

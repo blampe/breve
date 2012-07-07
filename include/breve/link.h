@@ -25,6 +25,7 @@
 
 #include "worldObject.h"
 #include "multibody.h"
+#include "shape.h"
 
 class slJoint;
 

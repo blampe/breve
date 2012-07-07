@@ -26,6 +26,9 @@
 
 class slWorld;
 class slStationary;
+class slShape;
+class slMultibody;
+class slFace;
 
 typedef float slColor[4];
 

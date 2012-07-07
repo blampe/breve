@@ -108,10 +108,10 @@ typedef struct stSteveData stSteveData;
 
 - (void)interfaceActionTag:(int)tag stringValue:(NSString*)s;
 
-char *getLoadNameCallback();
-char *getSaveNameCallback();
+const char *getLoadNameCallback();
+const char *getSaveNameCallback();
 int dialogCallback(char *title, char *message, char *b1, char *b2);
-char *interfaceVersionCallback();
+const char *interfaceVersionCallback();
 int soundCallback();
 int pauseCallback();
 int unpauseCallback();

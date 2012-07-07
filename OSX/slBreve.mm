@@ -72,7 +72,7 @@ static NSRecursiveLock *gLogLock;
 #define stringify(x) #x
 #define expand_macro_stringify(x) stringify(x)
 
-	_versionString = [ [ NSString stringWithCString: expand_macro_stringify( BREVE_VERSION ) ] retain ];
+	_versionString = [ [ NSString stringWithCString: expand_macro_stringify( BREVE_VERSION )  encoding:NSUTF8StringEncoding] retain ];
 	[_versionField setStringValue: [ NSString stringWithFormat: @"version %@", _versionString ] ];
 	
 	// NSLog(@ "version = %@\n", [ NSString stringWithFormat: @"version %@", _versionString ]  );
@@ -156,7 +156,7 @@ static NSRecursiveLock *gLogLock;
 
 	if( count > 0 ) {
 		for( n = 0; n< count; n++ ) {
-			NSString *name = [ NSString stringWithCString: docsArray[n]->d_name ];
+			NSString *name = [ NSString stringWithCString: docsArray[n]->d_name  encoding:NSUTF8StringEncoding];
 			[ inMenu insertItemWithTitle: name action: @selector(docsMenu:) keyEquivalent: @"" atIndex: n ];
 
 			free(docsArray[n]);
@@ -175,7 +175,7 @@ static NSRecursiveLock *gLogLock;
 	int demoCount = scandir(directory, &demoArray, isBreveFile, alphasort);
 	NSString *name;
 
-	[menu setPath: [NSString stringWithCString: directory]];
+	[menu setPath: [NSString stringWithCString: directory encoding:NSUTF8StringEncoding]];
 
 	for(n=0;n<demoCount;n++) {
 		fullpath = (char*)slMalloc(strlen(directory) + strlen(demoArray[n]->d_name) + 2);
@@ -184,7 +184,7 @@ static NSRecursiveLock *gLogLock;
 
 		stat(fullpath, &st);
 		
-		name = [NSString stringWithCString: demoArray[n]->d_name];
+		name = [NSString stringWithCString: demoArray[n]->d_name encoding:NSUTF8StringEncoding];
 
 		if(st.st_mode & S_IFDIR && ![[name pathExtension] isEqualToString: @"nib"]) {
 			id item, submenu;
@@ -225,12 +225,12 @@ static NSRecursiveLock *gLogLock;
 
 	if(!currentDocument) return;
 
-	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cString]);
+	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
 
-	file = [currentDocument fileName];
+	file = [[currentDocument fileURL] path];
 	if(!file) file = [currentDocument displayName];
 
-	(char*)[file cString];
+	(char*)[file cStringUsingEncoding:NSUTF8StringEncoding];
 
 	if([breveEngine checkSyntax: buffer withFilename: name]) {
 		[self runErrorWindow];
@@ -274,17 +274,17 @@ static NSRecursiveLock *gLogLock;
 
 	if(!saved) return;
 
-	csaved = (char*)[saved cString];
+	csaved = (char*)[saved cStringUsingEncoding:NSUTF8StringEncoding];
 
 	if(!currentDocument) return;
 
 
-	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cString]);
+	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
 
-	file = [currentDocument fileName];
+	file = [[currentDocument fileURL] path];
 	if(!file) file = [currentDocument displayName];
 
-	name = slStrdup((char*)[file cString]);
+	name = slStrdup((char*)[file cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	[self clearLog: self];
 
@@ -366,12 +366,12 @@ static NSRecursiveLock *gLogLock;
 	strncpy( buffer, (char*)[ data bytes ], [ data length ] );
 	buffer[ [ data length ] ] = 0;
 
-	file = [currentDocument fileName];
+	file = [[currentDocument fileURL] path];
 
 	if( !file ) 	
 		file = [currentDocument displayName];
 
-	name = slStrdup((char*)[file cString]);
+	name = slStrdup((char*)[file cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	[self clearLog: self];
 
@@ -450,7 +450,7 @@ static NSRecursiveLock *gLogLock;
 	
 	if(!engine) return;
 
-	controller = brEngineGetController(engine);
+  controller = engine->getController();
 
 	i = [breveEngine getSelectedInstance];
 
@@ -509,8 +509,8 @@ static NSRecursiveLock *gLogLock;
 
 - (IBAction)simMenu:sender {
 	brEngine *e = [breveEngine getEngine];
-	brInstance *controller = brEngineGetController(e);
-	[self doMenuCallbackForInstance: controller item: [sender tag]];
+	brInstance *controller = e->getController();
+  [self doMenuCallbackForInstance: controller item: [sender tag]];
 }
 
 - (IBAction)contextualMenu:sender {
@@ -555,7 +555,7 @@ static NSRecursiveLock *gLogLock;
 - (IBAction)saveLog:sender {
 	NSString *logFile = [self saveNameForType: @"txt" withAccView: NULL];
 
-	if(logFile) [[logText string] writeToFile: logFile atomically: YES];
+   if(logFile) [[logText string] writeToFile: logFile atomically: YES encoding:NSUTF8StringEncoding error:nil];
 }
 
 - (IBAction)snapshot:sender {
@@ -609,7 +609,7 @@ void slPrintLog( const char *text ) {
 		pool = [ [NSAutoreleasePool alloc] init ];
 
 	[ gLogLock lock];
-	[ gLogString appendString: [NSString stringWithCString: text] ];
+	[ gLogString appendString: [NSString stringWithCString: text encoding:NSUTF8StringEncoding] ];
 	[ gLogLock unlock ];
 }
 
@@ -646,7 +646,7 @@ void slPrintLog( const char *text ) {
 	error = brEngineGetErrorInfo(engine);
 
 	if(error->file) {
-		simpleFilename = (char*)[[[NSString stringWithCString: error->file] lastPathComponent] cString];
+		simpleFilename = (char*)[[[NSString stringWithCString: error->file encoding:NSUTF8StringEncoding] lastPathComponent] cStringUsingEncoding:NSUTF8StringEncoding];
 	} else {
 		// this shouldn't happen, but it happened once and caused a crash, so I'm
 		// fixing the symptom instead of the disease.  for shame.
@@ -657,8 +657,8 @@ void slPrintLog( const char *text ) {
 	for(n=0;n<[documents count];n++) {
 		slBreveSourceDocument *doc = [documents objectAtIndex: n];
 
-		if([doc fileName]) {
-			currentCName = (char*)[[[doc fileName] lastPathComponent] cString];
+		if([[doc fileURL] path]) {
+			currentCName = (char*)[[[[doc fileURL] path] lastPathComponent] cStringUsingEncoding:NSUTF8StringEncoding];
 
 			if(!strcmp(currentCName, simpleFilename)) {
 				[[doc text] goToLine: error->line];
@@ -768,7 +768,7 @@ void updateMenu(brInstance *i) {
 	id menuItem;
 	unsigned int n;
 
-	if(!i->engine || i != brEngineGetController(i->engine)) return;
+	if(!i->engine || i != i->engine->getController()) return;
 
 	[gSelf clearSimulationMenu];
 
@@ -778,7 +778,7 @@ void updateMenu(brInstance *i) {
 		if(!strcmp(entry->title, "")) {
 			[gSimMenu addItem: [NSMenuItem separatorItem]];
 		} else {
-			menuItem = [gSimMenu addItemWithTitle: [NSString stringWithCString: entry->title] action: @selector(simMenu:) keyEquivalent: @""];
+			menuItem = [gSimMenu addItemWithTitle: [NSString stringWithCString: entry->title encoding:NSUTF8StringEncoding] action: @selector(simMenu:) keyEquivalent: @""];
 
 			[menuItem setTag: n];
 
@@ -798,7 +798,7 @@ void updateMenu(brInstance *i) {
 
 	if([savePanel runModal] == NSFileHandlingPanelCancelButton) return NULL;
 
-	return [savePanel filename];
+	return [[savePanel fileURL] path];
 }
 
 - (NSString*)loadNameForTypes:(NSArray*)types withAccView:(NSView*)view {
@@ -930,7 +930,7 @@ void updateMenu(brInstance *i) {
 
 - (NSMutableDictionary*)parseDocsIndex {
 	NSString *index = [NSString stringWithFormat: @"%s/index.txt", docsPath];
-	NSString *text = [NSString stringWithContentsOfFile: index];
+	NSString *text = [NSString stringWithContentsOfFile:index encoding:NSUTF8StringEncoding error:nil];
 	NSScanner *scanner;
 	NSString *name, *title, *location;
 	NSMutableCharacterSet *set;
