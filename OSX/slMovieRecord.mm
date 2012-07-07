@@ -59,6 +59,10 @@
 #define MV_RAW_CODEC	'raw '
 
 - initWithPath:(NSString *)path bounds:(NSRect)bounds timeScale:(int)scale qualityLevel:(int)quality {	
+#if TARGET_CPU_X86_64
+  [self release];
+  return nil;
+#else
     int e;
     PixMapHandle pixMapH;
     FSSpec fs;
@@ -169,6 +173,7 @@
     theName = [[path lastPathComponent] retain];
 
     return self;
+#endif
 }
 
 - (NSString*)name {
@@ -192,6 +197,7 @@
 }
 
 - (void)queueFrameFromRGBPixels:(unsigned char*)ptr {
+#if !TARGET_CPU_X86_64
     int length;
     NSData *data;
 
@@ -200,6 +206,7 @@
     data = [NSData dataWithBytes: ptr length: length];
 
     [theFrameArray addObject: data];
+#endif
 }
 
 - (int)getQueueSize {
@@ -235,6 +242,7 @@
 */
 
 - (int)addFrameFromRGBPixels:(unsigned char*)ptr {
+#if !TARGET_CPU_X86_64
     PixMapHandle pmh;
     unsigned char *pmhPixels;
     int result;
@@ -270,9 +278,13 @@
     UnlockPixels(pmh);
 
     return result;
+#else
+  return 0;
+#endif
 }
 
 - (int)addFrameFromPixMapHandle:(PixMapHandle)pixMapH {
+#if !TARGET_CPU_X86_64
     ImageDescriptionHandle imageDesc = NULL;
     OSErr err;
 
@@ -292,10 +304,14 @@
     }
 
     return err;
+#else
+  return 0;
+#endif
 }
 
 - (int)closeMovie {
     int r = 0;
+#if !TARGET_CPU_X86_64
     OSErr err;
     short resID = movieInDataForkResID;
 
@@ -326,7 +342,7 @@
             r = -1;
         }
     }
-
+#endif
     return r;
 }
 
@@ -334,11 +350,12 @@
     [theFrameArray removeAllObjects];
     [theFrameArray release];
 
+#if !TARGET_CPU_X86_64
     DisposeMovie(theMovie);
     DisposeGWorld(theGWorld);
 
     ExitMovies();
-
+#endif
     [theName release];
     [super dealloc];
 }
