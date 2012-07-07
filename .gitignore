@@ -11,3 +11,15 @@ xcuserdata
 *.xcworkspacedata
 *.o
 *.d
+config.log
+config.status
+lib/*
+bin/*
+OSX/ConfigureLibraryList
+Makefile
+README*txt
+include/breve/config.h
+steve/steveparse.tab.?
+Qt/breve.pro
+steve/format.c
+steve/stevelex.c
