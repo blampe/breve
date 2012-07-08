@@ -1,0 +1,124 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Program Control Structures</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07s06.html" title="Expressions"><link rel="next" href="ch07s08.html" title="Garbage Collection and Memory Management"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Program Control Structures</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s06.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch07s08.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2685"></a>Program Control Structures</h2></div></div></div><p><span class="emphasis"><em>Control structures</em></span> effect the flow of
+        simulation code. Though many of these structures function the same as
+        their counterparts in C, the syntax is slightly different in each case.
+        The main difference is that the statement being tested is not
+        (necessarily) surrounded by parenthesis, but is followed by a colon
+        (':') character.
+      </p><p>
+        Control statements evaluate test statements and then execute code
+        according to the result. In the case of <code class="literal">for</code> (<a href="ch07s07.html#node-2689" title="The for Loop">the section called &#8220;The for Loop&#8221;</a>), <code class="literal">foreach</code> (<a href="ch07s07.html#node-2688" title="The foreach Loop">the section called &#8220;The foreach Loop&#8221;</a>) and <code class="literal">while</code> (<a href="ch07s07.html#node-2689" title="The for Loop">the section called &#8220;The for Loop&#8221;</a>), these structures are used as
+        loops to repeat execution of a piece of code a certain number of times
+        or while a certain condition is met. The <code class="literal">if</code> statement is used to execute a block of code if a
+        certain condition is true and, optionally, a different piece of code if
+        the statement is false. A call to <code class="literal">return</code>
+        will exit any control structure's block immediately and exit the
+        method.
+      </p><p>
+        The conditional statements are be comprised of C-style comparison
+        operators. The following comparison operators are available:
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">==</code>, Equals
+            </p></li><li><p><code class="literal">!=</code>, Not equals
+            </p></li><li><p><code class="literal">&gt;=</code>, Greater than or Equals
+            </p></li><li><p><code class="literal">&lt;=</code>, Less than or Equals
+            </p></li><li><p><code class="literal">&gt;</code>, Greater than
+            </p></li><li><p><code class="literal">&lt;</code>, Less than
+            </p></li><li><p><code class="literal">&amp;&amp;</code>, And (short circuit
+              operator)
+            </p></li><li><p><code class="literal">||</code>, Or (short circuit operator)
+            </p></li><li><p><code class="literal">!</code>, Negation
+            </p></li></ul></div><p>
+        For all of these structures, the code to be executed may be either a
+        single statement, or several statements enclosed in braces ('{' and
+        '}').
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2686"></a>The if Statement</h3></div></div></div><p> The <code class="literal">if</code> statement is used to execute one piece of code if
+        a test statement is true, and (optionally) another if the statement is
+        false:
+      </p><pre class="programlisting">
+if <span class="emphasis"><em><code class="function">test_statement</code></em></span>: <span class="emphasis"><em><code class="function">true_code</code></em></span>
+[ else <span class="emphasis"><em><code class="function">false_code</code></em></span> ]
+</pre><p>
+        Examples of the <code class="literal">if</code> statement are shown
+        below.
+      </p><pre class="programlisting">
+# here we execute a single statement
+
+if x &gt; 5: x = 20.
+else x = 0.
+
+# here we execute many...
+
+if x &gt; 5: {
+        x = 20.
+        y = 40.
+} 
+
+# here we execute many in the if, but only one in the else...
+
+if x &gt; 5: {
+        x = 20.
+        y = 40.
+} else x = 200.
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2687"></a>The while Loop</h3></div></div></div><p> The
+        <code class="literal">while</code> structure works just like the while
+        statement in C. If executes a block of code repeatedly, as long as the
+        condition statement is true:
+      </p><pre class="programlisting">
+while <span class="emphasis"><em><code class="function">condition</code></em></span>: <span class="emphasis"><em><code class="function">code</code></em></span></pre><p>
+        Examples of the <code class="literal">while</code> loop are shown
+        below.
+      </p><pre class="programlisting">
+# for example...
+
+while x &lt; 10: {
+        print "x = $x".
+        x++.
+}
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2688"></a>The foreach Loop</h3></div></div></div><p> The
+        <code class="literal">foreach</code> structure is similar to the
+        foreach loop in Perl. The loop iterates through a list, and executes
+        the associated code each time. The current item in the list is stored
+        in a temporary variable as supplied by the user:
+      </p><pre class="programlisting">
+foreach <span class="emphasis"><em><code class="function">temporary_variable</code></em></span> in <span class="emphasis"><em><code class="function">list_variable</code></em></span>: <span class="emphasis"><em><code class="function">code</code></em></span>.
+</pre><p>
+        Examples of the <code class="literal">foreach</code> loop are shown
+        below.
+      </p><pre class="programlisting">
+# so, for example, if we have a variable called agent and a list
+# of objects stored in agentList:
+
+foreach agent in agentList: {
+        print (agent get-location).
+}
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2689"></a>The for Loop</h3></div></div></div><p> The
+        <code class="literal">for</code> loop (similar to the <code class="literal">for</code> loop in C) repeatedly executes a block of code.
+        Though it can function more generally like the <code class="literal">while</code> loop, it is typically used to run a block of
+        code for each value of a "counter" variable.
+      </p><p>
+        The loop is separated into three statements&#8212;an initializer, a
+        test statement, and an increment statement.
+      </p><pre class="programlisting">
+for <span class="emphasis"><em><code class="function">expression</code></em></span>, <span class="emphasis"><em><code class="function">test_expression</code></em></span>, <span class="emphasis"><em><code class="function">increment_expression</code></em></span>: <span class="emphasis"><em><code class="function">code</code></em></span>.
+</pre><p>
+        The <span class="emphasis"><em>initializer</em></span> is executed once
+        when the loop starts. It is typically used to set the iteration
+        variable before proceeding. The <span class="emphasis"><em>test
+        statement</em></span> is run at every iteration to determine whether
+        the loop will continue to execute (similar to the <code class="literal">while</code> loop). Finally, the <span class="emphasis"><em>increment statement</em></span> is run at every
+        iteration of the loop, typically to update a counter variable. Examples
+        of the <code class="literal">for</code> loop are shown below.
+      </p><pre class="programlisting">
+# so, for example, if we have a variable called n (int), this loop will
+# print the numbers from 1 to 30.
+
+for n=0, n&lt;30, n+=1: {
+        print n.
+}
+
+# we can also use a different increment statement in order to run the 
+# loop a bit differently&#8212;let's print only even numbers between 1 and 30
+
+for n=2, n&lt;30, n+=2: {
+        print n.
+}
+</pre></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s06.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s08.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Expressions </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Garbage Collection and Memory Management</td></tr></table></div></body></html>

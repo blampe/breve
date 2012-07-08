@@ -1,0 +1,379 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Expressions</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07s05.html" title='Types in "steve"'><link rel="next" href="ch07s07.html" title="Program Control Structures"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Expressions</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s05.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch07s07.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2673"></a>Expressions</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2674"></a>Special variables and values</h3></div></div></div><p>
+        Certain variables have special meanings in steve. Their values are
+        managed automatically by the breve engine and should not be assigned
+        manually.
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">self (object)</code>.
+            </p><p> This
+              variable always contains the value of the instantiation in which
+              the current method is being run. The variable is used most
+              frequently to call other methods within the same instantiation.
+              For example, an object of class Mobile could move itself with the
+              call:
+            </p><pre class="programlisting">
+    self move to (10, 10, 10).
+</pre></li><li><p><code class="literal">super (object)</code>.
+            </p><p> This
+              special value refers to the parent, or super-instance. This is
+              used to invoke a parent class implementation of a method, instead
+              of the current class implementation.
+            </p><p>
+              For example, in the Controller's iterate method, the superclass
+              iterate method is often called: super iterate. This is because
+              custom subclasses of Control typically preform simulation
+              specific tasks, but must then call on the superclass
+              implementation (Control) to actually step the physical simulation
+              forward and update the state of the world. Anytime you wish to
+              implement a custom object behavior <span class="emphasis"><em>in
+              addition</em></span> a parent class behavior, you should invoke
+              the parent class method as well.
+            </p></li><li><p><code class="literal">controller (object)</code>.
+            </p><p> The
+              controller variable is defined for all instances. It always
+              refers to the simulation's controller instance.
+            </p></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2675"></a>Assignments</h3></div></div></div><p> The most simple
+        expressions are simple assignments of literal values to variables. It
+        may help to refer to the documentation on steve types before
+        continuing.
+      </p><p>
+        Below are a few examples of this type of expression. In each case, the
+        variable on the left will take the value of the expression on the
+        right. If the expression on the right is not the correct type, it will
+        be automatically converted if possible. If the conversion is not
+        possible, an error will occur.
+      </p><pre class="programlisting">
+myInt = 4.
+myDouble = 12.345.
+myString = "Hello!".
+    
+# If we assign a double to an int, it will be automatically converted by 
+# truncating the decimal portion.  In this example, myInt will take the value 
+# 4:  
+    
+myInt = 4.8.
+    
+# Likewise if we assign a string to a double or int.  The variable will take 
+# the number value of the string, according to the atoi() or atof() ANSI C 
+# functions.  Here the double will get the value 10000: 
+     
+myDouble = "10000 miles away.".
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2676"></a>Mathematical Expressions</h3></div></div></div><p>
+        Mathematical operators in steve function almost exactly the same as
+        they do in C, although there are some additions to account for vector
+        and matrix types.
+      </p><p>
+        The following binary operators are valid for <code class="literal">int</code> and <code class="literal">double</code> types
+        (the descriptions refer to x and y, as though they were used in an
+        expression: <code class="literal">x <span class="emphasis"><em><code class="function">operator</code></em></span> y</code>): </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">+</code>, addition
+            </p></li><li><p><code class="literal">-</code>, subtraction
+            </p></li><li><p><code class="literal">*</code>, multiplication
+            </p></li><li><p><code class="literal">/</code>, division
+            </p></li><li><p><code class="literal">%</code>, modulus (the remainder of x when
+              divided by y)
+            </p></li><li><p>
+              ^, power (x raised to the power of y)
+            </p></li></ul></div><p>
+        Their functions should be self-explanatory, with the possible exception
+        of modulus, which cannot be used with double types in C. When used with
+        doubles, the result is calculated using the ANSI <code class="literal">fmod()</code> function.
+      </p><p>
+        The following operators are valid for use with two vectors:
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">+</code>, vector addition
+            </p></li><li><p><code class="literal">-</code>, vector subtraction
+            </p></li></ul></div><p>
+        The following operators are valid for a vector and a double (although
+        an <code class="literal">int</code> is automatically promoted to a
+        double in this case):
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">*</code>, vector times scalar
+              multiplication
+            </p></li><li><p><code class="literal">/</code>, vector divided by scalar
+              division
+            </p></li></ul></div><p>
+        As in many languages, parenthesis are used to group expressions when
+        the default order of operations does not compute the desired result:
+      </p><pre class="programlisting">
+# this is the default order, but we can make it explicit with parens
+x = x + (4 / y).                    # computes 4 / y first...
+
+# this is NOT the default order -- we need to force it
+x = (x + 4) / y.                    # computes x + 4 first
+</pre><p>
+        Mathematical expressions are often used in conjunction with assignments
+        in order to modify the value of a variable. A few examples of using
+        mathematical expressions in conjunction with assignments follow:
+      </p><pre class="programlisting">
+    x = x + 4.
+
+    y = (1, 2, 3) / x.                  # assumes x is an int or double
+
+    z = z + x^2.
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2677"></a>Mathematical Assignment Expressions</h3></div></div></div><p> In addition to the mathematical assignment operators
+        above, steve also support <span class="emphasis"><em>mathematical
+        assignment operators</em></span>. Mathematical assignment operators are
+        used as shortcuts to perform a calculation and update the value of a
+        variable simultaneously, instead of as two separate steps. These
+        expressions are useful, but since they are only shortcuts for other
+        expressions, understanding them is not critical.
+      </p><p>
+        The following mathematical assignment operators are available:
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">+=</code></p></li><li><p><code class="literal">-=</code></p></li><li><p><code class="literal">*=</code></p></li><li><p><code class="literal">/=</code></p></li><li><p><code class="literal">%=</code></p></li><li><p><code class="literal">^=</code></p></li></ul></div><p>
+        These operators are simply shortcuts for cases in which the left
+        operand of the mathematical expression is also the location where the
+        output of the expression will be stored. For example, the following
+        expression pairs are equivalent:
+      </p><pre class="programlisting">
+a = a + b.               # "a equals a plus b" can also be written as...
+a += b.                  # "a plus equals b"
+
+a = a - (2, 2, 2).
+a -= (2, 2, 2).
+</pre><p>
+        steve also has "increment" and "decrement" assignment operators:
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+              ++
+            </p></li><li><p>
+              --
+            </p></li></ul></div><p>
+        As in languages like C and Perl, these operators increment and
+        decrement a variable by one, respectively. Unlike C and Perl, these
+        operators may <span class="emphasis"><em>only</em></span> be placed
+        after the variable. As an example, the following expression pairs are
+        equivalent:
+      </p><pre class="programlisting">
+x = x + 1.          # updates the variable x by adding 1
+x++.
+
+x += 1.             # does the same...
+x++.
+
+y = (x += 1).       # a little confusing, but sets both x and y to (x + 1)
+y = x++.            # as does this.
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2678"></a>Mathematical Functions</h3></div></div></div><p> A number of internal functions (which are otherwise
+        typically not used in breve simulations) are available for math-related
+        expressions. Internal functions are called just like C functions:
+        <code class="literal"><span class="emphasis"><em><code class="function">functionName</code></em></span>, (<span class="emphasis"><em><code class="function">arguments</code></em></span>)</code>.
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">sin(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the sine of
+              the radian angle <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">cos(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the cosine of
+              the radian angle <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">tan(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the tangent
+              of the radian angle <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">asin(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the radian
+              angle arc sine of <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">acos(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the radian
+              angle arc cosine of the <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">atan(input)</code> gives the radian angle
+              arc tangent of <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">sqrt(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the
+              <code class="literal">float</code> square root of <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">angle(<span class="emphasis"><em><code class="function">a</code></em></span>, , <span class="emphasis"><em><code class="function">b</code></em></span>)</code> gives the <code class="literal">float</code> angle in radians between vectors
+              <span class="emphasis"><em><code class="function">a</code></em></span> and <span class="emphasis"><em><code class="function">b</code></em></span>.
+            </p></li><li><p><code class="literal">max(<span class="emphasis"><em><code class="function">a</code></em></span>, , <span class="emphasis"><em><code class="function">b</code></em></span>)</code> gives the maximum of
+              <code class="literal">floats</code><span class="emphasis"><em><code class="function">a</code></em></span> and <span class="emphasis"><em><code class="function">b</code></em></span>.
+            </p></li><li><p><code class="literal">min(<span class="emphasis"><em><code class="function">a</code></em></span>, , <span class="emphasis"><em><code class="function">b</code></em></span>)</code> gives the minimum of
+              <code class="literal">floats</code><span class="emphasis"><em><code class="function">a</code></em></span> and <span class="emphasis"><em><code class="function">b</code></em></span>.
+            </p></li><li><p><code class="literal">cross(<span class="emphasis"><em><code class="function">v1</code></em></span>, , <span class="emphasis"><em><code class="function">v2</code></em></span>)</code> gives the vector cross
+              product of vectors <span class="emphasis"><em><code class="function">v1</code></em></span>
+              and <span class="emphasis"><em><code class="function">v2</code></em></span>.
+            </p></li><li><p><code class="literal">dot(<span class="emphasis"><em><code class="function">v1</code></em></span>, , <span class="emphasis"><em><code class="function">v2</code></em></span>)</code> gives the float dot
+              product of vectors <span class="emphasis"><em><code class="function">v1</code></em></span>
+              and <span class="emphasis"><em><code class="function">v2</code></em></span>.
+            </p></li><li><p><code class="literal">log(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the
+              <code class="literal">float</code> natural log of <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li><li><p><code class="literal">randomGauss()</code> gives a <code class="literal">float</code> random number with a Gaussian
+              distribution.
+            </p></li><li><p><code class="literal">transpose(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> gives the transpose
+              of the matrix <span class="emphasis"><em><code class="function">input</code></em></span>.
+            </p></li></ul></div><p>
+        The following internal functions are used for testing float variables
+        for special values which have meaning primarily to developers and
+        plugin authors.
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">isnan(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> returns 1 if the
+              input is a "not-a-number" float value, 0 otherwise.
+            </p></li><li><p><code class="literal">isinf(<span class="emphasis"><em><code class="function">input</code></em></span>)</code> returns 1 if the
+              input is a float value representing infinity, 0 otherwise.
+            </p></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2679"></a>Random Numbers</h3></div></div></div><p> Random
+        numbers are available in steve using the command <code class="literal">random</code>. The syntax is <code class="literal">random[
+        <span class="emphasis"><em><code class="function">expression</code></em></span> ]</code>, where
+        expression is an expression of either <code class="literal">int</code>
+        (<a href="ch07s05.html#node-2645" title="The int type">the section called &#8220;The int type&#8221;</a>),
+        <code class="literal">float</code> (<a href="ch07s05.html#node-2648" title="The float type">the section called &#8220;The float type&#8221;</a>) or <code class="literal">vector</code> (<a href="ch07s05.html#node-2654" title="The vector Type">the section called &#8220;The vector Type&#8221;</a>). The value returned is always
+        the same type as the expression. In the case of <code class="literal">int</code> or <code class="literal">float</code>, the
+        returned value is a random value between 0 and the expression. In the
+        case of a <code class="literal">vector</code> expression, the returned
+        value is a <code class="literal">vector</code> in which each element
+        is between 0 and the corresponding value of the expression. For
+        example, a call to <code class="literal">random[(10, 10, 20)]</code>
+        returns a <code class="literal">vector</code> with X and Y elements
+        between 0 and 10, and the Z element between 0 and 20.
+      </p><p>
+        Note that <code class="literal">random[<span class="emphasis"><em><code class="function">intValue</code></em></span>]</code> returns a value
+        between 0 and <span class="emphasis"><em><code class="function">intValue</code></em></span>,
+        inclusive, as opposed to the behavior that many C programmers expect in
+        which the returned value is between 0 and <span class="emphasis"><em><code class="function">intValue</code></em></span> - 1.
+      </p><p>
+        Because many simulations use the origin (0, 0, 0) as the "center" of
+        their world, it is often useful to obtain a random vector centered
+        around (0, 0, 0). For example, if we want to move agents somewhere
+        within an imaginary box surrounding the origin, we might use the
+        expression <code class="literal">random[(40, 40, 40)] - (20, 20,
+        20)</code>. This convention gives us a <code class="literal">vector</code> with each element between -20 and 20. This
+        type of expression appears frequently in simulations.
+      </p><p>
+        The values are produced using the standard C library <code class="literal">random()</code> routine. The library is seeded with the
+        current time when the breve application is launched. To explicitly set
+        the random seed, you may call the internal function <code class="literal">randomSeed( <span class="emphasis"><em><code class="function">value</code></em></span>
+        )</code>, where value is an integer.
+      </p><p> In the event
+        that multiple breve simulations are launched simultaneously (typically
+        only relevant in cluster environments), it may be necessary to pick
+        unique random seeds for each simulation to prevent each of the
+        simulations from giving the same results. Refer to the <a href="http://www.spiderland.org/documentation/classes/Control.html" target="_top">Controller</a> method <a href="http://www.spiderland.org/documentation/classes/Control.html#set-random-seed-from-dev-random" target="_top">set-random-seed-from-dev-random</a> for more information
+        on automatically picking unique random seeds on systems which support
+        it.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2680"></a>Method Calls</h3></div></div></div><p> As discussed
+        in the section on defining class methods, each method is identified by
+        a name and may have any number of input arguments. The most simple
+        method call to a method with no arguments is simply:
+      </p><pre class="programlisting"><span class="emphasis"><em><code class="function">instance</code></em></span><span class="emphasis"><em><code class="function">methodName</code></em></span>.
+</pre><p>
+        If the method takes arguments, each argument is associated with a
+        keyword: the keyword identifies which argument will follow and what
+        it's type is. This is somewhat different from C where the argument's
+        type and meaning is specified by its order relative to other arguments.
+        The steve method is more similar to Objective C and allows a more
+        natural language structure to method calls and protects against
+        arguments being passed in the wrong order.
+      </p><p>
+        To pass arguments to the method, simply precede the argument value with
+        the keyword name. Consider a method move-object which takes a keyword
+        to:
+      </p><pre class="programlisting">
+myObject move-object to (1, 2, 3). 
+</pre><p>
+        If the method takes more than a single argument, the convention is the
+        same&#8212;just add the next argument afterwards. Note that the order
+        in which the arguments are passed does not affect the method call,
+        though it may affect the readability of the code. For example, the
+        Control object implements a method to point the camera at a certain
+        vector location from a vector offset&#8212;first we'll see the method
+        definition, then how it's called:
+      </p><pre class="programlisting">
+# if the method is defined using:
+    
++ to point-camera at location (vector) from offset (vector):
+    ...
+
+# then from another method, we can call point-camera using the code below.
+# these two method calls are equivalent, though the first reads more 
+# naturally.
+
++ to do-something-else:
+    self point-camera at (0, 0, 0) from (100, 100, 100).
+    self point-camera from (100, 100, 100) at (0, 0, 0). 
+
+</pre><p>
+        If you wish to call a method for multiple objects, you can use the
+        method call syntax with a list of objects. Note, however, that the
+        arguments to the list are computed for item in the list separately.
+        This makes a difference in the following example:
+      </p><pre class="programlisting">
+# assume that mobileList is of type list
+
+mobileList = 10 new Mobile.
+
+# The random statement is evaluated for each instance, meaning that all the 
+# instance go to different random locations, not to a single random location.
+
+mobileList move to random[(20, 20, 20)].
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2681"></a>The all Expression</h3></div></div></div><p>
+        You can find all instances of a given class using the <code class="literal">all</code> expression. <code class="literal">all</code> is
+        given the name of a class, and returns a list containing all objects of
+        that type.
+      </p><pre class="programlisting">
+# get a list of all mobile objects in the simulation
+
+myMobile = all Mobiles
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2682"></a>Printing information with print and printf</h3></div></div></div><p> The <code class="literal">print</code> and <code class="literal">printf</code>
+        statements are used to print output from a simulation to the output
+        log. Both of these statements accept any type of expression, as well as
+        multiple expressions separated by commas. Also, since <code class="literal">strings</code> may contain embedded variables, you can
+        format the output of variables however you'd like. See the section on
+        <code class="literal">strings</code> (<a href="ch07s05.html#node-2663" title="The string Type">the section called &#8220;The string Type&#8221;</a>) for more information.
+      </p><p>
+        The only difference between <code class="literal">print</code> and
+        <code class="literal">printf</code> is that <code class="literal">printf</code> does <span class="emphasis"><em>not</em></span> automatically print a newline character.
+        This means that subsequent prints will continue on the same line (as
+        though the "return" key was never hit). This can be useful if you're
+        trying to produce output in a specific format, but is typically not
+        desirable. If in doubt, stick to <code class="literal">print</code></p><p>
+        Here are some examples of <code class="literal">print</code> and
+        <code class="literal">printf</code>:
+      </p><pre class="programlisting">
+# print two variables, side by side.
+
+print (self get-time), populationSize.
+
+# use a variable embedded in a string.
+
+print "the population size is $populationSize".
+
+# the following statements would produce the text:
+# A B C
+# D E F
+
+print "A B C ".
+print "D E F"
+
+# the following statements would produce the text:
+# A B C D E F
+
+printf "A B C ".
+printf "D E F"
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2683"></a>Using Subexpressions</h3></div></div></div><p> As in C, of
+        course, users can use subexpressions as part of larger expressions. For
+        example, you can use a mathematical expression as part of a method
+        call, or a method call as part of a mathematical expression. Because of
+        the syntax of steve , however, subexpressions frequently need to be
+        parenthesized in situations where it would not be required in C. The
+        following important rules apply to using subexpressions: If a method
+        call is not the entire statement, it must be parenthesized. If you wish
+        to assign the result of a method call, use it in a mathematical
+        expression or use it as an argument for another method, for example:
+      </p><pre class="programlisting">
+myInt = self get-speed.                   # incorrect
+myInt = (self get-speed).                 # correct
+
+myInt = self get-speed + 5.               # incorrect
+myInt = (self get-speed) + 5.             # correct
+
+self set-speed to neighbor get-speed.     # incorrect 
+self set-speed to (neighbor get-speed).   # correct
+</pre><p>
+        All method arguments must be a single "unit"&#8212;arguments which are
+        not simply a variable or literal value must be parenthesized.
+      </p><p>
+        This means that if you use mathematical expressions, instantiations or
+        other method calls as input arguments to a method, they must be
+        parenthesized. The first rule about method calls, of course, still
+        applies:
+      </p><pre class="programlisting">
+self set-location to ((neighbor get-location) + (10, 10, 10)). # correct
+self set-location to (neighbor get-location) + (10, 10, 10).   # incorrect
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2684"></a>Internal Function Calls</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: 
+              For developer use only
+            "><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="../images/note.gif"></td><th align="left">
+              For developer use only
+            </th></tr><tr><td align="left" valign="top"><p>
+                Internal function calls are for use by breve and plugin
+                developers only.
+              </p></td></tr></table></div><p>
+        A final expression type not discussed above is an internal functions.
+        Internal function calls look just like C calls:
+      </p><pre class="programlisting"><span class="emphasis"><em><code class="function">methodName</code></em></span>(<span class="emphasis"><em><code class="function">arg1</code></em></span>,<span class="emphasis"><em><code class="function">arg2</code></em></span>, <span class="emphasis"><em><code class="function">... argN</code></em></span>)
+</pre><p>
+        Though internal function calls are the most direct access to the breve
+        libraries and features, the included class hierarchy provides a formal
+        interface to the internal functions such that user simulations should
+        never use these internal functions. The only exception to this is for
+        certain mathematical functions.
+      </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s05.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s07.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Types in "steve" </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Program Control Structures</td></tr></table></div></body></html>

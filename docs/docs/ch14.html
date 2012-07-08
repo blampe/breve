@@ -1,0 +1,103 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter 14. Archiving and Dearchiving Objects and Simulations</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="prev" href="ch13s02.html" title="Saving Snapshots"><link rel="next" href="ch14s02.html" title="Saving and Loading the Entire State of a Simulation"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 14. Archiving and Dearchiving Objects and Simulations</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch13s02.html">&lt;&lt; previous</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch14s02.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="node-2747"></a>Chapter 14. Archiving and Dearchiving Objects and Simulations</h2></div></div></div><p> breve allows simulations and
+        individual objects within simulations to be archived into
+        human-readable XML files, and then later extracted. The XML
+        archive/dearchive process applies both to saving simulation objects to
+        files and to sending objects over the network. Both techniques require
+        object encoding and decoding, and the discussion in this chapter
+        applies to both.
+      </p><p>
+        This chapter first describes how individual objects can be archived and
+        dearchived (<a href="ch14.html#node-2748" title="Saving and Loading Individual Objects">the section called &#8220;Saving and Loading Individual Objects&#8221;</a>) and then
+        how entire simulations can be archived and dearchived (<a href="ch14s02.html" title="Saving and Loading the Entire State of a Simulation">the section called &#8220;Saving and Loading the Entire State of a Simulation&#8221;</a>).
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2748"></a>Saving and Loading Individual Objects</h2></div></div></div><p> This method is used to export and import individual
+        objects or subsets of objects in a simulation. When an object is
+        dearchived with this method, a new instance is created for the saved
+        object and loaded into a running simulation. This technique is in
+        contrast to the method described in <a href="ch14s02.html" title="Saving and Loading the Entire State of a Simulation">the section called &#8220;Saving and Loading the Entire State of a Simulation&#8221;</a>,
+        which creates an entirely new simulation from an archived world. The
+        steps described here also apply to sending and receiving objects over a
+        network as described in <a href="ch15s02.html" title="Sending and Receiving breve Objects">the section called &#8220;Sending and Receiving breve Objects&#8221;</a>.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2749"></a>Methods Called During Archiving/Dearchiving</h3></div></div></div><p>
+        The special methods <code class="literal">archive</code> and
+        <code class="literal">dearchive</code> are called during archiving and
+        dearchiving respectively. The "archive" method is used, if necessary,
+        to prepare an object for archiving. The "dearchive" method is used, if
+        necessary, after an object has been loaded to prepare it for being
+        loaded into the simulation.
+      </p><p>
+        For most users, these methods are not required and should not be
+        implemented. If they are implemented, however, they <span class="emphasis"><em>must return 1 to indicate success</em></span> and unless
+        the methods are specifically intended to override superclass behaviors,
+        they <span class="emphasis"><em>must call the superclass
+        implementation</em></span>. In most cases, it is desirable to return
+        the same value as the superclass implementation so that errors are
+        handled correctly. Example <code class="literal">archive</code> and
+        <code class="literal">dearchive</code> methods are shown below. These
+        methods do no special preparation for archiving and dearchiving, but
+        instead fulfill the requirements lists above and print a message.
+      </p><pre class="programlisting">
++ to archive:
+        print "Archiving $self...".
+
+        return (super archive).
+
++ to dearchive:
+        print "Dearchiving $self...".
+
+        return (super archive).
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2750"></a>Saving and Loading Objects With No Dependencies</h3></div></div></div><p>
+        In a "simple" object archive, only a single object is encoded. If the
+        object has variable <code class="literal">object</code> variables or
+        <code class="literal">pointer</code> variables, they will be set to 0
+        when the object is dearchived. All other variable types will be
+        restored to their pre-archiving values. For this type of object
+        archiving and dearchiving, no additional code or preparation is
+        required.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2751"></a>Saving and Loading Objects With Dependencies</h3></div></div></div><p>
+        Variables of type <code class="literal">object</code> and <code class="literal">pointer</code> cannot be automatically maintained without
+        special treatment. This is because an <code class="literal">object</code> may reference another, which in turn
+        references several others, and so forth. If all <code class="literal">object</code> variables were maintained, then a huge chain
+        reaction would result every time an instance was saved.
+      </p><p>
+        To avoid this, saving objects does not include an object variable
+        <span class="emphasis"><em>unless</em></span> the the object being
+        saved has declared it as a dependency, using the <a href="http://www.spiderland.org/documentation/classes/Object.html" target="_top">Object</a> method <a href="http://www.spiderland.org/documentation/classes/Object.html#add-dependency" target="_top">add-dependency</a>. If you define an object, Y, as a
+        dependency of X, then saving X will also save Y. Loading the saved
+        instance X will also recreate the instance Y.
+      </p><p>
+        Because adding dependencies also has the potential to lead to
+        chain-reactions of archiving, it should be used with care. Generally,
+        an object should only add dependencies on objects it has created and
+        for which it is exclusively responsible. So while a simulated creature
+        might legitimately add a dependency on an object containing its genome
+        or an object which determines its movement (a "brain"), it would be
+        inappropriate for the object to add a dependency on the controller
+        object, or other creatures in the world.
+      </p><p>
+        When an object is to be archived using this technique, the
+        user-supplied method <code class="literal">archive</code> is executed
+        for the object. In your <code class="literal">archive</code> method,
+        you should include code that might be needed to prepare the object for
+        archiving such as updating variables which will be required when the
+        object is dearchived. <span class="emphasis"><em>Your <code class="function">archive</code> method must, on success, return
+        1</em></span>. Any other return value is considered failure and will
+        abort the archive.
+      </p><p>
+        When an object is to be dearchived using this method, the user-supplied
+        method <code class="literal">dearchive</code> is executed for the
+        object. In your <code class="literal">dearchive</code> method, you
+        should include code that might be needed to restore the state of the
+        object, or to inform the rest of the simulation of its presence if
+        necessary. <span class="emphasis"><em>Your dearchive method must, on
+        success, return 1</em></span>. Any other return value is considered
+        failure and will abort the archive.
+      </p><p>
+        Once dependencies, archive methods and dearchive methods (all of which
+        may prove to be unnecessary for most straightforward classes) are
+        addressed, you may initiate an archive using the <a href="http://www.spiderland.org/documentation/classes/Object.html" target="_top">Object</a> method <a href="http://www.spiderland.org/documentation/classes/Object.html#archive-as-xml" target="_top">archive-as-xml</a>.
+      </p><p>
+        To dearchive an object previously archived with this technique, use the
+        <a href="http://www.spiderland.org/documentation/classes/Control.html" target="_top">Control</a> method <a href="http://www.spiderland.org/documentation/classes/Control.html#dearchive-xml" target="_top">dearchive-xml</a>. Note that this creates new instances
+        of the objects in the archived file, instead of "filling" an existing
+        object.
+      </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch13s02.html">&lt;&lt; previous</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch14s02.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Saving Snapshots </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Saving and Loading the Entire State of a Simulation</td></tr></table></div></body></html>

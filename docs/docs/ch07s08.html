@@ -1,0 +1,52 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Garbage Collection and Memory Management</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07s07.html" title="Program Control Structures"><link rel="next" href="ch07s09.html" title="Directives"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Garbage Collection and Memory Management</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s07.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch07s09.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2690"></a>Garbage Collection and Memory Management</h2></div></div></div><p>
+        breve includes built-in <span class="emphasis"><em>garbage
+        collection</em></span> (sometimes called <span class="emphasis"><em>GC</em></span>). Garbage collection is a form of memory
+        management in which the system detects when an object is no longer
+        referenced by any other variable. When an object is no longer
+        referenced by any other variable, it is an indication that the memory
+        is no longer in use and can thus be safely deallocated.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2691"></a>Memory Management and Garbage Collection of Basic Types</h3></div></div></div><p>
+        Memory management and garbage collection of basic types happens
+        automatically and requires no user interaction. ints, floats, matrices
+        and vectors are passed by reference and do not require garbage
+        collection. lists, hashes and data are automatically garbage collected
+        when appropriate.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2692"></a>Memory Management and Garbage Collection of Objects</h3></div></div></div><p>
+        breve's garbage collection is slightly complicated by the fact that
+        objects do not need to be referenced in memory to be "in use". An
+        unreferened object may, for example, "come back to life" because of an
+        all (<a href="ch10s06.html" title="Finding All Objects of a Given Type">the section called &#8220;Finding All Objects of a Given Type&#8221;</a>) expression.
+        Furthermore, objects in the simulated world (members of subclasses of
+        the class "Real") may physically interact even without referencing each
+        other in their variables. Because of these complications, garbage
+        collection cannot be automatically enabled for all objects in a
+        simulation.
+      </p><p>
+        Garbage collection for objects is thus enabled on a per-object basis
+        and the programmer must decide when its use is appropriate. The
+        following guidelines should generally help to decide when garbage
+        collection is appropriate for an object:
+      </p><div class="itemizedlist"><ul type="disc"><li><p>
+              the object is not a member of a subclass of Real.
+            </p></li><li><p>
+              the object does not have it's own iterate or post-iterate
+              methods.
+            </p></li><li><p>
+              the object is not a dependency of any object that does not hold a
+              reference to it.
+            </p></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2693"></a>A Garbage Collection Caveat: Circular References</h3></div></div></div><p>
+        One important caveat applies to garbage collection of both basic types
+        and objects. The steve garbage collection scheme does not correctly
+        deallocate memory when there are <span class="emphasis"><em>circular
+        references</em></span>. A circular reference occurs when two (or more)
+        objects refer to each other in a circular fashion. An example of a
+        circular reference between three objects is shown below:
+      </p><div class="mediaobject" align="center"><img src="images/circular_reference.jpg" align="middle"></div><p>
+        When a circular reference occurs, the objects are never recognized as
+        "unused" and are thus never deleted as they should be. Circular
+        references thus lead to "islands" of unused memory which do not get
+        released. This type of circular reference is rare, but if your
+        simulation design makes use of these types of structures, you may have
+        to explicitly overwrite variables in order to ensure that no circular
+        references exist.
+      </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s07.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s09.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Program Control Structures </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Directives</td></tr></table></div></body></html>

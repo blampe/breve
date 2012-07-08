@@ -1,0 +1,344 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Types in "steve"</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07s04.html" title="Building Classes"><link rel="next" href="ch07s06.html" title="Expressions"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Types in "steve"</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s04.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch07s06.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2644"></a>Types in "steve"</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2645"></a>The int type</h3></div></div></div><p>
+        An <code class="literal">int</code> is a whole number, identical to the
+        <code class="literal">int</code> type in C.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2646"></a>int operators</h4></div></div></div><p>
+        ints can be operated on using the following mathematical operators,
+        which operate just like their C counterparts: +, -, *, /, % and ^
+        (power). Divisions or mods by zero are treated as errors and will stop
+        the execution of the simulation. The absolute value of an integer is
+        given by | <span class="emphasis"><em><code class="function">integer expression</code></em></span>
+        |.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2647"></a>Conversions to Other Types</h4></div></div></div><p>
+        ints can be converted to floats automatically in expressions or during
+        assignments, but cannot be converted to any other type.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2648"></a>The float type</h3></div></div></div><p> A real number, also
+        known as "double", identical to the <code class="literal">double</code> type in C. Internally, floats are represented
+        by 8-byte doubles.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2649"></a>float Operators</h4></div></div></div><p>
+        All of the operators used for ints&#8212;including %&#8212;can also be
+        applied to floats.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2650"></a>Conversions to Other Types</h4></div></div></div><p><code class="literal">floats</code> can be converted to (and from)
+        <code class="literal">ints</code> automatically in expressions or
+        assignments. <code class="literal">floats</code> cannot be converted
+        to any other type.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2651"></a>The object Type</h3></div></div></div><p> An
+        <code class="literal">object</code> is an <span class="emphasis"><em>instance</em></span> of a steve class.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2652"></a>object Operators</h4></div></div></div><p><code class="literal">objects</code> cannot used in mathematical
+        expressions as some of the other types can. Instead, <code class="literal">objects</code> are mainly used for one type of expression:
+        method calling. Method calling is outlined in the section Method Calls
+        (<a href="ch07s06.html#node-2680" title="Method Calls">the section called &#8220;Method Calls&#8221;</a>).
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2653"></a>Conversion to Other Types</h4></div></div></div><p>
+        Objects cannot be explicitly converted to other types. They do,
+        however, have meaning as "boolean" (true or false) expressions in
+        control structures (<a href="ch07s07.html" title="Program Control Structures">the section called &#8220;Program Control Structures&#8221;</a>). If used in the
+        context of a boolean expression (like an <code class="literal">if</code> statement, <a href="ch07s07.html#node-2686" title="The if Statement">the section called &#8220;The if Statement&#8221;</a>), the expression is true only
+        if the variable refers to an active object. This means that an object
+        variable which has not yet been associated with an instance in the
+        simulation is false.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2654"></a>The vector Type</h3></div></div></div><p> A vector is
+        used to represent a point or vector in 3D space. A vector is expressed
+        as three floating point numbers, such as (1.0, 2.0, 5.0).
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2655"></a>vector Operators</h4></div></div></div><p>
+        Vectors may be added (+) to and subtracted (-) from other vectors,
+        which yields another vector. Vectors may be multiplied (*) or divided
+        (/) by ints or floats, which also results in other vectors. The length
+        of the vector is given using the following construct: | <span class="emphasis"><em><code class="function">vector expression</code></em></span> |.
+      </p><p>
+        Some examples of using vectors follow:
+      </p><pre class="programlisting">
+v = (1, 2, 3).  # sets the vector to a constant vector.
+
+v = v * 4.      # multiplies the vector by 4
+
+v = v / |v|.    # normalizes the vector by dividing it by it's own 
+                                # length such that the new length is 1.
+</pre><p>
+        Individual vector components can be extracted or set using the "::"
+        notation:
+      </p><pre class="programlisting">
+xValue = myVector::x.
+
+myVector::y = 100.
+</pre><p>
+        Starting in breve 2.5, the standard list index syntax may also be used
+        with indices 0, 1, and 2:
+      </p><pre class="programlisting">
+xValue = myVector{ 0 }.
+
+myVector{ 1 } = 100.
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2656"></a>Conversions to Other Types</h4></div></div></div><p>
+        Vectors cannot be converted to any other types. They do, however, have
+        meaning as "boolean" (true or false) expressions in control structures
+        (<a href="ch07s07.html" title="Program Control Structures">the section called &#8220;Program Control Structures&#8221;</a>). If used in the
+        context of a boolean expression (like an <code class="literal">if</code> statement, <a href="ch07s07.html#node-2686" title="The if Statement">the section called &#8220;The if Statement&#8221;</a>), the vector will be true if
+        it's length is greater than 0, and false if its length is equal to 0.
+        This is to say that only the vector (0, 0, 0) is false in a boolean
+        context.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2657"></a>The matrix type</h3></div></div></div><p> A <span class="emphasis"><em>matrix</em></span> in steve refers to a 3x3 matrix which describes
+        a transformation in 3D space. Using transformation matrices is somewhat
+        advanced and they are not generally used in most simulations. Still,
+        they may be useful when dealing with physical simulation.
+      </p><p>
+        Matrices may be written in steve as three comma-separated vectors,
+        enclosed in braces ('[' and ']'), as in this example:
+      </p><pre class="programlisting">
+# the matrix m will be initialized to:
+#
+# [ 1 2 3 ]
+# [ 4 5 6 ]
+# [ 7 8 9 ]
+
+m = [ (1, 2, 3), (4, 5, 6), (7, 8, 9) ].
+</pre><p>
+        Matrix component can be extracted using the list index syntax. Each row
+        of the matrix is a vector:
+      </p><pre class="programlisting">
+myVector = myMatrix{ 0 }.
+
+myMatrix{ 1 } = ( 1, 2, 3 ).
+</pre><p>
+        Individual numbers can be extracted by the matrix as a two-dimensional
+        list:
+      </p><pre class="programlisting">
+myNumber = myMatrix{ 0 }{ 0 }.
+
+myMatrix{ 1 }{ 1 } = 100.
+</pre><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2658"></a>matrix Operators</h4></div></div></div><p>
+        Matrices may be multiplied (*), divided (/), added (+) to and
+        subtracted (-) from other matrices. The results of these operations are
+        other matrices.
+      </p><p>
+        Matrices may be multiplied (*) or divided (/) by scalars (ints and
+        doubles). The result of these operations are other matrices.
+      </p><p>
+        Matrices may be used to transform vectors by multiplying the matrix
+        times the vector (*). The result of this operation is a vector.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2659"></a>Conversions to Other Types</h4></div></div></div><p>
+        Matrices cannot be converted to any other types. They do, however, have
+        meaning as "boolean" (true or false) expressions in control structures
+        (<a href="ch07s07.html" title="Program Control Structures">the section called &#8220;Program Control Structures&#8221;</a>). If used in the
+        context of a boolean expression (like an <code class="literal">if</code> statement, <a href="ch07s07.html#node-2686" title="The if Statement">the section called &#8220;The if Statement&#8221;</a>), the expression will be true
+        if there are any non-zero values in the matrix. This means that a
+        matrix of all zeros will be false, while all other matrices are true.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2660"></a>The list Type</h3></div></div></div><p> The
+        <code class="literal">list</code> datatype allows you to keep a list
+        of other variables. lists can contain any datatype, including other
+        lists. lists can even contain multiple datatypes simultaneously.
+      </p><p><code class="literal">lists</code> are formed using the syntax
+        <code class="literal">{ <span class="emphasis"><em><code class="function">item1</code></em></span>, , <span class="emphasis"><em><code class="function">item2</code></em></span>, , <code class="function">...</code> }</code>.
+      </p><p>
+        Some simple examples of constructing <code class="literal">lists</code> are shown below:
+      </p><pre class="programlisting">
+myList = { 1, 2, 3.0 }.                 # a list of numbers (both int and float)
+myList = { "a", "b", "c" }.             # a list of strings
+myList = { "a", 30, new Mobile }.       # a list of mixed types
+myList = { 1, "a", { "dog", "cow" } }.  # a list with a nested list
+</pre><p>
+        An important feature of lists in steve is that they are always passed
+        by reference and are not copied. This means that if you pass a list to
+        a function, then any modifications done to the list inside the function
+        will modify the original list.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2661"></a>list Operators</h4></div></div></div><p>
+        The following operations can be used with <code class="literal">list</code> expressions:
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">insert <span class="emphasis"><em><code class="function">expression</code></em></span>, at <span class="emphasis"><em><code class="function">list</code></em></span>, { <span class="emphasis"><em><code class="function">index</code></em></span> }</code>: inserts
+              <span class="emphasis"><em><code class="function">expression</code></em></span> at the
+              specified index in the list, shifting up other list elements with
+              higher indices
+            </p></li><li><p><code class="literal">remove <span class="emphasis"><em><code class="function">list</code></em></span>, { <span class="emphasis"><em><code class="function">index</code></em></span> }</code>: removes the
+              element of <span class="emphasis"><em><code class="function">list</code></em></span> at the
+              specified index and returns it, shifting down other list elements
+              with higher indices
+            </p></li><li><p><code class="literal">push <span class="emphasis"><em><code class="function">expression</code></em></span>, onto <span class="emphasis"><em><code class="function">list</code></em></span></code>: appends <span class="emphasis"><em><code class="function">expression</code></em></span> onto the end of list
+            </p></li><li><p><code class="literal">pop <span class="emphasis"><em><code class="function">list</code></em></span></code>: removes the last
+              element of <span class="emphasis"><em><code class="function">list</code></em></span> and
+              returns it
+            </p></li><li><p><code class="literal">prepend <span class="emphasis"><em><code class="function">expression</code></em></span>, onto <span class="emphasis"><em><code class="function">list</code></em></span></code>: prepends <span class="emphasis"><em><code class="function">expression</code></em></span> onto the start of
+              <span class="emphasis"><em><code class="function">list</code></em></span></p></li><li><p><code class="literal">unprepend <span class="emphasis"><em><code class="function">list</code></em></span></code>: removes the first
+              element of <span class="emphasis"><em><code class="function">list</code></em></span> and
+              returns it
+            </p></li><li><p><code class="literal"><span class="emphasis"><em><code class="function">list</code></em></span>, { <span class="emphasis"><em><code class="function">expression</code></em></span> }</code>: returns the
+              element of the list at offset expression. The expression index is
+              zero based, as in C, such that 0 refers to the first element, 1
+              to the second, and so forth. If the offset expression is less
+              than zero, or greater than the length of the list minus one
+              (because the access is zero based), an error is triggered and the
+              simulation is stopped.
+            </p></li><li><p><code class="literal"><span class="emphasis"><em><code class="function">list</code></em></span>, { <span class="emphasis"><em><code class="function">expression</code></em></span>, } = <span class="emphasis"><em><code class="function">value</code></em></span></code>: sets an element of
+              the list at offset expression to value. The offset index is again
+              zero based. If the offset expression is less than zero or greater
+              than the size of the list an error is triggered and the
+              simulation is stopped. If the offset expression is equal to the
+              size of the list, the list is extended by one element; the
+              operation has the same effect as pushing a value on to the end.
+            </p></li><li><p><code class="literal">sort <span class="emphasis"><em><code class="function">list</code></em></span>, with <span class="emphasis"><em><code class="function">method-name</code></em></span></code>: sorts
+              <span class="emphasis"><em><code class="function">list</code></em></span> using the method
+              specified with <span class="emphasis"><em><code class="function">method-name</code></em></span>. <span class="emphasis"><em><code class="function">method-name</code></em></span> must be a method
+              which takes two list elements (the keywords are unimportant) and
+              compares them, returning a negative number if the first list
+              element belongs before the second in the sorted list, a positive
+              number if the second belongs before the first, and 0 if the two
+              entries are equal. In most cases, this confusing sounding method
+              returns a certain value associated with one argument minus the
+              same value in the other.
+            </p><p>
+              Unlike the perl sort operator, <code class="literal">sort</code>
+              operates on the list it is given and does not return a copy of
+              it. This means that the original list is modified during the sort
+              operation.
+            </p></li><li><p><code class="literal">copylist <span class="emphasis"><em><code class="function">list</code></em></span></code>: copies the entire
+              list. Normally, assigning a list to a variable will <span class="emphasis"><em>not</em></span> copy the list but instead will
+              yield two variables pointing to the <span class="emphasis"><em>same</em></span> list.
+            </p></li><li><p><code class="literal">| <span class="emphasis"><em><code class="function">list</code></em></span> |</code>: gives the length
+              of a list. Lists are automatically converted to integers when use
+              in mathematical expressions, but this construct can be used too
+              force the conversion.
+            </p></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2662"></a>Conversions to Other Types</h4></div></div></div><p><code class="literal">lists</code> can be converted to <code class="literal">ints</code> simply by using them in the context of integers.
+        They can thus also be used as <code class="literal">floats</code>. In
+        the event that the context of the expression does not force the list to
+        become an integer, you can force it yourself by using it in a
+        mathematical context:
+      </p><pre class="programlisting">
+myInt = (myList + 0).
+</pre></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2663"></a>The string Type</h3></div></div></div><p>
+        The string type holds a character string. A string is written in code
+        (as in C) as a quoted string. For example, the built-in print operator
+        is capable of printing strings:
+      </p><pre class="programlisting">
+print "this is a string".
+</pre><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2664"></a>string Operators</h4></div></div></div><p>
+          The following operations can be done one strings:
+        </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal"><span class="emphasis"><em><code class="function">string</code></em></span> { <span class="emphasis"><em><code class="function">index</code></em></span> }</code>: returns, as a
+              string, the letter at the specified index.
+            </p></li><li><p><code class="literal"><span class="emphasis"><em><code class="function">string</code></em></span> { <span class="emphasis"><em><code class="function">index</code></em></span> } = <span class="emphasis"><em><code class="function">otherString</code></em></span></code>: replaces the
+              letter at the specified location with the string <span class="emphasis"><em><code class="function">otherString</code></em></span>.
+            </p></li><li><p><code class="literal">| <span class="emphasis"><em><code class="function">string</code></em></span> |</code>: returns the
+              length of the string.
+            </p></li></ul></div><p>
+        In addition to the operators listed above, strings can be formatted
+        using embedded variables. Variables can be embedded in strings so that
+        the strings are interpreted dynamically, as in Perl. To indicate a
+        variable embedded in a string, use the "$" character. The following,
+        for example, will use the variable "self" in order to build a string to
+        be printed:
+      </p><pre class="programlisting">
+print "my value is $self.".
+</pre><p>
+        This technique can be used to performing string concatenations as well:
+      </p><pre class="programlisting">
+$longstring = "$string1$string2".
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2665"></a>Conversions to Other Types</h4></div></div></div><p>
+        strings can be converted to <code class="literal">ints</code> and
+        <code class="literal">floats</code>, but not to any other types.
+        types.
+      </p><p>
+        In the context of an int or a float, the string becomes the appropriate
+        type by taking the numerical component of the string. For more
+        information on this conversion, consult the man pages for the ANSI C
+        <code class="literal">atoi()</code> (for <code class="literal">ints</code>) or <code class="literal">atof()</code> (for
+        <code class="literal">doubles</code>) functions.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2666"></a>The hash Type</h3></div></div></div><p> A hash is a
+        type which works like a dictionary: it allows expressions ("values") to
+        be stored and looked-up using other expressions as the "keys". The
+        following example shows a steve hash being used like a dictionary:
+      </p><pre class="programlisting">
+dictionary (hash).
+
+dictionary{ "dog" } = "a four-legged pet".
+dictionary{ "fish" } = "a zero-legged pet".
+
+# this will print the definition we stored above.
+
+print "the definition of dog is: ", dictionary{ "dog" }.
+</pre><p>
+        As shown in this example, we're able to store data using strings as the
+        keys. When data is later retrieved from the hash table using the same
+        key, the value stored previously is returned.
+      </p><p>
+        hashes are not limited to using strings as keys. They can use any valid
+        type. The most useful application is a hash table which uses objects as
+        keys. In this way, relationships between objects can be stored in a
+        hash. Consider an object which wants to keep track of neighbors it has
+        encountered previously:
+      </p><pre class="programlisting">
+# let's say that this method gets called when a neighbor is seen...
+# if the neighbor has already been seen, print a message &#8212; otherwise,
+# just add it to the hash for next time!
+
++ to meet with neighbor (object):
+        if seenHash{ neighbor }: print "i've seen this neighbor before!"
+        else seenHash{ neighbor } = 1.
+</pre><p>
+        The example above also shows that the syntax of hashes is the same as
+        the syntax for lists when storing or retrieving data. Unlike lists,
+        however, hashes do not hold ordered data, and none of the other list
+        operators work with hashes.
+      </p><p>
+        When using hashes with ints, floats, vectors, matrices and strings,
+        then steve will test the equivalence of the key when looking up or
+        storing the data. This means that two equivalent strings, even if they
+        are stored in different variables, will refer to the same value in the
+        hash. For the other types (objects, pointers, data, lists and hashes
+        themselves), the hash will only return the same value for the same
+        exact variable key. This means that two different lists, even if they
+        contain "equal" data, will access different values in the hash.
+      </p><p>
+        An important feature of hashes in steve is that they are always passed
+        by reference and are not copied. This means that if you pass a hash to
+        a function, then any modifications done to the hash inside the function
+        will modify the original hash.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2667"></a>hash Operators</h4></div></div></div><p>
+        A list of the keys in a hash may be retrieved using the built-in
+        function <code class="literal">keys</code>. This key list is often
+        used to iterate through the items in a hash:
+      </p><pre class="programlisting">
+foreach key in keys( myHash ): {
+        print myHash{ key }.
+}
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2668"></a>Conversion to Other Types</h4></div></div></div><p>
+        hashes cannot be converted to any other types.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2669"></a>The pointer Type</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: 
+              For developer use only
+            "><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="../images/note.gif"></td><th align="left">
+              For developer use only
+            </th></tr><tr><td align="left" valign="top"><p> The
+                <code class="literal">pointer</code> type is for use by breve
+                and plugin developers only.
+              </p></td></tr></table></div><p>
+        pointer variables store C-style pointers to internal data. They are not
+        used for writing simulations in steve and are only used by breve
+        developers and plugin authors.
+      </p><p>
+        pointer variables are only useful in the context of interacting with
+        internal C-style function calls: they do not contain methods, variables
+        or any other meaning in the context of most steve code. Like objects,
+        however, pointers can be tested to see if they are NULL (0), but cannot
+        be used in mathematical expressions. That is to say that pointers have
+        a meaning in a boolean context of control structures such as
+        <span class="emphasis"><em>if</em></span> and <span class="emphasis"><em>while</em></span> (as well as the logical operators
+        <span class="emphasis"><em>&amp;&amp;</em></span> and <span class="emphasis"><em>||</em></span>).
+      </p><p>
+        Copying a pointer (assigning it to another variable), as in C, will not
+        copy the data is points to.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="node-2670"></a>Conversion to Other Types</h4></div></div></div><p>
+        pointers cannot be converted to any other types.
+      </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2671"></a>The data Type</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: 
+              For developer use only
+            "><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="../images/note.gif"></td><th align="left">
+              For developer use only
+            </th></tr><tr><td align="left" valign="top"><p>
+                The <code class="literal">data</code> type is for use by breve
+                and plugin developers only.
+              </p></td></tr></table></div><p><code class="literal">data</code> variables are similar to pointer variables in
+        that they contain a reference to internal data. Also like pointer
+        variables, they are not to be used in regular simulation
+        code&#8212;they are only to be used by breve developers and custom
+        plugins.
+      </p><p>
+        The different between <code class="literal">data</code> and
+        <code class="literal">pointer</code> is that <code class="literal">data</code> refers to a linear block of internal data of
+        known size. This means that <code class="literal">data</code>
+        variables can be successfully archived, while pointers cannot.
+        <span class="emphasis"><em>The only use for <code class="function">data</code> variables is archiving and dearchiving internal
+        data</em></span>. For more information on using the <code class="literal">data</code> type with plugins, see the section on Archiving
+        Plugin Data With The <code class="literal">data</code> Type (<a href="ch16s03.html" title="Archiving Plugin Data With The data Type">the section called &#8220;Archiving Plugin Data With The data Type&#8221;</a>).
+      </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s04.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s06.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Building Classes </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Expressions</td></tr></table></div></body></html>

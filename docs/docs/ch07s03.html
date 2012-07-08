@@ -1,0 +1,41 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>The Controller Object</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07s02.html" title="A Simple Example"><link rel="next" href="ch07s04.html" title="Building Classes"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">The Controller Object</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s02.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch07s04.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2636"></a>The Controller Object</h2></div></div></div><p> The
+        <span class="emphasis"><em>controller object</em></span> is the foundation of a
+        <span class="emphasis"><em>breve</em></span> simulation. The controller
+        object is a single instance which acts as the "boss" for the
+        simulation. When the simulation starts, it is the controller object
+        which is responsible for creating and setting up the rest of the
+        simulation. <span class="emphasis"><em>The controller object is the
+        only object which is automatically instantiated when the simulation
+        begins</em></span>. If you're used to programming in C or C++, the
+        controller is like the <code class="literal">main</code> function.
+      </p><p>
+        The first step in writing a <span class="emphasis"><em>breve</em></span> simulation is to create a controller
+        class which will setup and manage the simulation. The controller class
+        you create <span class="emphasis"><em>must be a subclass of the class
+        <a href="http://www.spiderland.org/documentation/classes/Control.html" target="_top">Control</a> or one of its subclasses</em></span>. Details
+        on how to do this is described in the rest of this chapter.
+      </p><p>
+        As shown in the previous section (<a href="ch07s02.html" title="A Simple Example">the section called &#8220;A Simple Example&#8221;</a>), the controller object is
+        specified at the top of your simulation file using the word
+        <span class="emphasis"><em>controller</em></span>:
+      </p><pre class="programlisting">
+Controller <span class="emphasis"><em><code class="function">myControllerClass</code></em></span>.
+</pre><p>
+        This tells <span class="emphasis"><em>breve</em></span> to create an
+        instance of <span class="emphasis"><em><code class="function">myControllerClass</code></em></span>
+        when the simulation begins. This controller object will create and
+        setup the rest of the objects in the simulation. The controller object
+        does so by implementing the simulation setup code in the <code class="literal">init</code> method. Details on constructing classes and
+        implementing an <code class="literal">init</code> method are described
+        in more detail in the rest of this chapter.
+      </p><p>
+        In addition to setting up the simulation, the controller object is also
+        used as a liaison between simulation objects, the <span class="emphasis"><em>breve</em></span> engine and the user. While other
+        instances may come and go, the controller object is forever. The
+        controller class contains a great number of methods for controlling the
+        behavior of simulations, the appearance of the graphical display and
+        interactions with the user interface. See the class documentation on
+        <a href="http://www.spiderland.org/documentation/classes/Control.html" target="_top">Control</a> for more information. As with some of the
+        other topics covered in this section, the significance of these
+        concepts will become clearer in the rest of the documentation.
+      </p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s02.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s04.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">A Simple Example </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Building Classes</td></tr></table></div></body></html>

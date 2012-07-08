@@ -1,0 +1,327 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Building Classes</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07s03.html" title="The Controller Object"><link rel="next" href="ch07s05.html" title='Types in "steve"'></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Building Classes</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s03.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch07s05.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2637"></a>Building Classes</h2></div></div></div><p> All objects
+        in the simulated world correspond to programming objects in steve. In
+        order to define an agent in the simulated world, you'll start by
+        constructing a programming object, or class. This class will serve as a
+        template which defines the agent's behaviors. This section describes
+        how to construct and use these classes.
+      </p><p>
+        The section Defining Classes (<a href="ch07s04.html#node-2638" title="Defining Classes">the section called &#8220;Defining Classes&#8221;</a>) describes how to define an
+        empty class.
+      </p><p>
+        All classes have two major components: <span class="emphasis"><em>methods</em></span>, which define a class's behavior and
+        <span class="emphasis"><em>variables</em></span> which define the data that the
+        class can hold. This data can be used both to store information about
+        the state of the agent, or information required for computation. The
+        section Defining Instance Variables (<a href="ch07s04.html#node-2639" title="Defining Instance Variables">the section called &#8220;Defining Instance Variables&#8221;</a>) details how
+        variables can be added to objects, while the section Defining Class
+        Methods (<a href="ch07s04.html#node-2640" title="Defining Methods">the section called &#8220;Defining Methods&#8221;</a>) shows how method are
+        defined.
+      </p><p>
+        Two special methods are critical for an agents behavior: one that gets
+        called automatically when the agent is created, <code class="literal">init</code>, and another which is run automatically at every
+        step of the simulation, <code class="literal">iterate</code>. These
+        methods, and a few other special methods are discussed in the section
+        Special Method Names (<a href="ch07s04.html#node-2642" title="Special Method Names">the section called &#8220;Special Method Names&#8221;</a>)
+      </p><p>
+        Even after the class is defined, it will still not be present in the
+        simulation. This is because a class is nothing more than a "template"
+        for an agent. In order to bring agents into the simulation, you must
+        use the template to create <span class="emphasis"><em>instances</em></span> of the class.
+        The section on Creating and Destroying Instances (<a href="ch07s04.html#node-2643" title="Creating and Destroying Instances">the section called &#8220;Creating and Destroying Instances&#8221;</a>) describes
+        how instances of classes are created and destroyed.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2638"></a>Defining Classes</h3></div></div></div><p> When building a class, you
+        typically don't start from scratch&#8212;instead, you make the new
+        class the child of an existing class. This is called creating a
+        <span class="emphasis"><em>subclass</em></span>. By subclassing a class, the new
+        class will inherit all of the parent's methods and variables. This
+        approach means that most of the difficult work will already be done by
+        an existing breve class, and we can simply override and customize the
+        behaviors that we need to.
+      </p><p>
+        For example, if we're building an object which will move through the 3D
+        world, we'd like to have an object that understands the relationship
+        between position, velocity and acceleration. Instead of implementing
+        such a class ourselves, we can subclass <a href="http://www.spiderland.org/documentation/classes/Mobile.html" target="_top">Mobile.tz</a> which is included with breve. Our custom subclass
+        will contain the custom behaviors we desire, while the parent class
+        takes care of the details.
+      </p><p>
+        When building a class, you must first decide the class name and its
+        parent class. The parent class is the class from which the new class
+        will inherit its behaviors. Classes which are to be used primarily for
+        computation and do not require any special inherited behaviors, will
+        typically use the generic root class <a href="http://www.spiderland.org/documentation/classes/Object.html" target="_top">Object</a>. Classes which move around the world will inherit
+        behaviors from <a href="http://www.spiderland.org/documentation/classes/Mobile.html" target="_top">Mobile</a>, while immobile objects in the world will inherit
+        behaviors from <a href="http://www.spiderland.org/documentation/classes/Stationary.html" target="_top">Stationary</a>. A full list of classes is available in
+        the appendix (???).
+      </p><p>
+        An empty class is simply defined by the following steve code:
+      </p><pre class="programlisting"><span class="emphasis"><em><code class="function">parent_class_name</code></em></span> : <span class="emphasis"><em><code class="function">class_name</code></em></span> {
+
+}
+</pre><p>
+        Because we often deal with classes in their plural form (like when
+        creating multiple instances of an object), it can be useful to give a
+        class an alias which will allow us to refer to the class in its plural
+        form. <span class="emphasis"><em>This is not required</em></span> but
+        may make code easier to read. This alias is defined by adding the text
+        <code class="literal">(aka <span class="emphasis"><em><code class="function">alias_name</code></em></span>)</code> after the class
+        name.
+      </p><p>
+        As an example of defining a class, both with and without an alias,
+        consider a class called <code class="literal">myMobile</code> which
+        will be a child of the class <code class="literal">Mobile</code>:
+      </p><pre class="programlisting">
+# first without the alias...
+
+Mobile : myMobile {
+
+}
+
+# now with the alias...
+
+Mobile : myMobile (aka myMobiles) {
+
+}
+</pre><p>
+        This code above defines an empty class with no variables and no
+        methods. This means that it will behave exactly as its parent class
+        does. The next step is to customize the class' behavior by adding in
+        methods and variables.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2639"></a>Defining Instance Variables</h3></div></div></div><p> An <span class="emphasis"><em>instance variable</em></span> is a variable associated with a
+        class. Each instance of the class will have it's own private copies of
+        the class' instance variables.
+      </p><p>
+        Once the empty class declaration has been written, variables can be
+        added using the heading <code class="literal">+ variables</code>,
+        followed by the list of instance variables. Variables are listed in the
+        format <code class="literal"><span class="emphasis"><em><code class="function">variable_name</code></em></span>, (<span class="emphasis"><em><code class="function">variable_type</code></em></span>).</code></p><p>
+        The variable name must start with a letter, but afterwords may contain
+        any alphanumeric characters, as well as the characters _ and -.
+      </p><p>
+        Multiple variables of the same type can also be declared on the same
+        line:
+      </p><pre class="programlisting"><span class="emphasis"><em><code class="function">variable1</code></em></span>, <span class="emphasis"><em><code class="function">variable2</code></em></span>, <span class="emphasis"><em><code class="function">variable3</code></em></span>, ... (<span class="emphasis"><em><code class="function">variableType</code></em></span>). 
+</pre><p>
+        Variable types are covered in detail in the section Types (<a href="ch07s05.html" title='Types in "steve"'>the section called &#8220;Types in "steve"&#8221;</a>).
+      </p><p>
+        As an example, we'll add some variables to the simple class we created
+        in the previous section:
+      </p><pre class="programlisting">
+Mobile : myMobile {
+        + variables:
+                myInt, myOtherInt (int).
+                myObject (object).
+                myFloat (float).
+}
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2640"></a>Defining Methods</h3></div></div></div><p> The most simple method call in
+        steve is a call to a method which takes no arguments. The definition of
+        such an method is simple. Inside the definition of instanceName, we
+        create a line:
+      </p><pre class="programlisting">
++ to <span class="emphasis"><em><code class="function">methodName</code></em></span>:
+</pre><p>
+        The statements which follow this line will be part of the newly defined
+        method until either the end of the object definition, or until the next
+        method definition.
+      </p><p>
+        To define an method which takes arguments we will need the keyword,
+        variable name and type of each argument. The keyword identifies the
+        variable when it is being called, while the variable name is how the
+        variable will be referenced from within the method. Finally, the type
+        is simply the type of variable that will be passed in. The layout of
+        this information is <code class="literal"><span class="emphasis"><em><code class="function">keyword</code></em></span>, <span class="emphasis"><em><code class="function">variable_name</code></em></span>, (<span class="emphasis"><em><code class="function">type</code></em></span>)</code>, such that a method which
+        takes one variable could be defined by the following line:
+      </p><pre class="programlisting">
++ to set-velocity to-value theValue (float):
+</pre><p>
+        If the method takes two variables, we add another keyword/name/type
+        triplet:
+      </p><pre class="programlisting">
++ to set-rotation of-joint theJoint (Object) to-value theValue (float):
+</pre><p>
+        The code associated with the second method would then use the variables
+        <code class="literal">theJoint</code> and <code class="literal">theValue</code>: "of-joint" and "to-value" are not actual
+        variables, but instead the keywords which indicate which variables
+        follows.
+      </p><p>
+        The calling convention of these methods is simple. After the instance
+        name and method name, we give a list of keywords and values to be
+        passed in. The order of the keyword/value pairs does not affect how the
+        code is executed, though it may effect the readability of the code. The
+        following lines call the <code class="literal">set-rotation</code>
+        method which we defined above:
+      </p><pre class="programlisting">
+# the following lines are equivalent
+
+myObject set-rotation of-joint myJoint to-value 200.
+myObject set-rotation to-value 200 of-joint myJoint.
+</pre><p>
+        Methods may also have local variables associated with them. These
+        variable definitions look just like class variable definitions, except
+        that they follow after the method definition line, and not after the
+        variable definition line. Method variables are automatically
+        initialized to zero every time the method is called. Variable
+        declarations in a method must precede all statements in the method.
+      </p><p>
+        For example, here is a simple method which uses local variables:
+      </p><pre class="programlisting">
++ to find-closest-creature in creatureList (list):
+        item (object).
+        closestItem (object).
+        distance (float).
+
+        # we start with a unreasonably high "closestDistance" so that 
+        # we are sure to find something closer.
+
+        closestDistance = 1000000.
+
+        foreach item in creatureList: {
+                distance = |(self get-location) - (item get-location)|.
+
+                if distance &lt; closestDistance: {
+                        closestItem = item.
+                        closestDistance = distance.
+                }
+        }
+
+        return closestItem.
+</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note: 
+              For developer use only
+            "><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="../images/note.gif"></td><th align="left">
+              For developer use only
+            </th></tr><tr><td align="left" valign="top"><p>
+                When examining the internal classes included with the breve
+                distribution, you might notice some methods defined using a
+                minus sign instead of a plus sign:
+              </p><pre class="programlisting">
+- to methodName:
+</pre><p>
+                This syntax simple means that the method should be treated as a
+                non-public method and that the method should not be documented.
+                Though these methods function as all other methods, their use
+                in user simulations is discouraged.
+              </p></td></tr></table></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2641"></a>Optional Arguments in Methods</h3></div></div></div><p>
+        Methods definitions may also specify <span class="emphasis"><em>optional
+        arguments</em></span>. Optional arguments are arguments which are given
+        default values, and therefore do not need to be provided when calling
+        the method. Optional arguments can greatly simplify writing code in
+        steve.
+      </p><p>
+        To make an argument optional, you need to provide it with a default
+        value. To do so, you'll need to modify the argument definition to
+        include the text <code class="literal">= <span class="emphasis"><em><code class="function">value</code></em></span></code> after the argument name.
+        For example, a variable called <code class="literal">theHeight</code>
+        with keyword <code class="literal">with-height</code> could be given a
+        default value like this: <code class="literal">with-height theHeight =
+        100 (int)</code>. Default values for optional arguments must be literal
+        values (and not expressions or variables).
+      </p><p>
+        Below is an example of a method defined with a set of optional
+        arguments.
+      </p><pre class="programlisting">
+        # Create a new agent, with some default values.
+
+        + to create-new-agent with-color color = (1, 0, 0) (vector) 
+                with-energy energy = 100 (int)
+                with-radius radius = 10 (int) 
+                with-name name = "agent" (string):
+</pre><p>
+        The method above could be called in a number of ways, optionally
+        including or excluding each of the arguments:
+      </p><pre class="programlisting">
+        # no arguments 
+        self create-new-agent.
+
+        # some of the arguments 
+        self create-new-agent with-energy 10 with-name "Becky".
+
+        # all of the arguments
+        self create-new-agent with-color (1, 1, 1) 
+                with-energy 100
+                with-radius 20
+                with-name "Robert".
+</pre></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2642"></a>Special Method Names</h3></div></div></div><p>
+        Certain method names have special meaning in steve, in that they are
+        called automatically by the simulation at special times. These methods,
+        in particular <code class="literal">init</code> and <code class="literal">iterate</code> are critical, as they are the entry-point
+        into how your agents are initialized and how they will behave. These
+        special method names are outlined below:
+      </p><div class="itemizedlist"><ul type="disc"><li><p><code class="literal">init</code>, if it exists, is called
+              automatically when a class is instantiated. The method is called
+              not only for the class being instantiated, but also for its
+              superclass and all other ancestors up to the root object. Though
+              you should implement an init method for your class which will set
+              up the instance when the class is instantiated, the init method
+              should never be called manually.
+            </p></li><li><p><code class="literal">iterate</code>, if it exists, is called
+              automatically during every iteration of the breve engine. If your
+              class must perform a task during each iteration, then you may
+              choose to implement an iterate method. The order in which the
+              objects in the simulation are iterated cannot be
+              controlled&#8212;if you need to control the order in which
+              actions are performed, consider using iterate in conjunction with
+              the post-iterate method described below.
+            </p><p>
+              Unlike the <code class="literal">init</code> and <code class="literal">destroy</code> methods, <code class="literal">iterate</code> is not automatically called for the
+              superclasses of an instance. This means that your iterate method
+              must call super iterate if you wish to incorporate the parent's
+              iterate method. This is absolutely necessary for subclasses of
+              Control.
+            </p></li><li><p><code class="literal">post-iterate</code>, if it exists, is
+              called automatically during every iteration of the breve engine
+              after the iterate methods for all objects have been called. It is
+              occasionally desirable to perform an action during each
+              iteration, which requires data produced during that very same
+              iteration from other objects. If this action is to be performed
+              in the iterate method, than object A cannot be certain that
+              object B has been iterated yet (and vice-versa). To solve this
+              problem, objects may implement a post-iterate method which is
+              automatically called after all objects have been iterated. The
+              PatchLife demo uses this technique.
+            </p></li><li><p><code class="literal">destroy</code>, if it exists, is called
+              automatically when a class is being freed. However, unlike init,
+              and like iterate, you must explicitly call the super class
+              destroy method if you need it to be called as well. If your class
+              needs to perform certain tasks before being destroyed, you should
+              implement this method. Be warned the you need to be carefull not
+              to free an object referenced in the base class if it is needed
+              for the base class destroy method.
+            </p></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2643"></a>Creating and Destroying Instances</h3></div></div></div><p>
+        Creating a new instance of an object is called instantiating the
+        object. Instantiating in steve is done using the new command.
+        Instantiation creates a single new instance if no number is given, or
+        as many objects as you want by preceding the command with a number. The
+        syntax follows:
+      </p><pre class="programlisting">
+new object_type.
+number new object_type.
+</pre><p>
+        If a single object is created, it is returned as an object type. If
+        several are created, they are returned as a list. For example:
+      </p><pre class="programlisting">
+myBird (object).
+myBugs (list).
+
+myBird = new Bird.
+myBugs = 100 new Bugs.
+</pre><p>
+        The method init is called automatically for a class and all of its
+        superclasses when the class is instantiated.
+      </p><p>
+        Destroying instances is simply accomplished using the command
+        <code class="literal">free</code>:
+      </p><pre class="programlisting">
+free instance.
+</pre><p><code class="literal">free</code> accepts both single instances and
+        lists of instances.
+      </p><p>
+        If an instance frees itself, then execution of the code is stopped
+        immediately, as though the <code class="literal">free</code> command
+        was followed by a <code class="literal">return</code>.
+      </p><p>
+        When an object is freed, the <code class="literal">destroy</code>
+        method is automatically called for the instance. Prior to version 1.9,
+        <code class="literal">destroy</code> would automatically be called for
+        all superclasses. This is no longer the case&#8212;you must call "super
+        destroy" if you wish for the superclass destroy method to be run.
+      </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s03.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s05.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">The Controller Object </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Types in "steve"</td></tr></table></div></body></html>

@@ -1,0 +1,74 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter 7. "steve" Language Reference</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="prev" href="ch06s03.html" title="Installing and Running Command-Line breve on Mac OS X, Linux and Windows"><link rel="next" href="ch07s02.html" title="A Simple Example"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 7. "steve" Language Reference</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch06s03.html">&lt;&lt; previous</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch07s02.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="node-2632"></a>Chapter 7. "steve" Language Reference</h2></div></div></div><p>
+        Simulations in breve are written using a language called "steve". steve
+        is a simple language which aims to allow rapid construction of advanced
+        simulations while avoiding a great deal of the programming overhead
+        associated with constructing simulations in other languages.
+      </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Tip: 
+              Don't Be Overwhelmed!
+            "><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Tip]" src="../images/tip.gif"></td><th align="left">
+              Don't Be Overwhelmed!
+            </th></tr><tr><td align="left" valign="top"><p>
+                Writing simulations in steve is ultimately quite simple. Due to
+                the number of features provided by the simulation engine,
+                however, this documentation may seem at times overwhelming.
+                Don't panic&#8212;make liberal use of the demo simulations
+                provided with the environment and don't be put off if some of
+                the features discussed here are difficult to understand.
+              </p></td></tr></table></div><p>
+        "steve" is an <span class="emphasis"><em>object-oriented</em></span> language. This means
+        that programming in "steve" involves working with components called
+        <span class="emphasis"><em>objects</em></span> which contain data (<span class="emphasis"><em>variables</em></span>) and behaviors (<span class="emphasis"><em>methods</em></span>). In breve, objects can be either <span class="emphasis"><em>real</em></span>, meaning they have a presence in the simulated
+        world; or <span class="emphasis"><em>abstract</em></span> meaning that they are
+        used to store data or to perform computations, but do not appear in the
+        simulated world. In order to define agents and their behaviors, one
+        needs to construct these objects and behaviors using the "steve"
+        language. The language is described in this chapter.
+      </p><p>
+        First, the classic "Hello, World" program is constructed in steve
+        (<a href="ch07.html#node-2633" title="Hello, World">the section called &#8220;Hello, World&#8221;</a>). Then, a
+        simple multiagent 3D simulation written in steve is presented (<a href="ch07s02.html" title="A Simple Example">the section called &#8220;A Simple Example&#8221;</a>). This sample
+        should give the basic idea of what a breve simulation looks like.
+      </p><p>
+        As discussed above, all agents in the simulated world are represented
+        by programming objects. These objects are defined in terms of object
+        templates called <span class="emphasis"><em>classes</em></span>. The most important
+        object, called the <span class="emphasis"><em>Controller</em></span> is described
+        in the section The Controller Object (<a href="ch07s03.html" title="The Controller Object">the section called &#8220;The Controller Object&#8221;</a>). The section Building
+        Classes (<a href="ch07s04.html" title="Building Classes">the section called &#8220;Building Classes&#8221;</a>)
+        describes how to construct basic classes in steve.
+      </p><p>
+        In order to define the data and behaviors of your classes, you'll need
+        to be familiar with types (<a href="ch07s05.html" title='Types in "steve"'>the section called &#8220;Types in "steve"&#8221;</a>) and expressions (<a href="ch07s06.html" title="Expressions">the section called &#8220;Expressions&#8221;</a>). The section Program
+        Control Structures (<a href="ch07s07.html" title="Program Control Structures">the section called &#8220;Program Control Structures&#8221;</a>) discusses loops and
+        conditional statements.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2633"></a>Hello, World</h2></div></div></div><p> The
+        traditional introduction to any programming language is a program which
+        repeatedly prints out the text "Hello, World!". Here it is written in
+        steve:
+      </p><pre class="programlisting">
+@include "Control.tz"           
+
+Controller HelloWorld.
+
+Control : HelloWorld {
+        + to iterate:
+                print "Hello, world!".
+}
+</pre><p>
+        The specifics will be discussed in more detail through the rest of this
+        chapter. Briefly, we first declare the simulation's controller object
+        to be a class called <code class="literal">HelloWorld</code> (line 3).
+        Then we construct the <code class="literal">HelloWorld</code> class
+        (lines 5-8), and as part of that class, we define a method called
+        <code class="literal">iterate</code> (line 6) which will print out the
+        text "Hello, world!". The "include" line (line 1) simply tells breve to
+        load in a file called "Control.tz", which is included with the breve
+        distribution. This built-in class file contains the class control,
+        which is the <span class="emphasis"><em>parent</em></span> class for our
+        "HelloWorld" controller.
+      </p><p>
+        When this simulation is run, the controller object is created, and the
+        method named <code class="literal">iterate</code> gets run
+        automatically at every step of the simulation. Thus, "Hello, World!".
+        Ad nauseum.
+      </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch06s03.html">&lt;&lt; previous</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch07s02.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Installing and Running Command-Line breve on Mac OS X, Linux and Windows </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> A Simple Example</td></tr></table></div></body></html>

@@ -1,0 +1,109 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>A Simple Example</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="next" href="ch07s03.html" title="The Controller Object"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">A Simple Example</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch07s03.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2634"></a>A Simple Example</h2></div></div></div><p>
+        "Hello, World" is a very simple example which can be used for any
+        programming language. It does not, however, give any insight into how
+        3D multiagent simulations are written in steve. This section shows the
+        code for a simple 3D multiagent simulation.
+      </p><div class="mediaobject" align="center"><img src="images/random_walker.jpg" align="middle"></div><p>
+            In the <span class="emphasis"><em>RandomWalker</em></span> demo,
+            you can see a simple simulation containing hundreds of independent
+            agents.
+          </p><p>
+        The simulation below is very heavily commented&#8212;all of the lines
+        beginning with the # character are descriptive comments which do not
+        effect the execution of the simulation, but clarify for the user what
+        the simulation is doing. Comments are described in more detail below.
+      </p><p>
+        The simple simulation below features a number of agents which perform a
+        "random walk" through 3D space. That is to say that at each time-step,
+        the agents will move in a random direction.
+      </p><pre class="programlisting">
+#
+# RandomWalker is a simulation in which small spheres do
+# a random walk.  This is a very simple simulation which
+# can be used as a skeleton for more complex simulations.
+#
+
+# include some required breve class files
+@use Control.
+@use Mobile.
+
+# First tell the breve engine the name of our controller class
+
+Controller myControl.             
+
+# Subclass "Control" and define our "myControl" object.
+
+Control : myControl {
+    # Here we define the class variables.  
+
+    + variables:
+        walkerShape (object).
+        
+    # Next we define a method called init.  The init method is called 
+    # automatically when our class is created.  Since this is the controller
+    # class, an instance gets created when we launch the simulation,
+    # so this is the entry point for our simulation.
+        
+    + to init:
+        print "Setting up the simulation.".
+
+        self point-camera at (0, 0, 0) from (0, 60, 0).
+
+        # set up a shape that all of the RandomWalker objects will use.
+        
+        walkerShape = (new Sphere init-with radius 1).
+        
+        # Create a bunch of RandomWalkers.  You can create as few or 
+        # as many as you want... 
+
+        200 new RandomWalker.
+
+    # The get-walker-shape is a method that allows other objects 
+    # to look at the walkerShape variable.  we do this so that 
+    # each RandomWalker object can reuse the same Shape object.
+    # This is not strictly required--each RandomWalker could create
+    # it's own copy of the same Shape, but fewer objects means 
+    # less memory used and more efficient simulations, so it's 
+    # a good programming practice.
+        
+    + to get-walker-shape:
+        return walkerShape.
+}
+
+# The "RandomWalker" object is the physical object in the simulation
+# that does the random walk.  It is a subclass of "Mobile".
+
+Mobile : RandomWalker {
+    + to init:
+        # During init, the object asks the controller for the shape 
+        # it should use.  It then sets itself to a random color.
+
+        self set-shape to (controller get-walker-shape).
+        self set-color to random[(1.0, 1.0, 1.0)].
+    
+    + to iterate:
+        # Set a new random velocity at every timestep.
+        
+        self set-velocity to random[(60, 60, 60)] - (30, 30, 30).
+}
+</pre><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2635"></a>Comments</h3></div></div></div><p>
+        When writing code in any language, it is typically useful to include
+        <span class="emphasis"><em>comments</em></span> which clarify what the code is
+        doing. In steve, there are two ways to include comments in code. A
+        "single line" comment starts with a "#" is and continues to the end of
+        the line; "multiline comments" are written starting with "#!" and
+        ending with "!#". Some example of both kinds of comments are shown
+        below:
+      </p><pre class="programlisting">
+        # this is a simple one-line comment.
+
+        print "this is not a comment..."                # but this is.
+
+        #!
+                this
+                is 
+                a 
+                multiline 
+                comment
+        !#
+</pre></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch07s03.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 7. "steve" Language Reference </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> The Controller Object</td></tr></table></div></body></html>

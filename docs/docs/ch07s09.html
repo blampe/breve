@@ -1,0 +1,81 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Directives</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch07.html" title='Chapter 7. "steve" Language Reference'><link rel="prev" href="ch07s08.html" title="Garbage Collection and Memory Management"><link rel="next" href="ch08.html" title="Chapter 8. Defining Basic Agents"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Directives</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch07s08.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 7. "steve" Language Reference</th><td width="20%" align="right"> <a accesskey="n" href="ch08.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2694"></a>Directives</h2></div></div></div><p>
+        Before getting started with the code for a simulation or class, there
+        are often a few special lines at the top of a steve file which begin
+        with an @-character. These lines are called @-directives ("at
+        directives") and they specify information that can help breve to locate
+        classes or other files, or to define some constants that will be used
+        in your simulation. These directives are described below.
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2695"></a>include and @use: Load Another Source File</h3></div></div></div><p>
+        breve includes a rich hierarchy of classes which are used to construct
+        simulations. To use a class which comes with breve (or another file
+        which you have created yourself), you must tell breve to load in the
+        associated file. You need to load the class before you instantiate it
+        or subclass it.
+      </p><p>
+        Classes are loaded using the <code class="literal">@include</code>
+        directive. It is used simply by specifying the name of the file to
+        include:
+      </p><pre class="programlisting">
+@include "Control.tz".
+</pre><p><code class="literal">@use</code> works the same way, but with a
+        slightly different syntax, leaving out the quotes and the ".tz" from
+        the file name:
+      </p><pre class="programlisting">
+@use Control.
+</pre><p>
+        There is no different between <code class="literal">@include</code>
+        and <code class="literal">@use</code> in terms of how the file is
+        actually loaded.
+      </p><p><code class="literal">@include</code> directives are not only used to
+        include classes which come with the breve distribution, but also
+        potentially classes that you construct yourself. It is often used in
+        conjunction with the <code class="literal">@path</code> directive
+        (<a href="ch07s09.html#node-2696" title="path: Specify a Search Path">the section called &#8220;path: Specify a Search Path&#8221;</a>) to specify the
+        location of classes before loading them.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2696"></a>path: Specify a Search Path</h3></div></div></div><p> The <code class="literal">@path</code> directive specifies a directory that breve
+        should search in to find files. These directories apply to finding
+        class files, image files, sound files, archives and any other type of
+        resource that breve might be looking for. It should go at the top of
+        the file, before you try to include any other files.
+      </p><p>
+        Here's an example of <code class="literal">@path</code> line that
+        searches a folder in my home directory for class files:
+      </p><pre class="programlisting">
+@path "/Users/jk/breve_classes".
+</pre><p>
+        You may specify as many directories with <code class="literal">@path</code> directives as necessary.
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="node-2697"></a>define: Define a Global Constant</h3></div></div></div><p> A <span class="emphasis"><em>global
+        constant</em></span> lets you associate a name with a constant value in your
+        simulation. The <code class="literal">@define</code> directive allows
+        you to associate names with <code class="literal">ints</code>,
+        <code class="literal">floats</code> and <code class="literal">strings</code>.
+      </p><p>
+        These constants can be very useful when you have the same value used
+        several times in a simulation&#8212;if you want to change the value,
+        then instead of making the change several times, you can make it once
+        in the <code class="literal">@define</code> directive. It can also be
+        useful to assign meaningful symbols to numbers in your simulation. For
+        example, if your cellular automata is arbitrarily chosen to be 50x50,
+        then instead of <span class="emphasis"><em>hardcoding</em></span> the
+        number 50, it is more flexible and more descriptive to use a global
+        constant.
+      </p><p>
+        Global constants are defined with the following form:
+      </p><pre class="programlisting">
+@define <span class="emphasis"><em><code class="function">constant-name</code></em></span><span class="emphasis"><em><code class="function">constant-value</code></em></span> .
+</pre><p>
+        Here are some examples:
+      </p><pre class="programlisting">
+@define CA_SIZE                 50.
+@define PI_VALUE                3.14159.
+@define STRING_CONSTANT         "Hello".
+</pre><p>
+        By setting these constants at the top of the source file, you can use
+        them later on. For example:
+      </p><pre class="programlisting">
++ to print-pi:
+        print "pi is approximately: ", PI_VALUE.
+</pre><p>
+        It is not required, but, by convention, global constants are typically
+        written with all capital letters, to distinguish them from variables.
+      </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch07s08.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch07.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch08.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Garbage Collection and Memory Management </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Chapter 8. Defining Basic Agents</td></tr></table></div></body></html>

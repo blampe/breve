@@ -1,0 +1,87 @@
+<head>
+<title>Real : Stationary</title>
+<STYLE TYPE="text/css">
+    BODY, P, LI {
+		color: black;
+		font-family: Verdana, Arial, sans-serif;
+		font-size: small;
+    }
+
+    BODY {
+        margin-left: 10%;
+        margin-right: 10%;
+    }
+    TT {
+        font-size: 80%;
+    }
+</STYLE>
+</head>
+<body>
+<p>
+<center>
+<p>
+<img src="breve_icon.jpg"></center>
+<p>
+<p>
+
+<i><center>
+<font size=-2>
+These pages are auto-generated from self-documenting comments embedded 
+in class files.
+<br>
+For more information on <b>breve</b> and <i>steve</i>, refer to the 
+<a href="http://www.spiderland.org/breve" target="_top">breve homepage</a>.
+</font>
+</center>
+</i>
+
+<h2><a href="Real.html">Real</a> : Stationary</h2>
+This class is included as part of the file Stationary.tz.
+<br>
+To use this class in a simulation, include the line "<b>@use Stationary.</b>"
+<p>
+<h3>Class description:</h3><p>
+<blockquote>
+ Stationary objects are objects such as floors and walls that may collide with other objects but will never move.  Stationary objects require much less computation than <a href="Mobile.html">Mobile</a> objects, so it is always preferable to use a Stationary object when you know that an object will not need to move during a simulation. <P> To setup a stationary object, you'll need to associate it with a <a href="Shape.html">Shape</a> object using the method <a href="#register">register</a>.</blockquote>
+<P>
+<H3>Class methods:</H3></P>
+<BLOCKQUOTE>
+<P><B></B><UL>
+</UL>
+<P><B>Setting Up the Stationary Object</B><UL>
+<li><a href="#get-location">get-location</a></li>
+<li><a href="#register">register</a></li>
+</UL>
+<P><B>Changing the Appearence of the Object</B><UL>
+<li><a href="#catch-shadows">catch-shadows</a></li>
+<li><a href="#get-color">get-color</a></li>
+<li><a href="#set-color">set-color</a></li>
+</UL>
+</BLOCKQUOTE>
+<hr>
+<a name="catch-shadows"><font size=+1><tt>catch-shadows </tt></font><p></a>
+<blockquote>
+<p> Informs this object that it should display shadows (and/or reflections) of Mobile objects.  The shadows and reflections will always be shown on the plane of the object pointing upwards on the Y axis--that is to say, the plane with normal (0, 1, 0).  If the object does not have a plane with normal (0, 1, 0), the shadows and reflections will not be displayed correctly.  This method must be used in conjunction with the method <a href="Control.html#enable-shadows">enable-shadows (Control)</a>. <P> Before using this method, you should also refer to an improved shadowing technique outlined in OBJECTMETHOD(Control.tz:enable-shadow-volumes). <p>
+</blockquote>
+<hr>
+<a name="get-color"><font size=+1><tt>get-color </tt></font><p></a>
+<blockquote>
+<p> Returns the color of the Stationary object. <p>
+</blockquote>
+<hr>
+<a name="get-location"><font size=+1><tt>get-location </tt></font><p></a>
+<blockquote>
+<p> Returns the location of the Stationary object. <p>
+</blockquote>
+<hr>
+<a name="register"><font size=+1><tt>register with-shape <i>theShape</i> (object) at-location theLocation = (0, 0, 0) (vector) with-rotation theRotation = [ ( 1, 0, 0 ), ( 0, 1, 0 ), ( 0, 0, 1 ) ] (matrix) </tt></font><p></a>
+<blockquote>
+<p> Registers a stationary object using shape <i>theShape</i> at the location specified by theLocation. <p>
+</blockquote>
+<hr>
+<a name="set-color"><font size=+1><tt>set-color to <i>newColor</i> (vector) </tt></font><p></a>
+<blockquote>
+<p> Sets the color of the Stationary object to <i>newColor</i>.  Textures override color settings, so be sure to set the texture to -1 using the Real.tz method set-texture if you want a flat color to be displayed--the texture is on by default for stationary objects. <p> The vector elements of <i>newColor</i> are interpreted as red, green, and blue values, on a scale from 0.0 to 1.0. <p> <b>The Stationary object must be registered in the world before calling this method.  See <a href="#register">register</a>.</b> <p>
+</blockquote>
+</body>
+<hr><font size=-2><i>Documentation created Sun Jan 21 19:16:46 2007</i></font>

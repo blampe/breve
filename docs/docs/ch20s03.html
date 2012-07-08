@@ -1,0 +1,26 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>BallJoint</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch20.html" title="Chapter 20. The Built-In breve Class APIs"><link rel="prev" href="ch20s02.html" title="Abstract"><link rel="next" href="ch20s04.html" title="BraitenbergControl"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">BallJoint</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch20s02.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 20. The Built-In breve Class APIs</th><td width="20%" align="right"> <a accesskey="n" href="ch20s04.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-2797"></a>BallJoint</h2></div></div></div><p>
+        This subclass of Joint is used to link two Link objects together using
+        a ball joint. A universal joint has three degrees of freedom. It can
+        tilt "up-and-down" and "side-to-side", and can "twist". Your neck is
+        basically a ball joint--your head tilt up-and-down, side-to-side, and
+        can twist (although not all the way around--if your head turns all the
+        way around, please consult the user manual for repair).
+      </p><p>
+        This joint uses a scheme of 3 Euler angles to represent the relative
+        rotation between two objects. The Z-axis of rotation is automatically
+        derived from the parent link point, meaning that the Z-axis rotation is
+        always a "twist" relative to the link point. The X-axis of rotation is
+        specified by the user with the normal argument. The Y-axis is
+        automatically derived from the other two.
+      </p><p>
+        Because of a limitation of the physics engine, the Y-axis rotation is
+        limited to a range of approximately +/- 80 degrees of rotation.
+      </p><p>
+        If versions of breve prior to 2.3, there was no normal argument because
+        the axes of rotation were automatically defined. The argument is
+        therefore optional for backwards compatibility only, and should always
+        be specified when writing new code.
+      </p><p> Full API
+        documentation for the class <code class="literal">BallJoint</code> can
+        be found <a href="http://www.spiderland.org/documentation/classes/BallJoint.html" target="_top">here</a>.
+      </p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch20s02.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch20.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch20s04.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Abstract </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> BraitenbergControl</td></tr></table></div></body></html>

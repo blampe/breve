@@ -1,0 +1,20 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Importing and Executing Python Code From Steve</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="ch18.html" title="Chapter 18. The Python Bridge"><link rel="prev" href="ch18.html" title="Chapter 18. The Python Bridge"><link rel="next" href="ch18s03.html" title="Additional Notes"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Importing and Executing Python Code From Steve</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch18.html">&lt;&lt; previous</a> </td><th width="60%" align="center">Chapter 18. The Python Bridge</th><td width="20%" align="right"> <a accesskey="n" href="ch18s03.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-3248"></a>Importing and Executing Python Code From Steve</h2></div></div></div><p>
+      To include a Python file from a steve simulation file, simply use an
+      <code class="literal">"@include"</code> statement with the name of the Python file, just
+      as steve files are included.
+    </p><p>
+      To use a Python class from a steve file, simply create a new instance of
+      the class exactly as you would with a steve object. Likewise, methods can
+      be called in the new object exactly as usual. Because of differences
+      between the two languages, there are a few minor differences in calling
+      objects over the bridge:
+    </p><div class="itemizedlist"><ul type="disc"><li><p>Keywords are ignored for arugment passing. Instead, arguments are
+      expected in the order they are defined for a method. When calling Python
+      methods from steve, you can use made-up keyword names (to preserve the
+      normal steve syntax), but be sure to match the argument order of the
+      python method.
+      </p></li><li><p>steve uses the "-" (dash) character in many method names, but Python
+      does not allow this character in method names. If calling a steve method
+      from Python, use the "_" (underscore) character in place of "-". The
+      character will be automatically converted.
+      </p></li></ul></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch18.html">&lt;&lt; previous</a> </td><td width="20%" align="center"><a accesskey="u" href="ch18.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch18s03.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 18. The Python Bridge </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Additional Notes</td></tr></table></div></body></html>

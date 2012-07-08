@@ -1,0 +1,35 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter 18. The Python Bridge</title><link rel="stylesheet" href="stylesheet.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="up" href="../index.html" title="The breve Simulation Environment Documentation"><link rel="prev" href="ch17s03.html" title="Embedding breve In Another Program"><link rel="next" href="ch18s02.html" title="Importing and Executing Python Code From Steve"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 18. The Python Bridge</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch17s03.html">&lt;&lt; previous</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch18s02.html">next &gt;&gt;</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="node-3246"></a>Chapter 18. The Python Bridge</h2></div></div></div><p>
+      Starting in version 2.5.1, breve supports an experimental bridge to the
+      Python language. This means that your simulation can execute Python code
+      to preform computation. Communication between the languages is done by
+      creating objects in the other language: Python objects can be created
+      from steve code, and vice versa.
+    </p><p>
+      This feature is in-development and is subject to minor changes.
+    </p><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="node-3247"></a>Writing Python Code for Inclusion in breve</h2></div></div></div><p>
+      All Python files to be loaded into breve should import the breve module
+      to gain access to important breve engine functionality. In order for a
+      Python object to be compatible with the breve engine, it must be a
+      subclass of the breve Python module class breve.object. If an object is
+      not a subclass of breve.object, it will not be visible to the breve
+      engine. The <code class="literal">__init__</code> method of the class must execute the
+      <code class="literal">breve.object.__init__</code> method before any breve bridge
+      functionality is used.
+    </p><p>
+      The following example illustrates a basic Python file with a simple
+      breve-compatible class defined:
+    </p><pre class="programlisting">
+@import breve
+
+
+class PythonBridgeObject( breve.object ):
+        def __init__( self ):
+                breve.object.__init__( self )
+                print "Inited Python bridge object"
+
+
+        def iterate( self ):
+                print "Iterating Python bridge object"</pre><p>
+      This simple Python object will be visible to the breve engine and will
+      have its iterate method called at each iteration of the breve engine.
+    </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch17s03.html">&lt;&lt; previous</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch18s02.html">next &gt;&gt;</a></td></tr><tr><td width="40%" align="left" valign="top">Embedding breve In Another Program </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Table of Contents</a></td><td width="40%" align="right" valign="top"> Importing and Executing Python Code From Steve</td></tr></table></div></body></html>
