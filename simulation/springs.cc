@@ -30,7 +30,6 @@
 */
 
 void slSpring::draw( slCamera *camera ) {
-#ifndef OPENGLES
 	slVector x, y;
 
 	if ( !_src || !_dst ) return;
@@ -56,7 +55,6 @@ void slSpring::draw( slCamera *camera ) {
 	glEnd();
 
 	glDisable( GL_LINE_STIPPLE );
-#endif
 }
 
 

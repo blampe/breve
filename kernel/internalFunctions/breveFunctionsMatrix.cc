@@ -35,6 +35,7 @@
 #include "kernel.h"
 #include "breveFunctionsImage.h"
 #include "bigMatrix.hh"
+#include "gldraw.h"
 
 #ifdef HAVE_LIBGSL
 typedef slBigMatrix2DGSL brMatrix2D;
@@ -264,24 +265,33 @@ int brIMatrix2DCopyToImage( brEval args[], brEval *result, brInstance *i ) {
 	xmax = sourceMatrix->xDim();
 	ymax = sourceMatrix->yDim();
 
-	if ( xmax > d -> _width )
-		xmax = d -> _width;
+	if ( xmax > d->x )
+		xmax = d->x;
 
-	if ( ymax > d -> _height )
-		ymax = d -> _height;
+	if ( ymax > d->y )
+		ymax = d->y;
 
-	pdata = d -> _data + offset;
+//	pdata = d->data;
+	pdata = d->data + offset;
 
 	for ( y = 0; y < ymax; y++ )
 		for ( x = 0; x < xmax; x++ ) {
 			r = ( int )( sourceData[x * sourceTDA + y] * scale );
 
-			*pdata = r > 255 ? 255 : r;
+			if ( r > 255 )
+//				pdata[(x * xStride) + (y << 2) + offset] = 255;
+				*pdata = 255;
+			else
+//				pdata[(x * xStride) + (y << 2) + offset] = r;
+				*pdata = r;
 
 			pdata += 4;
 		}
 
-	d -> updateTexture();
+	if ( d->textureNumber == -1 )
+		d->textureNumber = slTextureNew( i->engine->camera );
+
+	slUpdateTexture( i->engine->camera, d->textureNumber, d->data, d->x, d->y, GL_RGBA );
 
 	return EC_OK;
 }
@@ -518,24 +528,33 @@ int brIMatrix3DCopyToImage( brEval args[], brEval *result, brInstance *i ) {
 	zmax = sourceMatrix->zDim();
 	zOffset = xmax * ymax * BRINT( &args[1] );
 
-	if ( xmax > d -> _width )
-		xmax = d -> _width;
+	if ( xmax > d->x )
+		xmax = d->x;
 
-	if ( ymax > d -> _height )
-		ymax = d -> _height;
+	if ( ymax > d->y )
+		ymax = d->y;
 
-	pdata = d -> _data + offset;
+//	pdata = d->data;
+	pdata = d->data + offset;
 
 	for ( y = 0; y < ymax; y++ )
 		for ( x = 0; x < xmax; x++ ) {
 			r = ( int )( sourceData[zOffset + x * sourceTDA + y] * scale );
 
-			*pdata = r > 255 ? 255 : r;
+			if ( r > 255 )
+//				pdata[(x * xStride) + (y << 2) + offset] = 255;
+				*pdata = 255;
+			else
+//				pdata[(x * xStride) + (y << 2) + offset] = r;
+				*pdata = r;
 
 			pdata += 4;
 		}
 
-	d -> updateTexture();
+	if ( d->textureNumber == -1 )
+		d->textureNumber = slTextureNew( i->engine->camera );
+
+	slUpdateTexture( i->engine->camera, d->textureNumber, d->data, d->x, d->y, GL_RGBA );
 
 	return EC_OK;
 }

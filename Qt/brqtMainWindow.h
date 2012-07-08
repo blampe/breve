@@ -8,21 +8,9 @@
 #include <QCheckBox>
 #include <QPainter>
 #include <QGLWidget>
-#include <QFileDialog>
-#include <QVariant>
-#include <QUrl>
-#include <QDesktopServices>
-#include <QTextEdit>
 
 #include "ui_brqtMainWindow.h"
-
-#include "brqtLogWindow.h"
-#include "brqtFindDialog.h"
 #include "brqtWidgetPalette.h"
-#include "brqtEngine.h"
-#include "brqtGLWidget.h"
-
-class brqtEditorWindow;
 
 class brqtMainWindow : public QMainWindow {
 	Q_OBJECT
@@ -40,111 +28,29 @@ class brqtMainWindow : public QMainWindow {
 			_editing = e; 
 		}
 
-		void					closeDocument( brqtEditorWindow *inWidget );
-
 	public slots:
-		void 					toggleEditing();
-		void 					openDocument();
-		void 					saveDocument();
-		void 					newDocument();
-		void 					toggleSimulation();
-		void 					stopSimulation();
-		void 					setButtonMode();
+		void toggleEditing() {
+			_editing = !_editing;
 
-		void 					activateLogWindow();
+			if( _editing ) {
+				_ui.editButton->setText( tr( "Finished Editing" ) );
+				_palette.show();
+			} else {
+				_ui.editButton->setText( tr( "Edit Interface" ) );
+				_palette.hide();
+			}
 
-
-		void 					copy() {
-			QTextEdit *editor = focusedTextEdit();
-			if( editor )
-				editor -> copy();
-		}
-
-		void 					paste() {
-			QTextEdit *editor = focusedTextEdit();
-			if( editor )
-				editor -> paste();
-		}
-
-		void 					cut() {
-			QTextEdit *editor = focusedTextEdit();
-			if( editor )
-				editor -> cut();
-		}
-
-		void 					undo() {
-			QTextEdit *editor = focusedTextEdit();
-			if( editor )
-				editor -> undo();
-		}
-
-		void 					redo() {
-			QTextEdit *editor = focusedTextEdit();
-			if( editor )
-				editor -> redo();
-		}
-
-		void 					selectAll() {
-			QTextEdit *editor = focusedTextEdit();
-			if( editor )
-				editor -> selectAll();
-		}
-
-
-		void					closeWindow() {
-			QWidget *w = QApplication::activeWindow();
-
-			if( w && w != this ) 
-				w -> close();
-		}
-
-		void 					openDemo( QAction *inAction ) {
-			QString s = inAction -> data().toString();
-			openDocument( s );
-		}
-
-		void 					openHTML( QAction *inAction ) {
-			QString s = QString( "file://" ) + inAction -> data().toString();
-			QUrl url( s );
-			QDesktopServices::openUrl( url );
-		}
-		
-		
-		
-		void					find() {
-			_findDialog.show();
+			repaint();
 		}
 
 	private:
-		brqtEditorWindow*			openDocument( QString &inDocument );
+		bool _editing;
 
-		void					updateSimulationPopup();
-		void					buildMenus();
+		QPushButton *_editButton;
 
-		QMenu*					buildMenuFromDirectory( const QString& inDirectory, QMenu *inParent, QStringList *inFilters, const char *inSlot );
+		brqtWidgetPalette _palette;
 
-		QTextEdit*				focusedTextEdit() {
-									QWidget *w = QApplication::focusWidget();
-
-									if( w && w->inherits( "QTextEdit" ) ) 
-										return (QTextEdit*)w;
-
-									return NULL;
-								}
-
-		bool 					_editing;
-
-		brqtWidgetPalette 			_palette;
-		brqtFindDialog				_findDialog;
-		
-		brqtEngine*				_engine;
-		brqtLogWindow*				_logWindow;
-		
-		QList< brqtEditorWindow* >		_documents;
-
-		QPoint					_documentLocation;
-
-		Ui::brqtMainWindow			_ui;
+		Ui::brqtMainWindow	_ui;
 };
 
 #endif // _BRQTMAINWINDOW_H

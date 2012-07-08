@@ -18,7 +18,7 @@
 @define STRENGTH 5.
 @define LENGTH 9.
 @define NUMPOINTSONSIDE 3.
-@define HEIGHTTODROP 20.
+@define HEIGHTTODROP 60.
 
 Controller SpringController.
 
@@ -52,8 +52,8 @@ PhysicalControl : SpringController {
 
         self set-background-color to (.7, .7, .7).
         self point-camera at (0, 10, 0) from (70, 20, 70).
-		#self enable-fast-physics.
-		#self set-fast-physics-iterations to 5.
+		self enable-fast-physics.
+		self set-fast-physics-iterations to 5.
 
         nodes = (NODES new Nodes).
         nodes enable-physics.
@@ -69,7 +69,7 @@ PhysicalControl : SpringController {
 
         self set-gravity to (0, -9.8, 0).
 
-        new Floor.
+        new Stationary register with-shape (new Cube init-with size (1200, 1, 1200)).
 
         for x=0,x< NUMEDGESONSIDE,x++: {
             for y = 0, y< NUMEDGESONSIDE, y++:{

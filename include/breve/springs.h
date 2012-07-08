@@ -3,8 +3,6 @@
 
 #include "worldObject.h"
 
-class slLink;
-
 enum slSpringModes {
 	SPRING_MODE_NORMAL = 0,
 	SPRING_MODE_EXPAND_ONLY,

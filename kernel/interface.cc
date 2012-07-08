@@ -29,32 +29,32 @@
 	trigger the given method when selected.
 */
 
-brMenuEntry *brAddMenuItem( brInstance *i, const char *method, const char *title ) {
+brMenuEntry *brAddMenuItem( brInstance *i, char *method, char *title ) {
 	brMethod *m;
-	// extract the engine from the brInstance 
+	/* rather than using the global engine variable, we extract */
+	/* the value from the brInstance */
 
 	m = brMethodFind( i->object, method, NULL, 0 );
 
-	if ( strcmp( title, "" ) && !m ) {
-		slMessage( DEBUG_ALL, "Cannot add menu item for method \"%s\"\n", method );
-		return NULL;
-	}
+	if ( strcmp( title, "" ) && !m ) return NULL;
 
 	if ( m ) brMethodFree( m );
 
 	brMenuEntry *entry = new brMenuEntry;
 
 	entry->method = slStrdup( method );
+
 	entry->title = slStrdup( title );
 
 	entry->instance = i;
+
 	entry->checked = 0;
+
 	entry->enabled = 1;
 
 	i->_menus.push_back( entry );
 
-	if ( i->engine->updateMenu ) 
-		i->engine->updateMenu( i );
+	if ( i->engine->updateMenu ) i->engine->updateMenu( i );
 
 	return entry;
 }
@@ -71,7 +71,7 @@ brMenuEntry *brAddMenuItem( brInstance *i, const char *method, const char *title
 int brMenuCallback( brEngine *e, brInstance *i, unsigned int n ) {
 	brEval eval;
 
-	if ( !i ) i = e-> getController() ;
+	if ( !i ) i = e->controller;
 
 	if ( i->status != AS_ACTIVE ) return EC_OK;
 
@@ -86,65 +86,76 @@ int brMenuCallback( brEngine *e, brInstance *i, unsigned int n ) {
 
 	if ( !strcmp( menu->method, "" ) ) return EC_OK;
 
-	e -> lock();
+	brEngineLock( e );
+
 	int result = brMethodCallByName( i, menu->method, &eval );
-	e -> unlock();
+
+	brEngineUnlock( e );
 
 	return result;
 }
 
 brInstance *brClickAtLocation( brEngine *e, int x, int y ) {
-	slWorldObject *clicked = e -> camera -> select( e->world, x, y );
-	
-	brInstance *clickedInstance = clicked ? (brInstance*)clicked -> getCallbackData() : NULL;
-	return brClickCallback( e, clickedInstance );
+	return brClickCallback( e, e->camera->select( e->world, x, y ) );
 }
 
-/**
- * \brief Called when the user clicks in the breve graphical window.
- *
- * The interface detects when an object = has been clicked on in the
- * simulation, then calls this function to pass that instance the
- * "click" method.
- */
+/*!
+	\brief Called when the user clicks in the breve graphical window.
 
-brInstance *brClickCallback( brEngine *inEngine, brInstance *inClickedObject ) {
+	The interface detects when an object = has been clicked on in the
+	simulation, then calls this function to pass that instance the
+	"click" method.
+
+	Be careful calling this method from another thread--the engine is
+	not thread safe, so you must externally make sure that the engine
+	is not being iterated, preferably by a lock.
+*/
+
+brInstance *brClickCallback( brEngine *e, int n ) {
 	brEval eval, theArg;
 	const brEval *argPtr[1];
 	brMethod *method;
 	unsigned char types[] = { AT_INSTANCE };
 
-	method = brMethodFind( inEngine -> getController() ->object, "click", types, 1 );
+	slWorldObject *o;
 
-	if ( !method ) 
-		return NULL;
+	if ( n == -1 ) o = NULL;
+	else o = e->world->getObject( n );
 
-	theArg.set( inClickedObject );
+	method = brMethodFind( e->controller->object, "click", types, 1 );
 
-	argPtr[ 0 ] = &theArg;
+	if ( !method ) return NULL;
 
-	inEngine -> lock();
-	brMethodCall( inEngine -> getController() , method, argPtr, &eval );
-	inEngine -> unlock();
+	if ( o ) theArg.set(( brInstance* )o->getCallbackData() );
+	else theArg.set(( brInstance* )NULL );
+
+	argPtr[0] = &theArg;
+
+	brEngineLock( e );
+
+	brMethodCall( e->controller, method, argPtr, &eval );
+
+	brEngineUnlock( e );
 
 	brMethodFree( method );
 
-	return inClickedObject;
+	if ( !o ) return NULL;
+
+	return ( brInstance* )o->getCallbackData();
 }
 
 void brBeginDrag( brEngine *e, brInstance *i ) {
 	brEval result;
-	brMethodCallByName( e-> getController() , "get-drag-object", &result );
+	brMethodCallByName( e->controller, "get-drag-object", &result );
 
-	if ( !BRINSTANCE( &result ) ) 
-		return;
+	if ( !BRINSTANCE( &result ) ) return;
 
 	brMethodCallByName( BRINSTANCE( &result ), "suspend-physics", &result );
 }
 
 void brEndDrag( brEngine *e, brInstance *i ) {
 	brEval result;
-	brMethodCallByName( e-> getController() , "get-drag-object", &result );
+	brMethodCallByName( e->controller, "get-drag-object", &result );
 
 	if ( !BRINSTANCE( &result ) ) return;
 
@@ -168,25 +179,29 @@ int brDragCallback( brEngine *e, int x, int y ) {
 	unsigned char types[] = { AT_VECTOR };
 	slVector v;
 
-        e -> lock();
+	pthread_mutex_lock( &e->lock );
 
-	method = brMethodFind( e-> getController() ->object, "get-drag-object", NULL, 0 );
+	method = brMethodFind( e->controller->object, "get-drag-object", NULL, 0 );
 
 	if ( !method ) return EC_ERROR;
 
-	n = brMethodCall( e-> getController() , method, NULL, &eval );
+	n = brMethodCall( e->controller, method, NULL, &eval );
 
 	brMethodFree( method );
 
 	if ( n != EC_OK ) {
-        	e -> unlock();
+
+		pthread_mutex_unlock( &e->lock );
+
 		return n;
 	}
 
 	i = BRINSTANCE( &eval );
 
 	if ( !i ) {
-        	e -> unlock();
+
+		pthread_mutex_unlock( &e->lock );
+
 		return EC_OK;
 	}
 
@@ -199,18 +214,22 @@ int brDragCallback( brEngine *e, int x, int y ) {
 	brMethodFree( method );
 
 	if ( n != EC_OK ) {
-        	e -> unlock();
+
+		pthread_mutex_unlock( &e->lock );
+
 		return n;
 	}
 
-	e -> camera -> vectorForDrag( e->world, &BRVECTOR( &eval ), x, y, &v );
+	e->camera->vectorForDrag( e->world, &BRVECTOR( &eval ), x, y, &v );
 
 	theArg.set( v );
 
 	method = brMethodFind( i->object, "move", types, 1 );
 
 	if ( !method ) {
-		e -> unlock();
+
+		pthread_mutex_unlock( &e->lock );
+
 		return EC_ERROR;
 	}
 
@@ -220,7 +239,8 @@ int brDragCallback( brEngine *e, int x, int y ) {
 
 	brMethodFree( method );
 
-	e -> unlock();
+	pthread_mutex_unlock( &e->lock );
+
 	return EC_OK;
 }
 
@@ -249,27 +269,27 @@ int brKeyCallback( brEngine *e, unsigned char keyCode, int isDown ) {
 
 	if ( isDown ) {
 		snprintf( mname, sizeof( mname ), "catch-key-%c-down", keyCode );
-		method = brMethodFind( e-> getController() ->object, mname, NULL, 0 );
+		method = brMethodFind( e->controller->object, mname, NULL, 0 );
 
 		if ( !method ) {
 			snprintf( mname, sizeof( mname ), "catch-key-0x%X-down", keyCode );
-			method = brMethodFind( e-> getController() ->object, mname, NULL, 0 );
+			method = brMethodFind( e->controller->object, mname, NULL, 0 );
 		}
 	} else {
 		snprintf( mname, sizeof( mname ), "catch-key-%c-up", keyCode );
 
-		method = brMethodFind( e-> getController() ->object, mname, NULL, 0 );
+		method = brMethodFind( e->controller->object, mname, NULL, 0 );
 
 		if ( !method ) {
 			snprintf( mname, sizeof( mname ), "catch-key-0x%X-up", keyCode );
-			method = brMethodFind( e-> getController() ->object, mname, NULL, 0 );
+			method = brMethodFind( e->controller->object, mname, NULL, 0 );
 		}
 	}
 
 	if ( !method )
 		return EC_OK;
 
-	r = brMethodCall( e-> getController() , method, NULL, &eval );
+	r = brMethodCall( e->controller, method, NULL, &eval );
 
 	brMethodFree( method );
 
@@ -287,7 +307,7 @@ int brKeyCallback( brEngine *e, unsigned char keyCode, int isDown ) {
 	simulation.
 */
 
-int brSpecialKeyCallback( brEngine *e, const char *name, int isDown ) {
+int brSpecialKeyCallback( brEngine *e, char *name, int isDown ) {
 	brEval eval;
 	brMethod *method;
 	int r;
@@ -295,29 +315,29 @@ int brSpecialKeyCallback( brEngine *e, const char *name, int isDown ) {
 
 	if ( isDown ) {
 		snprintf( mname, sizeof( mname ), "catch-key-%s-down", name );
-		method = brMethodFind( e-> getController() ->object, mname, NULL, 0 );
+		method = brMethodFind( e->controller->object, mname, NULL, 0 );
 	} else {
 		snprintf( mname, sizeof( mname ), "catch-key-%s-up", name );
-		method = brMethodFind( e-> getController() ->object, mname, NULL, 0 );
+		method = brMethodFind( e->controller->object, mname, NULL, 0 );
 	}
 
 	if ( !method ) return EC_OK;
 
-	r = brMethodCall( e-> getController() , method, NULL, &eval );
+	r = brMethodCall( e->controller, method, NULL, &eval );
 
 	brMethodFree( method );
 
 	return r;
 }
 
-/**
- * \brief Handles a miscellaneous interface event.
- * 
- * If the frontend supports it, this is used to interface with arbitrary
- * interface elements.  Currently only available under Mac OS X.
- */
+/*!
+	\brief Handles a miscellaneous interface event.
 
-int brInterfaceCallback( brEngine *e, int interfaceID, const char *string ) {
+	If the frontend supports it, this is used to interface with arbitrary
+	interface elements.  Currently only available under Mac OS X.
+*/
+
+int brInterfaceCallback( brEngine *e, int interfaceID, char *string ) {
 	brEval eval, a;
 	const brEval *args;
 	brMethod *method;
@@ -330,26 +350,38 @@ int brInterfaceCallback( brEngine *e, int interfaceID, const char *string ) {
 
 	snprintf( mname, sizeof( mname ), "catch-interface-id-%d", interfaceID );
 
-	method = brMethodFind( e-> getController() ->object, mname, types, 1 );
+	method = brMethodFind( e->controller->object, mname, types, 1 );
 
 	if ( !method ) return EC_OK;
 
-	r = brMethodCall( e-> getController() , method, &args, &eval );
+	r = brMethodCall( e->controller, method, &args, &eval );
 
 	brMethodFree( method );
 
 	return r;
 }
 
-const char *brEngine::runSaveDialog() {
-	return getSavename ? getSavename() : NULL;
+/*!
+	\brief Calls the getSavename callback.
+*/
+
+char *brEngineRunSaveDialog( brEngine *e ) {
+	if ( !e->getSavename ) return NULL;
+
+	return e->getSavename();
 }
 
-const char *brEngine::runLoadDialog() {
-	return getLoadname ? getLoadname() : NULL;
+/*!
+	\brief Calls the getLoad callback.
+*/
+
+char *brEngineRunLoadDialog( brEngine *e ) {
+	if ( !e->getLoadname ) return NULL;
+
+	return e->getLoadname();
 }
 
-void brEngine::setMouseLocation( int inX, int inY ) {
-	_mouseX = inX;
-	_mouseY = inY;
+void brEngineSetMouseLocation( brEngine *e, int x, int y ) {
+	e->mouseX = x;
+	e->mouseY = y;
 }

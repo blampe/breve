@@ -31,11 +31,12 @@
 #include "expression.h"
 
 stEvalExp::stEvalExp( brEval *e, const char *file, int line ) : stExp( file, line ) {
-	_eval = *e;
+	eval = e;
 	type = ET_ST_EVAL;
 }
 
 stEvalExp::~stEvalExp() {
+	stGCUnretain( eval );
 }
 
 stReturnExp::stReturnExp( stExp *e, const char *file, int line ) : stExp( file, line ) {
@@ -74,23 +75,25 @@ stLengthExp::~stLengthExp() {
 	delete expression;
 }
 
-stEvalExp *stDoubleExp( double inValue, const char *file, int line ) {
-	brEval e;
-	e.set( inValue );
-	return new stEvalExp( &e, file, line );
+stIntExp::stIntExp( int i, const char *file, int line ) : stExp( file, line ) {
+	intValue = i;
+	type = ET_INT;
 }
 
-stEvalExp *stIntExp( int inValue, const char *file, int line ) {
-	brEval e;
-	e.set( inValue );
-	return new stEvalExp( &e, file, line );
+stDoubleExp::stDoubleExp( double d, const char *file, int line ) : stExp( file, line ) {
+	doubleValue = d;
+	type = ET_DOUBLE;
 }
 
 stMethodExp::stMethodExp( stExp *o, char *n, std::vector< stKeyword* > *a, const char *file, const int line ) : stExp( file, line ) {
 	objectExp = o;
 	methodName = n;
 	arguments = *a;
+	method = NULL;
 	type = ET_METHOD;
+
+	objectCache = NULL;
+	objectTypeCache = NULL;
 }
 
 stMethodExp::~stMethodExp() {
@@ -128,7 +131,6 @@ stArrayIndexExp::stArrayIndexExp( stMethod *m, stObject *o, char *word, stExp *i
 	}
 
 	offset = var->offset;
-	_variableName = word;
 
 	loadType = var->type->_arrayType;
 	maxIndex = var->type->_arrayCount;
@@ -169,7 +171,6 @@ stArrayIndexAssignExp::stArrayIndexAssignExp( stMethod *m, stObject *o, char *wo
 	}
 
 	offset = var->offset;
-	_variableName = word;
 
 	assignType = var->type->_arrayType;
 	maxIndex = var->type->_arrayCount;
@@ -206,7 +207,6 @@ stLoadExp::stLoadExp( stMethod *m, stObject *o, char *word, const char *file, in
 
 	loadType = var->type->_type;
 	var->used = 1;
-	_word = word;
 
 	type = ET_LOAD;
 }
@@ -251,8 +251,6 @@ stAssignExp::stAssignExp( stMethod *m, stObject *o, char *word, stExp *r, const 
 	_objectName = var->type->_objectName;
 
 	_objectType = NULL;
-
-	_word = word;
 
 	var->used = 1;
 

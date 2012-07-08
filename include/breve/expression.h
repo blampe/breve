@@ -25,13 +25,12 @@
 
 #include <vector>
 
-#include "pyconvert.h"
-#include "perlconvert.h"
-
 enum stExpTypes {
 	// basic expression types 
 
+	ET_INT = 1,
 	ET_ST_EVAL,
+	ET_DOUBLE,
 	ET_VECTOR,
 	ET_VECTOR_ELEMENT,
 	ET_VECTOR_ELEMENT_ASSIGN,
@@ -102,8 +101,7 @@ enum stExpTypes {
 	/* memory management of the expression, but the DUPLICATES */
 	/* don't bother. */
 
-	ET_DUPLICATE, /* 35 */
-	ET_COMMENT 
+	ET_DUPLICATE /* 35 */
 };
 
 enum stBinaryExpTypes {
@@ -113,6 +111,12 @@ enum stBinaryExpTypes {
 	BT_DIV,
 	BT_MOD,
 	BT_POW,
+	BT_UMN,
+	BT_RDEC,
+	BT_RINC,
+	BT_LDEC,
+	BT_LINC,
+
 	BT_EQ,
 	BT_NE,
 	BT_GT,
@@ -162,8 +166,6 @@ typedef struct stRtcCodeBlock_t {
 		int (*stRtcEval4)(void *, void *, void *, void *);
 		int (*stExpEval3)(stExp *, stRunInstance *, brEval *);
 		int (*stExpEval)(stExp *, stRunInstance *, brEval *, stObject **);
-
-		int (*stEvalEvalExp)(stEvalExp*, stRunInstance *, brEval *);
 		int (*stEvalLoadPointer)(stLoadExp *, stRunInstance *, void **, int *);
 		int (*stEvalTruth)(brEval *, brEval *, stRunInstance *);
 		int (*stEvalFree)(stFreeExp *, stRunInstance *, brEval *);
@@ -178,8 +180,8 @@ typedef struct stRtcCodeBlock_t {
 		int (*stEvalAll)(stAllExp *, stRunInstance *, brEval *);
 		int (*stEvalSort)(stSortExp *, stRunInstance *, brEval *);
 		int (*stEvalListIndexPointer)(stListIndexExp *, stRunInstance *, void **, int *);
-		int (*stEvalIndexLookup)(stListIndexExp *, stRunInstance *, brEval *);
-		int (*stEvalIndexAssign)(stListIndexAssignExp *, stRunInstance *, brEval *);
+		int (*stEvalListIndex)(stListIndexExp *, stRunInstance *, brEval *);
+		int (*stEvalListIndexAssign)(stListIndexAssignExp *, stRunInstance *, brEval *);
 		int (*stEvalPrint)(stPrintExp *, stRunInstance *, brEval *);
 		int (*stEvalCopyList)(stCopyListExp *, stRunInstance *, brEval *);
 		int (*stEvalVectorElementExp)(stVectorElementExp *, stRunInstance *, brEval *);
@@ -222,7 +224,9 @@ class stExp {
 			block = NULL;
 			line = l;
 			file = f;
+
 			debug = false;
+			block = NULL;
 		}
 
 		virtual ~stExp() { 
@@ -230,35 +234,14 @@ class stExp {
 				free(block);	
 		}
 
-		virtual std::string			toPython( stPyConversionData *inData ) = 0;
-		virtual std::string			toPerl( stPerlConversionData *inData ) = 0;
+		unsigned char type;
 
-		virtual	bool				isCompound() { return false; };
+		bool debug;
 
-		unsigned char 				type;
-
-		bool 						debug;
-
-		int 						line;
-		const char 					*file;
+		int line;
+		const char *file;
 	
-		stRtcCodeBlock				*block;
-};
-
-class stCommentExp : public stExp {
-	public:
-		stCommentExp( const char *inString, bool inDocumenting = false ) : stExp( file, line ) {
-			// ghetto
-			while( *inString && !isalnum( *inString ) ) inString++;
-			_comment = inString;
-		}
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
-	private:
-		std::string _comment;
-
+		stRtcCodeBlock	*block;
 };
 
 class stRandomExp : public stExp {
@@ -271,9 +254,6 @@ class stRandomExp : public stExp {
 		~stRandomExp() {
 			delete expression;
 		}
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *expression;
 };
@@ -291,9 +271,6 @@ class stListExp : public stExp {
 			}
 		}
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		std::vector< stExp* > expressions;
 };
 
@@ -310,19 +287,13 @@ class stCodeArrayExp : public stExp {
 			}
 		}
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
-		std::vector< stExp* > 		expressions;
+		std::vector< stExp* > expressions;
 };
 
 class stCopyListExp : public stExp {
 	public:
 		stCopyListExp(stExp *e, const char *file, int line);
 		~stCopyListExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *expression;
 };
@@ -338,33 +309,23 @@ class stDieExp : public stExp {
 			delete expression;
 		}
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *expression;
 };
 
 class stSelfExp : public stExp {
 	public:
 		stSelfExp(const char *file, int line) : stExp(file, line) { type = ET_SELF; }
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 };
 
 class stSuperExp : public stExp {
 	public:
 		stSuperExp(const char *file, int line) : stExp(file, line) { type = ET_SUPER; }
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 };
 
 class stFreeExp : public stExp {
 	public:
 		stFreeExp(stExp *e, const char *file, int line);
 		~stFreeExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *expression;
 };
@@ -374,19 +335,20 @@ class stEvalExp : public stExp {
 		stEvalExp(brEval *e, const char *file, int line);
 		~stEvalExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
+		brEval *eval;
+};
 
-		brEval 				_eval;
+class stIntExp : public stExp {
+	public:
+		stIntExp(int i, const char *file, int line);
+
+		int intValue;
 };
 
 class stReturnExp : public stExp {
 	public:
 		stReturnExp(stExp *e, const char *file, int line);
 		~stReturnExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *expression;
 };
@@ -396,49 +358,41 @@ class stLengthExp : public stExp {
 		stLengthExp(stExp *e, const char *file, int line);
 		~stLengthExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *expression;
 };
 
-stEvalExp *stDoubleExp( double inValue, const char *inFile, int inLine );
-stEvalExp *stIntExp( int inValue, const char *inFile, int inLine );
+class stDoubleExp : public stExp {
+	public:
+		stDoubleExp(double d, const char *file, int line);
+
+		double doubleValue;
+};
 
 class stStringExp : public stExp {
 	public:
 		stStringExp( char *str, stMethod *m, stObject *o, const char *file, int line );
 		~stStringExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
+		int baseSize;
+		std::string string;
 
-		int 				baseSize;
-		std::string 			string;
-
-		std::vector< stSubstringExp* > 	substrings;
+		std::vector< stSubstringExp* > substrings;
 };
 
 class stSubstringExp : public stExp {
 	public:
 		stSubstringExp( const char *file, int line ) : stExp(file, line) {};
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
-		stExp 				*loadExp;
-		std::string 			string;
-		int 				offset;
-		unsigned char 			retain;
+		stExp *loadExp;
+		std::string string;
+		int offset;
+		unsigned char retain;
 };
 
 class stBinaryExp : public stExp {
 	public:
 		stBinaryExp( unsigned char o, stExp *le, stExp *re, const char *file, int line );
 		~stBinaryExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		unsigned char op;
 		stExp *left;
@@ -450,9 +404,6 @@ class stUnaryExp : public stExp {
 		stUnaryExp( unsigned char o, stExp *e, const char *file, int line );
 		~stUnaryExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		unsigned char op;
 		stExp *expression;
 };
@@ -461,9 +412,6 @@ class stVectorExp : public stExp {
 	public:
 		stVectorExp( stExp *x, stExp *y, stExp *z, const char *file, int line );
 		~stVectorExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *_x;
 		stExp *_y;
@@ -475,9 +423,6 @@ class stMatrixExp : public stExp {
 		stMatrixExp( stExp *e00, stExp *e01, stExp *e02, stExp *e10, stExp *e11, stExp *e12, stExp *e20, stExp *e21, stExp *e22, const char *file, int line );
 		~stMatrixExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *expressions[9];
 };
 
@@ -485,9 +430,6 @@ class stPrintExp : public stExp {
 	public:
 		stPrintExp(std::vector< stExp* > *expressions, int newline, const char *file, int lineno);
 		~stPrintExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		std::vector< stExp* > expressions;
 		unsigned char newline;
@@ -498,9 +440,6 @@ class stVectorElementExp : public stExp {
 		stVectorElementExp(stExp *v, char e, const char *file, int line);
 		~stVectorElementExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *exp;
 		char element;
 };
@@ -509,9 +448,6 @@ class stDuplicateExp : public stExp {
 	public:
 		stDuplicateExp(stExp *e, const char *file, int l);
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *expression;
 };
 
@@ -519,9 +455,6 @@ class stVectorElementAssignExp : public stExp {
 	public:
 		stVectorElementAssignExp(stExp *v, stExp *rvalue, char element, const char *file, int line);
 		~stVectorElementAssignExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *exp;
 		stExp *assignExp;
@@ -533,9 +466,6 @@ class stListInsertExp : public stExp {
 		stListInsertExp(stExp *le, stExp *ee, stExp *ie, const char *file, int l);
 		~stListInsertExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *exp;
 		stExp *listExp;
 		stExp *index;
@@ -546,9 +476,6 @@ class stListRemoveExp : public stExp {
 		stListRemoveExp(stExp *list, stExp *index, const char *file, int lineno);
 		~stListRemoveExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *listExp;
 		stExp *index;
 };
@@ -557,9 +484,6 @@ class stSortExp : public stExp {
 	public:
 		stSortExp(stExp *list, char *method, const char *file, int lineno);
 		~stSortExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *listExp;
 		std::string methodName;
@@ -570,9 +494,6 @@ class stListIndexExp : public stExp {
 		stListIndexExp(stExp *list, stExp *index, const char *file, int lineno);
 		~stListIndexExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *listExp;
 		stExp *indexExp;
 };
@@ -582,41 +503,27 @@ class stListIndexAssignExp : public stExp {
 		stListIndexAssignExp(stExp *list, stExp *index, stExp *assignment, const char *file, int lineno);
 		~stListIndexAssignExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *listExp;
 		stExp *indexExp;
 		stExp *assignment;
 };
 
-
-struct stMethodExpCache {
-	stMethodExpCache() { 
-		_method = NULL;
-		_baseObjectCache = NULL;
-	}
-
-	stMethod*					_method;
-	stObject* 					_baseObjectCache;
-	std::vector< stKeyword* > 	_positionedArguments;
-};
-
 class stMethodExp : public stExp {
 	public:
 		stMethodExp( stExp *o, char *n, std::vector<stKeyword*> *a, const char *file, int line );
+
 		~stMethodExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
+		stExp *objectExp;
 
-		stExp*											objectExp;
-
-		std::string 									methodName;
+		std::string methodName;
 	
-		std::vector< stKeyword* > 						arguments;
+		std::vector< stKeyword* > arguments;
+		std::vector< stKeyword* > positionedArguments;
 
-		std::map< stObject*, stMethodExpCache >			_cache;
+		stMethod *method;
+		stObject *objectCache;
+		stObject *objectTypeCache;
 };
 
 class stAssignExp : public stExp {
@@ -624,29 +531,21 @@ class stAssignExp : public stExp {
 		stAssignExp(stMethod *m, stObject *o, char *word, stExp *rvalue, const char *file, int line);
 		~stAssignExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		int _offset;
 		bool _local;
 		unsigned char _assignType;
 		stExp *_rvalue;
 		std::string _objectName;
 		stObject *_objectType;
-		std::string _word;
 };
 
 class stLoadExp : public stExp {
 	public:
 		stLoadExp(stMethod *m, stObject *o, char *word, const char *file, int l);
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
-		int 				offset;
-		char 				local;
-		unsigned char 			loadType;
-		std::string 			_word;
+		int offset;
+		char local;
+		unsigned char loadType;
 };
 
 class stArrayExp : public stExp {
@@ -663,9 +562,6 @@ class stArrayExp : public stExp {
 				delete expressions[n];
 		}
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		std::vector< stExp* > expressions;
 };
 
@@ -673,11 +569,6 @@ class stArrayIndexAssignExp : public stExp {
 	public:
 		stArrayIndexAssignExp(stMethod *m, stObject *o, char *word, stExp *i, stExp *rv, const char *file, int line);
 		~stArrayIndexAssignExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
-		std::string 			_variableName;
 
 		int offset;
 		int maxIndex;
@@ -694,11 +585,6 @@ class stArrayIndexExp : public stExp {
 		stArrayIndexExp(stMethod *m, stObject *o, char *word, stExp *i, const char *file, int line);
 		~stArrayIndexExp();
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
-		std::string 			_variableName;
-
 		int offset;
 		int maxIndex;
 		unsigned char local;
@@ -712,11 +598,6 @@ class stWhileExp : public stExp {
 		stWhileExp(stExp *cn, stExp *cd, const char *file, int lineno);
 		~stWhileExp();
 
-		virtual	bool			isCompound() { return true; };
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *cond;
 		stExp *code;
 };
@@ -725,11 +606,6 @@ class stForeachExp : public stExp {
 	public:
 		stForeachExp(stAssignExp *a, stExp *l, stExp *c, const char *file, int lineno);
 		~stForeachExp();
-
-		virtual	bool			isCompound() { return true; };
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stAssignExp *assignment;
 		stExp *list;
@@ -740,11 +616,6 @@ class stForExp : public stExp {
 	public:
 		stForExp(stExp *a, stExp *cn, stExp *i, stExp *cd, const char *file, int lineno);
 		~stForExp();
-
-		virtual	bool			isCompound() { return true; };
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		stExp *assignment;
 		stExp *condition;
@@ -757,11 +628,6 @@ class stIfExp : public stExp {
 		stIfExp(stExp *c, stExp *t, stExp *f, const char *file, int lineno);
 		~stIfExp();
 
-		virtual	bool			isCompound() { return true; };
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		stExp *cond;
 		stExp *trueCode;
 		stExp *falseCode;
@@ -771,9 +637,6 @@ class stAllExp : public stExp {
 	public:
 		stAllExp(char *objectName, const char *file, int line);
 		~stAllExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
 
 		std::string name;
 		stObject *object;
@@ -792,9 +655,6 @@ class stInstanceExp : public stExp {
 			delete count;
 		}
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
 		std::string name;
 		stExp *count;
 };
@@ -802,10 +662,7 @@ class stInstanceExp : public stExp {
 class stCCallExp : public stExp {
 	public:
 		stCCallExp(brEngine *e, brInternalFunction *s, std::vector< stExp* > *expressions, const char *file, int line);
-		virtual ~stCCallExp();
-
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
+		~stCCallExp();
 
 		brInternalFunction *_function;
 		std::vector< stExp* > _arguments;
@@ -822,12 +679,9 @@ class stKeyword {
 			delete value;
 		}
 
-		std::string			toPython( stPyConversionData *inData );
-		std::string			toPerl( stPerlConversionData *inData );
-
-		std::string 			word;
-		stExp* 				value;
-		int 				position;
+		std::string word;
+		stExp *value;
+		int position;
 };
 
 char *dequote(char *c);

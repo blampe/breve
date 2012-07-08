@@ -23,7 +23,6 @@
 
 #include "vclip.h"
 
-class slWorld;
 void slVclipDataInit( slWorld *w );
 
 #endif /* _VCLIPDATA_H */

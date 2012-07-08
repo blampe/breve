@@ -3,7 +3,7 @@
                       http://www.spiderland.org/breve
                         release _VERSION_ - _DATE_
              command line version for Mac OS X, Linux and Windows
-                         jk [at] spiderland.org 
+                         jklein@spiderland.org 
 
                            -= INTRODUCTION =-
 
@@ -14,10 +14,10 @@ such as Swarm and StarLogo, but simulates objects in a continuous 3D world
 with continuous time.  breve thus allows simulation involving realistic 
 collision detection and physics.   
 
-Agent behaviors are written in Python or in a simple scripting language called
-"steve".  Users can define an agent's behavior by specifying how the agent 
-interacts with the world at each timestep and how the agent reacts to events 
-like collisions.
+Agent behaviors are written in a simple object oriented language called 
+"steve".  Users define an agent's behavior by specifying how the agent 
+interacts with the world at each timestep and how the agent interacts when 
+it collides with other agents. 
 
 breve includes full collision detection and physical simulation of rigid 
 bodies.  See the Walker and Gravity demo simulations for examples.   
@@ -28,8 +28,8 @@ documentation in the "docs" directory.
                              -= GETTING STARTED =- 
 
 NOTE FOR WINDOWS USERS: You'll need to download the GLUT library in order
-to run breve.  One source for this is http://www.xmission.com/~nate/glut.html .
-The GLUT DLL may be placed in the same directory with the breve executable.
+to run breve.  One source for this is: 
+http://www.xmission.com/~nate/glut.html
 
 The best way to get started with breve is to run some of the included demo 
 simulations, which are found in the "demos" directory.  More complete 
@@ -37,7 +37,7 @@ information on programming and running simulations with breve is available
 in the documentation, which is found in the "docs" directory.
 
 These are the directions to get started quickly with the command-line 
-version of breve _VERSION_.
+version of breve 2.4.
 
 1) set the environment variable BREVE_CLASS_PATH to the full path of the
    included "lib/classes" directory.  For example, using the bash shell
@@ -72,7 +72,7 @@ the file.
 
 This software is provided with the hope that it will be useful--the only way 
 for me to make the software more useful is to hear your feedback.  You can 
-send me mail directly at jk [at] spiderland.org.  Please let me know how you 
+send me mail directly at jk@spiderland.org.  Please let me know how you 
 use the software and how it could be improved. 
 
 If you have any cool or useful simulations or classes that should be included 
@@ -84,7 +84,7 @@ http://lists.spiderland.org/mailman/listinfo/breve .
                                  -= LICENSE =-
 
 The breve Simulation Environment                                           
-Copyright (C) 2000-2007 Jonathan Klein                        
+Copyright (C) 2003, 2004 Jonathan Klein                        
 
 This program is free software; you can redistribute it and/or modify       
 it under the terms of the GNU General Public License as published by       

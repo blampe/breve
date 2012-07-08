@@ -80,8 +80,8 @@ CodeCtrl::CodeCtrl(CodeWindow * parent) :
     SetFoldFlags (wxSTC_FOLDFLAG_LINEBEFORE_CONTRACTED |
                   wxSTC_FOLDFLAG_LINEAFTER_CONTRACTED);
 
-    SetTabWidth(4);
-    SetUseTabs(true);
+    SetTabWidth(8);
+    SetUseTabs(false);
     SetTabIndents(true);
     SetBackSpaceUnIndents(true);
     SetIndent(4);
@@ -113,7 +113,8 @@ void CodeCtrl::OnChar(wxStyledTextEvent &event)
 {
     int currentLine = GetCurrentLine();
 
-    if (event.GetKey() == '\n') {
+    if (event.GetKey() == '\n')
+    {
         int lineInd = 0;
 
         if (currentLine > 0)
@@ -181,7 +182,7 @@ void CodeCtrl::OnMenu(wxCommandEvent &event)
 
 	case 12001: // Save as
 	   {
-	    wxFileDialog d(parent, "Please enter a filename", "", "", "steve files (*.tz)|*.tz|Python files (*.py)|*.py", wxSAVE | wxOVERWRITE_PROMPT);
+	    wxFileDialog d(parent, "Please enter a filename", "", "", "*.tz", wxSAVE | wxOVERWRITE_PROMPT);
 
 	    if (d.ShowModal() == wxID_OK)
 	    {

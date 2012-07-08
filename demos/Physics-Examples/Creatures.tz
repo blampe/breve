@@ -23,13 +23,13 @@
 @use Stationary.
 @use MultiBody.
 @use GeneticAlgorithm.
-@use URL.
 
 Controller VirtualCreatures.
 
 PhysicalControl : VirtualCreatures {
 	+ variables:
 		running (int).
+		dg (object).
 		body (object).
 		flag (object).
 
@@ -39,50 +39,33 @@ PhysicalControl : VirtualCreatures {
 
 		ga (object).
 
-		blockTexture, startTexture, floor (object).
-
-	+ to get-block-texture:
-		return blockTexture.
-
-
 	+ to init:
-		startTexture = (new Image load from "images/star.png").
+		new Floor.
 
 		flag = new Mobile.
 		flag disable-physics.
-		flag set-bitmap-image to startTexture.
-		flag set-color to (1, 1, 0).
+		flag set-shape to (new Sphere init-with radius .2).
+		flag set-color to (1, 0, 0).
 		flag set-label to "Start".
-		flag disable-shadows.
 
-		self set-mountain-skybox.
-
-		blockTexture = ( new Image load from "images/noise.png" ).
-
-		floor = new Floor.
-		floor set-texture-image to ( new Image load from "images/ground.jpg" ).
-		floor set-color to ( .8, .8, .8 ).
+		self set-background-texture-image to (new Image load from "images/clouds.png").
 
 		self enable-fast-physics.
-		self set-fast-physics-iterations to 30.
-		self enable-shadow-volumes.
+		self set-fast-physics-iterations to 20.
 
 		parser = new MorphologyParser.
 
 		ga = (controller dearchive-xml file "breveCreatures.xml").	
 
 		if !ga: {
-			print "Making new GA".
 			ga = new SimsGA.
 
-			ga set-fitness-test-duration to 45.
+			ga set-fitness-test-duration to 30.
 			ga set-individual-class to "SimsGAIndividual".
 			ga set-population-size to 25.
 			ga set-crossover-percent to 30.
 			ga set-mutation-percent to 30.
 		}
-
-		self add-dependency on ga.
 
 		self update-text.
 
@@ -98,8 +81,8 @@ PhysicalControl : VirtualCreatures {
 			index = (ga get-current-individual-index) + 1.
 		}
 
-		self set-display-text to "Generation: $gen ($index/$total)"at-x -.95 at-y -.75 number 1.
-		self set-display-text to "Best distance: $bestDistance" at-x -.95 at-y -.85 number 2.
+		self set-display-text number 1 to "Generation: $gen ($index/$total)" at-x -.95 at-y -.75.
+		self set-display-text number 2 to "Best distance: $bestDistance" at-x -.95 at-y -.85.
 
 	+ to iterate:
 		t (vector).
@@ -114,30 +97,24 @@ PhysicalControl : VirtualCreatures {
 
 		self point-camera at t.
 
-		dist = ( self get-current-critter-fitness ).
+		dist = | t - startlocation |.
+		if running: self set-display-text to "Distance traveled: $dist" at-x -.95 at-y -.95.
 
-		if running: 
-			self set-display-text to "Distance traveled: $dist" at-x -.95 at-y -.95.
-
-		self pivot-camera x 0.0 y 0.0002.
+		self pivot-camera x 0 y 0.001.
 
 		super iterate.
 
 	+ to get-current-critter-fitness:
+		t (vector).
 		link (object).
-		mindist (float).
 
-		if | all Links | == 0:
-			return 0.0.
-                
-		mindist = 10000.
-                
 		foreach link in all Links: {
-			if | ( link get-location ) - link{ "_startLocation" } | < mindist:
-				mindist = | ( link get-location ) - link{ "_startLocation" } |.
+			t += (link get-location).
 		}
-                
-		return mindist.
+
+		if |all Links|: t /= |all Links|.
+
+		return | t - startlocation | .
 
 	+ to setup-test with i (object):
 		l (object).
@@ -148,15 +125,15 @@ PhysicalControl : VirtualCreatures {
 
 		free all Links.
 		free all Joints.
+		if body: free body.
 
-		if body: 
-			free body.
+		# (i get-genome) print-graph.
 
 		body = new MultiBody.
-		body set-root to (parser parse-top-level from ((i get-genome) get-root)).
-		body disable-self-collisions.
 
-		self add-dependency on body.
+		body set-root to (parser parse from ((i get-genome) get-root)).
+
+		body disable-self-collisions.
 
 		self schedule method-call "check-penetration" at-time (self get-time) + 8.0.
 		self set-display-text to "Preparing to test $i..." at-x -.95 at-y -.95.
@@ -177,7 +154,6 @@ PhysicalControl : VirtualCreatures {
 		startlocation = (0, 0, 0).
 
 		foreach link in all Links: {
-			link set-start-location.
 			startlocation += (link get-location).
 		}
 
@@ -186,19 +162,12 @@ PhysicalControl : VirtualCreatures {
 }
 
 GeneticAlgorithm : SimsGA {
-	+ variables:
-		h (hash).
-
-	+ to init:
-		h{ 10 } = ( 1, 2, 3 ).
-		
 	+ to start-fitness-test of o (object):
 		newOffset (vector).
 
-		newOffset = random[(40, 2, 40)] + (-20, .15, -20).
-
+		newOffset = random[(40, 6, 40)] + (-20, 3, -20).
 		if |newOffset| < 20: newOffset = 20 * newOffset/|newOffset|.
-		controller pan-camera-offset by newOffset steps 600.
+		controller pan-camera-offset by newOffset steps 80.
 
 		controller setup-test with o.
 
@@ -207,13 +176,12 @@ GeneticAlgorithm : SimsGA {
 		if isnan((o get-fitness)): o set-fitness to 0.
 		print "fitness of $o: ", (o get-fitness).
 
-		self archive-as-xml file "breveCreatures.xml".
+		(self archive-as-xml file "breveCreatures.xml").
 }
 
 GeneticAlgorithmIndividual : SimsGAIndividual {
 	+ variables:
 		genome (object).
-		h (hash).
 
 	+ to init:
 		genome = new GADirectedGraph.
@@ -231,7 +199,7 @@ GeneticAlgorithmIndividual : SimsGAIndividual {
 		genome mutate.
 
 	+ to randomize:
-		genome randomize with-max-nodes 4 with-node-parameters 12 with-connection-parameters 12.
+		genome randomize with-max-nodes 5 with-node-parameters 10 with-connection-parameters 10.
 
 	+ to get-genome:
 		return genome.
@@ -240,45 +208,30 @@ GeneticAlgorithmIndividual : SimsGAIndividual {
 		free genome.
 }
 
-@define MAXDEPTH 3.
-@define MAXLINKS 12.
-
 Object : MorphologyParser {
-	+ variables:
-		_linkCount (int).
 
 	#
 	# An object used to create morphologies from our DirectedGraph genomes
 	# 
 
-	+ to parse-top-level from root (object):
+	+ to parse from root (object):
 		rootNode (object).
-
-		_linkCount = 0.
 		
 		rootNode = (self create-node from root with-level 1).
+		return (self parse from root with-level 1 with-link rootNode).
 
-		(self parse from root with-level 1 with-link rootNode).
-		(self parse from root with-level 1 with-link rootNode flip 1).
-
-		return rootNode.
-
-	+ to parse from root (object) with-level n (int) with-link rootNode (object) flip f = 0 (int):
+	+ to parse from root (object) with-level n (int) with-link rootNode (object):
 		connectionParams, nodeParams, connections (list).
 		child, childNode, joint (object).
 		cpoint, ppoint, point, size, norm (vector).
-		jointRange (float).
-		face (int).
+
+		if n > 3: return 0.
 
 		connections = (root get-connections).
 
 		nodeParams = (root get-parameters).
 		
-		size = 1.5 * (|nodeParams{0}|, |nodeParams{1}|, |nodeParams{2}|) + ( .3, .3, .3 ).
-
-		# Don't recurse more than 3 levels deep, and don't recurse if the node-parameter doesn't tell us to.
-
-		if _linkCount > MAXLINKS || n > MAXDEPTH || ( n > 1 && nodeParams{ 9 } < 0.0 ): return 0.
+		size = 4 * (|nodeParams{0}|, |nodeParams{1}|, |nodeParams{2}|).
 
 		#
 		# This code has been refactored for 2.5 to create the parent link before
@@ -293,55 +246,34 @@ Object : MorphologyParser {
 			
 			if childNode: {
 				connectionParams = (child get-parameters).
-				
-				face = connectionParams{0} * 6.
-				
-				if( face < -2 ): {
-					point = (1,0,0).
-					norm = (0,.6,1).
-				} else if( face < -1 ): {
-					point = (-1,0,0).
-					norm = (0,.6,-1).
-				} else if( face < 0 ): {
-					point = (0,1,0).
-					norm = (.6,0,1).
-				} else if( face < 1 ): {
-					point = (0,-1,0).
-					norm = (.6,0,-1).
-				} else if( face < 2 ): {
-					point = (0,0,1).
-					norm = (1,.6,0).
-				} else {
-					point = (0,0,-1).
-					norm = (-1,.6,0).
-				}
 
+				point = (connectionParams{0}, connectionParams{1}, connectionParams{2}).
+
+				point::x *= size::x.
+				point::y *= size::y.
+				point::z *= size::z.
+		 
 				cpoint = (childNode get-shape) get-point-on-shape on-vector point.
 				ppoint = (rootNode get-shape) get-point-on-shape on-vector -point.
-				norm /= | norm |.
 
-			
+				norm = (connectionParams{4}, connectionParams{5}, connectionParams{6}).
+				norm /= | norm |.
 
 				joint = new SineJoint.
 
 				# joint set-relative-rotation around-axis norm by connectionParams{3}.
 
-				joint link with-normal norm 
+				joint link parent rootNode to-child childNode
 					with-parent-point ppoint
 					with-child-point cpoint
-					to-child childNode 
-					parent rootNode.
+					with-normal norm.
 
-				joint set-phaseshift to 2 * 3.14 * connectionParams{7}.
-				joint set-frequency to .1 + 2.0 * connectionParams{8}.
-
-				jointRange = 0.8 + 1.5 * | connectionParams{ 9 } |.
-
-				joint set-double-spring with-max jointRange with-min -jointRange with-strength 20.
-				joint set-strength-limit to 1300.
+				joint set-phaseshift to 3.14 * connectionParams{7}.
+				joint set-double-spring with-strength 600 with-max 2.6 with-min -2.6.
+				joint set-strength-limit to 5000.
+ 
 
 				self parse from (child get-target) with-level n + 1 with-link childNode.
-				# self parse from (child get-target) with-level n + 1 with-link childNode flip 1.
 			}
 		}
 
@@ -351,42 +283,23 @@ Object : MorphologyParser {
 		rootNode (object).
 		nodeParams (list).
 		size (vector).
-		scaleFactor (float).
+  
+		if n > 3: return 0.
+  
+		rootNode = new Link.	
+		rootNode move to (0, 15, 0).
+		rootNode set-color to (5 - n) / 4.0 * (1, 1, 1).
 
-		_linkCount += 1.
-  
-		if n > MAXDEPTH || _linkCount > MAXLINKS: 
-			return 0.
-  
+		rootNode set-color to random[(1, 1, 1)].
+
 		nodeParams = (root get-parameters).
-
-		scaleFactor = ( ( MAXDEPTH + 1 ) - ( ( .5 + .45 * |nodeParams{10}| ) * n ) ) / ( MAXDEPTH + 1 ).
 		
-		rootNode = new CreaturesLink.	
-		rootNode move to (0, 8, 0).
-		rootNode set-color to scaleFactor * (1, 1, 1).
+		size = 4 * (|nodeParams{0}|, |nodeParams{1}|, |nodeParams{2}|).
 
-		size = 6 * (|nodeParams{0}|, |nodeParams{1}|, |nodeParams{2}|) + ( .5, .5, .5 ).
+		rootNode set-shape to (new Cube init-with size ((8 - n) / 7.0 * size)).
 
-		rootNode set-color to (|nodeParams{3}|, |nodeParams{4}|, |nodeParams{5}|).
-
-		rootNode set-shape to (new Cube init-with size ( scaleFactor * size) ).
-
-		rootNode set-texture-image to ( controller get-block-texture ).
 
 		return rootNode.
-}
-
-
-Link : CreaturesLink (aka CreaturesLinks) {
-	+ variables: 
-		_startLocation (vector).
-
-	+ to init:
-		self set-mu to 300.0.
-                
-	+ to set-start-location:
-		_startLocation = ( self get-location ).
 }
 
 RevoluteJoint : SineJoint (aka SineJoints) {
@@ -394,26 +307,14 @@ RevoluteJoint : SineJoint (aka SineJoints) {
 
 	+ variables:
 		phaseshift (double).
-		frequency (double).
 		active (int).
-
-	+ to init:
-		phaseshift = 0.
-		frequency = 2.0.
 
 	+ to set-phaseshift to p (double):
 		phaseshift = p.
 
-	+ to set-frequency to f (double):
-		frequency = f.
-
 	+ to iterate:
-	    value (double).
-    
-	    value = sin( (controller get-time) * frequency + phaseshift ).
-
 		if active: {
-                    self set-joint-velocity to value.
+			self set-joint-velocity to 1 * sin((controller get-time) * 2.0 + phaseshift).
 		}
 
 	+ to activate:

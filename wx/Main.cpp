@@ -16,7 +16,7 @@
 // For compilers that support precompilation, includes "wx/wx.h".
 #include "wx/wxprec.h"
 
-#include "slutil.h"
+#include "util.h"
 
 #ifdef __BORLANDC__
 #pragma hdrstop
@@ -145,13 +145,8 @@ bool BCTestApp::OnInit()
 	SearchPathArray.Add(AppDir + FILE_SEP_PATH + ".." + FILE_SEP_PATH + "Resources" + FILE_SEP_PATH);
 #endif
 
-#ifdef WINDOWS
-        SetEnvironmentVariable( "PYTHONHOME", AppDir.c_str() );
-#endif
-
-	SearchPathArray.Add( AppDir );
-	SearchPathArray.Add( LocalDir );
-	SearchPathArray.Add( AppDir + FILE_SEP_PATH + "lib" + FILE_SEP_PATH + "python2.3" + FILE_SEP_PATH );
+	SearchPathArray.Add(AppDir);
+	SearchPathArray.Add(LocalDir);
 
 	count = SearchPathArray.GetCount();
 

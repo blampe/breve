@@ -23,8 +23,13 @@
 #include "kernel.h"
 
 int brEngineNextMethodCall( brEngine *e, brInstance **i, brMethod **m ) {
+	pthread_mutex_lock( &e->scheduleLock );
+
 	*i = NULL;
 	*m = NULL;
+
+	pthread_mutex_unlock( &e->scheduleLock );
+
 	return 0;
 }
 
@@ -33,8 +38,8 @@ void *brIterationThread( void *data ) {
 	brEngine *e = threadData->engine;
 
 	while ( 1 ) {
-		brInstance *i = NULL;
-		brMethod *m = NULL;
+		brInstance *i;
+		brMethod *m;
 		int rcode;
 		brEval result;
 

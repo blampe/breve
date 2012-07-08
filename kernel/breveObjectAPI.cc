@@ -16,7 +16,7 @@
  */
 
 void brEngineRegisterObjectType( brEngine *e, brObjectType *t ) {
-	e->_objectTypes.push_back( t );
+	e->objectTypes.push_back( t );
 }
 
 /**
@@ -37,13 +37,10 @@ brMethod *brMethodFind( brObject *o, const char *name, unsigned char *types, int
 		t = new unsigned char[ argCount ];
 		types = t;
 
-		for ( n = 0;n < argCount;n++ ) types[ n ] = AT_UNDEFINED;
+		for ( n = 0;n < argCount;n++ ) types[n] = AT_UNDEFINED;
 	}
 
 	mp = o->type->findMethod( o->userData, name, types, argCount );
-
-	if ( t ) 
-		delete[] t;
 
 	if ( !mp ) 
 		return NULL;
@@ -51,9 +48,15 @@ brMethod *brMethodFind( brObject *o, const char *name, unsigned char *types, int
 	m = new brMethod;
 
 	m->userData = mp;
+
 	m->object = o;
+
 	m->argumentCount = argCount;
+
 	m->name = slStrdup( name );
+
+	if ( t ) 
+		delete[] t;
 
 	return m;
 }
@@ -84,37 +87,6 @@ brMethod *brMethodFindWithArgRange( brObject *o, const char *name, unsigned char
 }
 
 /**
- * \brief Finds an object in the given namespace with a given type signature.
- */
-
-brObject *brObjectFindWithTypeSignature( brEngine *inEngine, const char *inTypename, int inSignature ) {
-	std::vector<brObjectType*>::iterator oi;
-	std::string name = inTypename;
-
-	if ( inEngine -> objects[ name ] && inEngine -> objects[ name ] -> type -> _typeSignature == inSignature ) 
-		return inEngine -> objects[ name ];
-
-	if ( inEngine -> objectAliases[ name ] && inEngine -> objectAliases[ name ] -> type -> _typeSignature == inSignature ) 
-		return inEngine -> objectAliases[ name ];
-
-	// try the object finder for this type
-
-	for ( oi = inEngine->_objectTypes.begin(); oi != inEngine->_objectTypes.end(); oi++ ) {
-		brObjectType *type = *oi;
-		void *pointer = NULL;
-
-		if ( type->findObject && type->_typeSignature == inSignature ) {
-			pointer = type->findObject( type->userData, inTypename );
-
-			if ( pointer ) 
-				return brEngineAddObject( inEngine, type, inTypename, pointer );
-		}
-	}
-
-	return NULL;
-}
-
-/**
  * \brief Finds an object in the given namespace
  *
  * Looks up an object in the engine's table of known objects.  If
@@ -126,27 +98,13 @@ brObject *brObjectFind( brEngine *e, const char *name ) {
 	brObject *object;
 	std::string names = name;
 
-	// try the known objects
-	if ( ( object = e->objects[ names ] ) ) return object;
+	if ( ( object = e->objects[ names] ) ) return object;
 
-	// try the known object aliases
 	if ( ( object = e->objectAliases[ names ] ) ) return object;
 
-	// try the main frontend language
-	if ( e -> getController() && ( object = brObjectFindWithTypeSignature( e, name, e-> getController() ->object->type->_typeSignature ) ) ) return object;
-
-	// okay, whatever
 	return brUnknownObjectFind( e, name );
 }
 
-brObject *brObjectFindWithPreferredType( brEngine *e, const char *name, int inSignature ) {
-	brObject *object;
-
-	if ( ( object = brObjectFindWithTypeSignature( e, name, inSignature ) ) ) return object;
-
-	return brObjectFind( e, name );
-
-}
 /**
  * \brief Looks up an unknown object and adds it to the engine.
  *
@@ -157,15 +115,14 @@ brObject *brObjectFindWithPreferredType( brEngine *e, const char *name, int inSi
 brObject *brUnknownObjectFind( brEngine *e, const char *name ) {
 	std::vector<brObjectType*>::iterator oi;
 
-	for ( oi = e->_objectTypes.begin(); oi != e->_objectTypes.end(); oi++ ) {
+	for ( oi = e->objectTypes.begin(); oi != e->objectTypes.end(); oi++ ) {
 		brObjectType *type = *oi;
 		void *pointer = NULL;
 
 		if ( type->findObject ) {
 			pointer = type->findObject( type->userData, name );
 
-			if ( pointer ) 
-				return brEngineAddObject( e, type, name, pointer );
+			if ( pointer ) return brEngineAddObject( e, type, name, pointer );
 		}
 	}
 
@@ -265,7 +222,7 @@ int brMethodCallByNameWithArgs( brInstance *i, const char *name, const brEval **
  * is executed for the observer.
  */
 
-int brInstanceAddObserver( brInstance *i, brInstance *observer, const char *notification, const char *mname ) {
+int brInstanceAddObserver( brInstance *i, brInstance *observer, char *notification, char *mname ) {
 	brObserver *o;
 	brMethod *method;
 	unsigned char types[] = { AT_INSTANCE, AT_STRING };
@@ -292,7 +249,7 @@ int brInstanceAddObserver( brInstance *i, brInstance *observer, const char *noti
  * instance i.
  */
 
-void brEngineRemoveInstanceObserver( brInstance *i, brInstance *observerInstance, const char *notification ) {
+void brEngineRemoveInstanceObserver( brInstance *i, brInstance *observerInstance, char *notification ) {
 	brObserver *observer;
 
 	if ( i->status == AS_FREED || observerInstance->status == AS_FREED ) 
@@ -321,44 +278,6 @@ void brEngineRemoveInstanceObserver( brInstance *i, brInstance *observerInstance
 		observerInstance->observees.erase( observee );
 }
 
-
-/*!
-        \brief Adds an instance to another's dependencies list.              
-*/                                                                           
- 
-int brInstanceAddDependency( brInstance *inInstance, brInstance *inDepencency ) {      
-        if ( inInstance && inDepencency ) {
-        	inInstance->_dependencies.insert( inDepencency );
-        	inDepencency->_dependents.insert( inInstance );
-	}
-
-	return 0;
-}
-
-/*!
-        \brief Removes an instance from another's dependencies list. 
-*/
-
-int brInstanceRemoveDependency( brInstance *inInstance, brInstance *inDependency ) {
-	std::set< brInstance*, brInstanceCompare>::iterator ii;
-         
-        if ( inInstance && inDependency ) {
-	        ii = inInstance->_dependencies.find( inDependency );
-
-		if ( ii != inInstance->_dependencies.end() ) 
-			inInstance->_dependencies.erase( ii );
-
-		ii = inDependency->_dependents.find( inInstance );
-
-		if ( ii != inDependency->_dependents.end() ) 
-			inDependency->_dependents.erase( ii );
-	}
-
-	return 0;
-}
-
-
-
 /**
  * \brief Adds an object to the engine.
  */
@@ -367,14 +286,7 @@ brObject *brEngineAddObject( brEngine *e, brObjectType *t, const char *name, voi
 	brObject *o;
 	std::string names = name;
 
-	if ( !name || !t || !e ) 
-		return NULL;
-
-	if( e->objects[ names ] ) {
-		slMessage( DEBUG_ALL, "Error adding object \"%s\" to engine: object redefined\n", name );
-		return NULL;
-	}
-		
+	if ( !name || !t || !e ) return NULL;
 
 	o = new brObject;
 
@@ -438,88 +350,8 @@ brInstance *brEngineAddBreveInstance( brEngine *e, brObject *object, brInstance 
 	return breveInstance;
 }
 
-/**
- * Determines whether one object is a subclass of another
- */
- 
-bool brObjectIsSubclass( brObject *inA, brObject *inB ) {
-	if( inA->type->_typeSignature != inB->type->_typeSignature )
-		return false;
-
-	return inA->type->isSubclass( inA->type, inA->userData, inB->userData );
-}
-
-/**
- * Creates an instance of the given brObject class.
- *
- * The constructur args and argCount are currently unused.
- */
-
-brInstance *brObjectInstantiate( brEngine *e, brObject *o, const brEval **args, int argCount, bool inSkipInit ) {
-	return o->type->instantiate( e, o, args, argCount, inSkipInit );
-}
-
-/**
- * 
- */
-
-char *brInstanceEncodeToString( brEngine *inEngine, brInstance *inInstance, brEvalHash *inInstanceToIndexMapping ) {
-	if( !inInstance->object->type->encodeToString ) 
-		return NULL;
-
-	return inInstance->object->type->encodeToString( inEngine, inInstance->userData, inInstanceToIndexMapping );
-}
-
-/**
- * Runs a text command in the simulation's controller language
- */
-
-int brRunCommand( brEngine *inEngine, const char *inCommand ) {
-	std::vector<brObjectType*>::iterator oi;
-
-	for ( oi = inEngine->_objectTypes.begin(); oi != inEngine->_objectTypes.end(); oi++ ) {
-		brObjectType *type = *oi;
-
-		if( type == inEngine -> getController() -> object -> type && type -> runCommand )
-			return type -> runCommand( type -> userData, inEngine, inCommand );
-	}
-
-	return -1;
-}
-
-/**
- * 
- */
-
-brInstance *brInstanceDecodeFromString( brEngine *inEngine, int inTypeSignature, const char *inData ) {
-	std::vector<brObjectType*>::iterator oi;
-
-	for ( oi = inEngine->_objectTypes.begin(); oi != inEngine->_objectTypes.end(); oi++ ) {
-		brObjectType *type = *oi;
-
-		if( type -> _typeSignature == inTypeSignature && type -> decodeFromString ) 
-			return type -> decodeFromString( inEngine, inData );
-
-	}
-
-	return NULL;
-}
-
-/**
- * 
- */
-
-int brFinishDearchive( brEngine *inEngine, int inTypeSignature, brEvalHash *inIndexToInstanceMapping ) {
-	std::vector<brObjectType*>::iterator oi;
-
-	for ( oi = inEngine->_objectTypes.begin(); oi != inEngine->_objectTypes.end(); oi++ ) {
-		brObjectType *type = *oi;
-
-		if( type -> _typeSignature == inTypeSignature && type -> finishDearchive ) 
-			return type -> finishDearchive( inEngine, inIndexToInstanceMapping );
-	}
-
-	return -1;
+brInstance *brObjectInstantiate( brEngine *e, brObject *o, const brEval **args, int argCount ) {
+	return o->type->instantiate( e, o, args, argCount );
 }
 
 /**
@@ -548,9 +380,9 @@ void brInstanceRelease( brInstance *i ) {
  */
 
 void brEngineRemoveInstance( brEngine *e, brInstance *i ) {
-	std::vector<brInstance*>::iterator bi;
-
 	// inform the camera of the change
+
+	std::vector<brInstance*>::iterator bi;
 
 	if ( e->camera ) e->camera->setRecompile();
 
@@ -617,12 +449,6 @@ void brInstanceFree( brInstance *i ) {
 		delete observerList[ n ];
 	}
 
-	while ( i->_dependencies.size() )
-		brInstanceRemoveDependency( i, *i->_dependencies.begin() );
-
-	while ( i->_dependents.size() )
-		brInstanceRemoveDependency( *i->_dependents.begin(), i );
-
 	i->observers.clear();
 
 	// removing observers will modify the observee list,
@@ -651,7 +477,7 @@ void brInstanceFree( brInstance *i ) {
 
 	i->userData = NULL;
 
-	i->engine->_freedInstances.push_back( i );
+	i->engine->freedInstances.push_back( i );
 }
 
 /**
@@ -687,7 +513,7 @@ int brObjectAddCollisionHandler( brObject *handler, brObject *collider, char *na
 	for ( int i = 0; i <= maxargs; i++ ) {
 		method[i] = brMethodFindWithArgRange( handler, name, types, i, i );
 
-		if ( method[i] ) nomethods = false;
+		if ( method[i] )nomethods = false;
 	}
 
 

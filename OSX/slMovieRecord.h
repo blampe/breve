@@ -20,25 +20,18 @@
 
 #import <AppKit/AppKit.h>
 
-#if !TARGET_CPU_X86_64
-# import <Carbon/Carbon.h>
-# import <QuickTime/Movies.h>
-#endif
+#import <Carbon/Carbon.h>
+#import <QuickTime/Movies.h>
 
 @interface slMovieRecord : NSObject
 {	
-#if !TARGET_CPU_X86_64
     GWorldPtr theGWorld;
     Rect theBounds;
-#else
-  NSRect theBounds;
-#endif
     long movieBytes;
     long maxCompressionSize;
 
 	long movieCodec;
 
-#if !TARGET_CPU_X86_64
     CodecQ movieQuality;
 
     Handle theCompressedData;
@@ -48,7 +41,7 @@
 
     Track theTrack;
     Media theMedia;
-#endif
+
     NSMutableArray *theFrameArray;
 
     int theRowPadding;
@@ -73,9 +66,7 @@
 - (int)addFrameFromQueue:(int)n;
 
 - (int)addFrameFromRGBPixels:(unsigned char*)ptr;
-#if !TARGET_CPU_X86_64
 - (int)addFrameFromPixMapHandle:(PixMapHandle)pmh;
-#endif
 
 - (int)closeMovie;
 

@@ -1,7 +1,4 @@
 #include <stdio.h>
-
-#ifdef HAVE_LIBOSMESA
-
 #define GLAPI extern
 #define GLAPIENTRY
 
@@ -17,7 +14,7 @@
 extern "C" {
 
 	OSMesaContext osContext;
-	int osWidth, osHeight;
+	int osSize;
 	unsigned char *osBuffer;
 
 	/**
@@ -26,11 +23,10 @@ extern "C" {
 	 * @param[in] size     The size of one side of the rendering window.
 	 */
 
-	void slOSMesaCreate( unsigned char *buffer, int inWidth, int inHeight ) {
+	void slOSMesaCreate( unsigned char *buffer, int size ) {
 		osContext = OSMesaCreateContext( OSMESA_RGBA, NULL );
 		osBuffer = buffer;
-		osWidth = inWidth;
-		osHeight = inHeight;
+		osSize = size;
 		printf( "OSMesa extension loaded: offscreen rendering enabled\n" );
 	}
 
@@ -41,7 +37,7 @@ extern "C" {
 	 */
 
 	int slOSMesaMakeCurrentContext( ) {
-		if ( !OSMesaMakeCurrent( osContext, osBuffer, GL_UNSIGNED_BYTE, osWidth, osHeight ) ) {
+		if ( !OSMesaMakeCurrent( osContext, osBuffer, GL_UNSIGNED_BYTE, osSize, osSize ) ) {
 			return -1;
 		}
 
@@ -49,5 +45,3 @@ extern "C" {
 	}
 
 }
-
-#endif

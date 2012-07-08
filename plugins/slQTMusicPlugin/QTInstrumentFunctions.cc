@@ -133,16 +133,16 @@ int brQTInstrumentPlayChord( brEval args[], brEval *result, void *i ) {
 
 	/* push down */
 
-	for ( int n = 0; n < brEvalListLength( list ); n++ ) {
-		NAPlayNote( info->allocator, info->channel, BRINT( brEvalListIndexLookup( list, n ) ), BRINT( &args[2] ) );
+	for ( int n = 0; n < list->_vector.size(); n++ ) {
+		NAPlayNote( info->allocator, info->channel, BRINT( list->_vector[ n ] ), BRINT( &args[2] ) );
 	}
 
 	usleep(( int )( BRDOUBLE( &args[3] ) * 100000 ) );
 
 	/* release */
 
-	for ( int n = 0; n < brEvalListLength( list ); n++ ) {
-		NAPlayNote( info->allocator, info->channel, BRINT( brEvalListIndexLookup( list, n ) ), 0 );
+	for ( int n = 0; n < list->_vector.size(); n++ ) {
+		NAPlayNote( info->allocator, info->channel, BRINT( list->_vector[ n ] ), 0 );
 	}
 
 	return EC_OK;
@@ -168,6 +168,8 @@ int brQTInstrumentStopNote( brEval args[], brEval *result, void *i ) {
 	return EC_OK;
 }
 
+extern "C" {
+
 void slInitQTInstrumentFuncs( void *n ) {
 	brNewBreveCall( n, "instrumentNew", brQTInstrumentNew, AT_POINTER, AT_INT, 0 );
 	brNewBreveCall( n, "instrumentFree", brQTInstrumentFree, AT_NULL, AT_POINTER, 0 );
@@ -176,4 +178,6 @@ void slInitQTInstrumentFuncs( void *n ) {
 	brNewBreveCall( n, "instrumentStopNote", brQTInstrumentStopNote, AT_NULL, AT_POINTER, AT_INT, 0 );
 	brNewBreveCall( n, "instrumentPlayChord", brQTInstrumentPlayChord, AT_NULL, AT_POINTER, AT_LIST, AT_INT, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "instrumentSetController", brQTInstrumentSetController, AT_NULL, AT_POINTER, AT_INT, AT_INT, 0 );
+}
+
 }

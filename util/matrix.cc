@@ -44,7 +44,7 @@
     = in the matrix.h header file.
 */
 
-#include "slutil.h"
+#include "util.h"
 
 #include <math.h>
 

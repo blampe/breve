@@ -1,5 +1,4 @@
 @use Object.
-@use Abstract.
 
 Abstract : Joint (aka Joints) [version 2.3] {
 	% Joint a is class used to connect two OBJECT(Mobile) objects together.  The
@@ -23,7 +22,6 @@ Abstract : Joint (aka Joints) [version 2.3] {
 	+ variables:
 		parent, child (object).
 		plinkPoint, clinkPoint (vector).
-		nativePlinkPoint, nativeClinkPoint (vector).
 		relativeRotation (matrix).
 		jointPointer (pointer).
 		strengthLimit (float).
@@ -46,16 +44,6 @@ Abstract : Joint (aka Joints) [version 2.3] {
 		relativeRotation = [ (1, 0, 0), (0, 1, 0), (0, 0, 1) ].
 
   + section "Setting parameters for joint springs and damping (friction)"
-
-	+ to set-erp to erpValue (double):
-		% Sets the joint's error correction parameter.  See the ODE physics engine documentation for more details.
-		
-		jointSetERP( jointPointer, erpValue ).
-		
-	+ to set-cfm to cfmValue (double):
-		% Sets the joint's constraint force mixing parameter.  See the ODE physics engine documentation for more details.
-
-		jointSetCFM( jointPointer, cfmValue ).
 
 	+ to set-double-spring with-strength theStrength (float) with-max theMax (float) with-min theMin (float):
 		% Enable this joint's spring to take effect when the rotation is above
@@ -94,9 +82,6 @@ Abstract : Joint (aka Joints) [version 2.3] {
 		% revolute), only the X-component is valid.  For 2-DOF joints (universal),
 		% both the X- and the Y-components are used.  For a ball joint, all three
 		% values are provided.
-		% <P>
-		% Note: due to a limitation of the physical simulation engine, this method
-		% is not currently implemented for ball or universal joints.
 
 		return jointGetVelocity(jointPointer).
 
@@ -187,19 +172,6 @@ Abstract : Joint (aka Joints) [version 2.3] {
 		if jointPointer: return jointGetTorque(jointPointer).
 
   + section "Getting and Setting Joint Position & Orientation"
-
-	- to set-native-link-points:
-		pScale, cScale (vector).
-
-		if parent: {
-			pScale = ((parent get-shape) get-scale).
-			nativePlinkPoint = ( plinkPoint::x / pScale::x, plinkPoint::y / pScale::y, plinkPoint::z / pScale::z ).
-		}
-
-		if child: {
-			cScale = ((child  get-shape) get-scale).
-			nativeClinkPoint = ( clinkPoint::x / cScale::x, clinkPoint::y / cScale::y, clinkPoint::z / cScale::z ).
-		}
 
 	+ to get-child-link-point:
 		% Returns the child link point.
@@ -295,11 +267,7 @@ Abstract : Joint (aka Joints) [version 2.3] {
 
   + section "Breaking Joints"
 
-	- to break:
-		% Deprecated -- use break-joint.
-		self break-joint.
-
-	+ to break-joint:
+	+ to break:
 		% Breaks this joint--removes the child (and all of the links connected to it)
 		% from the body.  The child link (and its descendents) are therefore removed 
 		% from the world and placed in limbo.  They may be reconnected later by 
@@ -349,11 +317,11 @@ Abstract : Joint (aka Joints) [version 2.3] {
 
 		if !parent: return.
 
-		scale = ((parent get-shape) get-scale).
+		scale = ((parent get-shape) get-last-scale).
 	
-		plinkPoint::x = nativePlinkPoint::x * scale::x.
-		plinkPoint::y = nativePlinkPoint::y * scale::y.
-		plinkPoint::z = nativePlinkPoint::z * scale::z.
+		plinkPoint::x *= scale::x.
+		plinkPoint::y *= scale::y.
+		plinkPoint::z *= scale::z.
 
 		self set-parent-link-point to plinkPoint.
 
@@ -364,11 +332,11 @@ Abstract : Joint (aka Joints) [version 2.3] {
 
 		if !child: return.
 
-		scale = ((child get-shape) get-scale).
+		scale = ((child get-shape) get-last-scale).
 	
-		clinkPoint::x = nativeClinkPoint::x * scale::x.
-		clinkPoint::y = nativeClinkPoint::y * scale::y.
-		clinkPoint::z = nativeClinkPoint::z * scale::z.
+		clinkPoint::x *= scale::x.
+		clinkPoint::y *= scale::y.
+		clinkPoint::z *= scale::z.
 
 		self set-child-link-point to clinkPoint.
 
@@ -378,7 +346,7 @@ Abstract : Joint (aka Joints) [version 2.3] {
 		return jointPointer.
 
 	- to destroy:
-		self break-joint.
+		self break.
 }
 
 Joint : PrismaticJoint (aka PrismaticJoints) [version 2.3] {
@@ -388,12 +356,11 @@ Joint : PrismaticJoint (aka PrismaticJoints) [version 2.3] {
 	% A retractable TV antenna is an
 	% example of an object that uses multiple prismatic joints.
 	% <P>
-	% <CENTER><IMG SRC="../images/PrismaticJoint.jpg" BORDER=1></CENTER>
+	% <CENTER><IMG SRC="PrismaticJoint.jpg" BORDER=1></CENTER>
 
-	+ to link with-normal theNormal (vector) with-parent-point parentPoint (vector) 
+	+ to link parent parentLink (object) to-child childLink (object)
+			with-normal theNormal (vector) with-parent-point parentPoint (vector) 
 			with-child-point childPoint (vector)
-			to-child childLink (object)
-			parent parentLink = 0 (object) 
 			use-current-relative-rotation currentRotation = 0 (int):
 
 		% Creates a prismatic (sliding) joint between parentLink and childLink.  
@@ -423,7 +390,6 @@ Joint : PrismaticJoint (aka PrismaticJoints) [version 2.3] {
 		parent = parentLink.
 		child = childLink.
 
-		self set-native-link-points.
 		self add-dependency on child.
 		self add-dependency on parent.
 
@@ -460,12 +426,11 @@ Joint : RevoluteJoint (aka RevoluteJoints) [version 2.3] {
 	% example of a RevoluteJoint--it can bend back-and-forth, but it cannot twist 
 	% or bend side-to-side.
 	% <P>
-	% <CENTER><IMG SRC="../images/RevoluteJoint.jpg" BORDER=1></CENTER>
+	% <CENTER><IMG SRC="RevoluteJoint.jpg" BORDER=1></CENTER>
 
-	+ to link with-normal theNormal (vector) with-parent-point parentPoint (vector) 
+	+ to link parent parentLink (object) to-child childLink (object)
+			with-normal theNormal (vector) with-parent-point parentPoint (vector) 
 			with-child-point childPoint (vector)
-			to-child childLink (object)
-			parent parentLink = 0 (object) 
 			use-current-relative-rotation currentRotation = 0 (int):
 
 		% Creates a revolute (rotating) joint between parentLink and childLink.  
@@ -498,7 +463,6 @@ Joint : RevoluteJoint (aka RevoluteJoints) [version 2.3] {
 		parent = parentLink.
 		child = childLink.
 
-		self set-native-link-points.
 		self add-dependency on child.
 		self add-dependency on parent.
 
@@ -523,9 +487,9 @@ Joint : RevoluteJoint (aka RevoluteJoints) [version 2.3] {
 		jointSetLimits(jointPointer, (min1, 0, 0), (max1, 0, 0)).
 
 	+ to dearchive:
-		if parent || child:
-			self link with-normal normalVector 
-				with-parent-point plinkPoint with-child-point clinkPoint to-child child parent parent.
+		if parent || child: 
+			self link parent parent to-child child with-normal normalVector 
+					with-parent-point plinkPoint with-child-point clinkPoint.
 
 		return (super dearchive).
 }
@@ -534,15 +498,15 @@ Joint : FixedJoint (aka FixedJoints) [version 2.3] {
 	% This subclass of OBJECT(Joint) is used to link two OBJECT(Link) objects
 	% together using a static, or fixed, joint.
 	% <P>
-	% <CENTER><IMG SRC="../images/FixedJoint.jpg" BORDER=1></CENTER>
+	% <CENTER><IMG SRC="FixedJoint.jpg" BORDER=1></CENTER>
 	% <P>
 	% <b>Fixed joints do not currently support a relative rotation the way
 	% other joint types do.</b>  I'm so sorry.  
 
-	+ to link with-parent-point parentPoint (vector) 
-			with-child-point childPoint (vector)
+	+ to link parent parentLink = 0 (object) 
 			to-child childLink (object)
-			parent parentLink = 0 (object) 
+			with-parent-point parentPoint = (0, 0, 0) (vector) 
+			with-child-point childPoint = (0, 0, 0) (vector)
 			use-current-relative-rotation currentRotation = 0 (int):
 
 		% Creates a fixed joint between parentLink and childLink.  
@@ -569,20 +533,20 @@ Joint : FixedJoint (aka FixedJoints) [version 2.3] {
 		jointPointer = jointLinkStatic(ppointer, cpointer, (0, 0, 0), parentPoint, childPoint, relativeRotation, currentRotation).
 
 		normalVector = (1, 0, 0).
-
 		plinkPoint = parentPoint.
 		clinkPoint = childPoint.
 
 		parent = parentLink.
 		child = childLink.
 
-		self set-native-link-points.
 		self add-dependency on child.
 		self add-dependency on parent.
 
 	+ to dearchive:
+		print "dearchiving for $parent and $child".
+
 		if parent || child: 
-			self link with-parent-point plinkPoint with-child-point clinkPoint to-child child parent parent.
+			self link parent parent to-child child with-parent-point plinkPoint with-child-point clinkPoint.
 
 		return (super dearchive).
 }
@@ -596,13 +560,12 @@ Joint : UniversalJoint (aka UniversalJoints) [version 2.3] {
 	% "twist".  Your wrist is basically a universal joint--your hand cannot
 	% rotate without the rest of your arm.
 	% <P>
-	% <CENTER><IMG SRC="../images/UniversalJoint.jpg" BORDER=1></CENTER>
+	% <CENTER><IMG SRC="UniversalJoint.jpg" BORDER=1></CENTER>
 
-	+ to link with-normal normal (vector)
+	+ to link parent parentLink (object) to-child childLink (object)
+			with-normal normal (vector)
 			with-parent-point parentPoint (vector) 
 			with-child-point childPoint (vector)
-			to-child childLink (object)
-			parent parentLink = 0 (object)
 			use-current-relative-rotation currentRotation = 0 (int):
 
 		% Creates a universal (rotation on two axes) joint between parentLink and childLink.  
@@ -677,14 +640,14 @@ Joint : BallJoint (aka BallJoints) [version 2.3] {
 	% This subclass of OBJECT(Joint) is used to link two OBJECT(Link) objects
 	% together using a ball joint.
 	% <p>
-	% A BallJoint has three degrees of
+	% A universal joint has three degrees of
 	% freedom.  It can tilt "up-and-down" and "side-to-side", and can
 	% "twist".  Your neck is basically a ball joint--your head tilt 
 	% up-and-down, side-to-side, and can twist (although not all the 
 	% way around--if your head turns all the way around, please consult 
 	% the user manual for repair).
 	% <P>
-	% <CENTER><IMG SRC="../images/BallJoint.jpg" BORDER=1></CENTER>
+	% <CENTER><IMG SRC="BallJoint.jpg" BORDER=1></CENTER>
 	% <P>
 	% This joint uses a scheme of 3 Euler angles to represent the 
 	% relative rotation between two objects.  The Z-axis of rotation is automatically 
@@ -701,10 +664,9 @@ Joint : BallJoint (aka BallJoints) [version 2.3] {
 	% for backwards compatibility <b>only</b>, and should <b>always</b> be specified
 	% when writing new code.
 
-	+ to link with-parent-point parentPoint (vector) 
+	+ to link parent parentLink (object) to-child childLink (object)
+			with-parent-point parentPoint (vector) 
 			with-child-point childPoint (vector)
-			to-child childLink (object)
-			parent parentLink = 0 (object) 
 			with-normal normal = (1, 0, 0) (vector)
 			use-current-relative-rotation currentRotation = 0 (int):
 
@@ -729,14 +691,12 @@ Joint : BallJoint (aka BallJoints) [version 2.3] {
 		jointPointer = jointLinkBall(ppointer, cpointer, normal, parentPoint, childPoint, relativeRotation, currentRotation).
 
 		normalVector = normal.
-
 		plinkPoint = parentPoint.
 		clinkPoint = childPoint.
 
 		parent = parentLink.
 		child = childLink.
 
-		self set-native-link-points.
 		self add-dependency on child.
 		self add-dependency on parent.
 

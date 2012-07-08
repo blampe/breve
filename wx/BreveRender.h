@@ -21,8 +21,6 @@
 #include "BreveCanvas.h"
 #include "LogWindow.h"
 
-#include <vector>
-
 #if !wxUSE_TOGGLEBTN
 	#define wxToggleButton wxCheckBox
 	#define EVT_TOGGLEBUTTON EVT_CHECKBOX
@@ -54,23 +52,20 @@ enum
 {
 	BREVE_FILEMENU_TOP = 10000, // Must always be first
 	BREVE_FILEMENU_NEW,
-	BREVE_FILEMENU_NEW_FROM_TEMPLATE,
 	BREVE_FILEMENU_OPEN,
 	BREVE_FILEMENU_QUIT,
 	BREVE_WINDOWMENU_LOG,
 	BREVE_WINDOWMENU_INSPECTOR,
-	BREVE_WINDOWMENU_FULLSCREEN,
+	BREVE_BREVEMENU_FULLSCREEN,
 
 	BREVE_FULLSPEED,
 	BREVE_MEDIUMSPEED,
 	BREVE_SLOWSPEED,
 
-	// The following items use large ID ranges, so they must be far enough apart to not overlap
+	BREVE_FILEMENU_BOTTOM, // Must always be third to last
+	BREVE_BREVEMENU_SIM, // Must always be second to last - uses +1500 to +2000
+	BREVE_SIMMENU // Must -always- be last - uses this to +1000
 
-	BREVE_DEMOMENU = 20000, 
-	BREVE_SIMMENU  = 30000,
-
-	BREVE_DOCMENU  = 50000
 };
 
 class BreveCanvas;
@@ -113,9 +108,6 @@ private:
 
 	bool mKeysDown[ 256 ];
 
-	std::vector< wxString > 		_docFiles;
-	wxString				_docLauncher;
-
 public:
 	BreveRender( );
 	~BreveRender();
@@ -128,9 +120,6 @@ public:
 	void ResetSim(int sim = -2);
 	void SetMenu(int mode);
 
-	wxMenu *MakeDocumentationMenu();
-
-
 	SimInstance * GetSimulation(int i = -1);
 	int GetSimInt(SimInstance * s);
 	void KillSimulation(int i = -1);
@@ -140,12 +129,10 @@ public:
 	void UpdateChoice(int i);
 
 	void OnSimMenu(wxCommandEvent &event);
-	void OnDocMenu(wxCommandEvent &event);
 	void OnSimSelect(wxCommandEvent& event);
 	void OnClose(wxCloseEvent& event);
 	void OnMenuOpen(wxCommandEvent& event);
 	void OnMenuNew(wxCommandEvent& event);
-	void OnMenuNewFromTemplate(wxCommandEvent& event);
 	void OnMenuQuit(wxCommandEvent& event);
 	void OnMenuSpeed(wxCommandEvent& event);
 	void OnFullScreen(wxCommandEvent &event);

@@ -22,13 +22,10 @@
 #define _TERRAIN_H
 
 #include "worldObject.h"
-#include "mesh.h"
-#include "vclip.h"
-#include "vclipData.h"
 
-/**
- *	\brief Serialized \ref slTerrain data.
- */
+/*!
+	\brief Serialized \ref slTerrain data.
+*/
 
 struct slSerializedTerrain {
 	int side;
@@ -39,9 +36,11 @@ struct slSerializedTerrain {
 	float *values;
 };
 
-/**
- * \brief Terrain data.
- */
+/*!
+	\brief Terrain data.
+*/
+
+#ifdef __cplusplus
 
 void slNormalForFace(slVector *a, slVector *b, slVector *c, slVector *n);
 
@@ -51,15 +50,14 @@ class slRoamPatch;
 class slTerrain: public slWorldObject {
 	public:
 		friend class slRoamPatch;
-		friend class slTerrainShape;
 
 		slTerrain(int res, double scale, void *data);
 		~slTerrain();
 
 		inline void terrainPoint(int x, int z, slVector *point) {
-			point->x =   x * _xscale;
-			point->y = _matrix[x][z];
-			point->z =   z * _xscale;
+			point->x =   x * _xscale + _position.location.x;
+			point->y = _matrix[x][z] + _position.location.y;
+			point->z =   z * _xscale + _position.location.z;
 		}
 
 		void setLocation(slVector *location);
@@ -72,13 +70,11 @@ class slTerrain: public slWorldObject {
 
 		void resize(int side);
 
-		void draw( slCamera *camera, bool );
+		void draw(slCamera *camera);
 
 		void generateFractalTerrain(double h, double height);
 		float averageDiamondValues(int x, int y, int jump);
 
-		void colorForHeight( double inHeight, slVector *outColor );
-	
 		int loadGeoTIFF(char *file);
 
 		float **_matrix;
@@ -128,10 +124,11 @@ class slTerrain: public slWorldObject {
 		int areaUnderPoint( slVector *origpoint, int *x, int *z, int *quad );
 };
 
-class slTerrainShape : public slMeshShape {
-	public:
-		void						updateGeom( slTerrain* );
-};
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int slTerrainTestPair(slVclipData *vc, int x, int y, slCollision *ce);
 
@@ -146,4 +143,8 @@ slSerializedTerrain *slSerializeTerrain(slTerrain *t, int *size);
 
 void slTerrainGetSlope(slTerrain *t, double x1, double z1, double x2, double z2, slVector *result);
 
-#endif // _TERRAIN_H 
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _TERRAIN_H */

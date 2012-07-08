@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "gldraw.h"
 #include "drawcommand.h"
 
 int brIDrawListNew( brEval args[], brEval *target, brInstance *i ) {

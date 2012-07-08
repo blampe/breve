@@ -21,7 +21,6 @@
 #define slRandomDouble() ((double)(0x7fff&random())/0x7fff)
 
 #define RADTODEG(x)	((x)*180.0/M_PI)
-#define DEGTORAD(x)	(M_PI*(x)/180.0)
 
 int slNextPowerOfTwo(int);
 

@@ -20,38 +20,37 @@
 
 #include "kernel.h"
 #include "world.h"
-#include "breveFunctionsImage.h"
 #include "gldraw.h"
 #include "image.h"
 #include "sensor.h"
-
 #define BRWORLDOBJECTPOINTER(p)	((slWorldObject*)BRPOINTER(p))
 
-/** \addtogroup InternalFunctions */
+/*! \addtogroup InternalFunctions */
 /*@{*/
 
-int brIWorldSetCFM( brEval args[], brEval *target, brInstance *i ) {
-	i->engine->world->setCFM( BRDOUBLE( &args[ 0 ] ) );
+/*!
+	\brief Loads a GIS data file.
+*/
+
+int brIWorldLoadTigerFile( brEval args[], brEval *target, brInstance *i ) {
+
+	target->set( slWorldLoadTigerFile( i->engine->world, BRSTRING( &args[0] ), ( slTerrain* )BRPOINTER( &args[1] ) ) );
+
 	return EC_OK;
 }
 
-int brIWorldSetERP( brEval args[], brEval *target, brInstance *i ) {
-	i->engine->world->setERP( BRDOUBLE( &args[ 0 ] ) );
-	return EC_OK;
-}
+/*!
+	\brief Enables or disables fast-physics.
 
-/**
- * \brief Enables or disables fast-physics.
- *
- * setStepFast(int).
- */
+	setStepFast(int).
+*/
 
 int brISetStepFast( brEval args[], brEval *target, brInstance *i ) {
 	i->engine->world->setPhysicsMode( BRINT( &args[0] ) );
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Sets the iterations parameter for quickstep.
 
 	setStepFastIterations(int).
@@ -67,7 +66,7 @@ int brISetAutoDisableFlag( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Enables or disables drawing of every frame.
 
 	setDrawEveryFrame(int).
@@ -83,7 +82,7 @@ int brISetDrawEveryFrame( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Sets the random seed for the simulation.
 
 	void randomSeed(int).
@@ -98,7 +97,7 @@ int brIRandomSeed( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Reads a random seed from /dev/random, if possible.
 
 	int randomSeedFromDevRandom().
@@ -113,19 +112,17 @@ int brIRandomSeedFromDevRandom( brEval args[], brEval *target, brInstance *i ) {
 	f = fopen( "/dev/random", "r" );
 
 	if ( !f || !fread( &seed, sizeof seed, 1, f ) || !seed ) {
-		if ( f ) 
-			fclose( f );
+		if ( f ) fclose( f );
 
 		if (( f = fopen( "/dev/urandom", "r" ) ) )
 			fread( &seed, sizeof seed, 1, f );
 	}
 
-	if ( f ) 
-		fclose( f );
+	if ( f ) fclose( f );
 
 	if ( seed ) {
 
-		target->set( (int)seed );
+		target->set( 0 );
 
 		slMessage( DEBUG_ALL, "read seed %u from random device\n", seed );
 
@@ -139,7 +136,7 @@ int brIRandomSeedFromDevRandom( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Returns the current simulation time.
 
 	double getTime().
@@ -152,7 +149,51 @@ int brIGetTime( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
+	\brief Loads a texture from an image file [deprecated].
+
+	USE OF THIS FUNCTION IS DEPRECATED.  The image loading methods from
+	breveFunctionsImage.c are now used instead.
+*/
+
+int brILoadTexture( brEval args[], brEval *target, brInstance *i ) {
+	unsigned char *pixels = NULL;
+	char *path;
+	int w, h, c;
+	int useAlpha = BRINT( &args[1] );
+
+	path = brFindFile( i->engine, BRSTRING( &args[0] ), NULL );
+
+	if ( !path ) {
+		slMessage( DEBUG_ALL, "Cannot locate image file for \"%s\"\n", BRSTRING( &args[0] ) );
+
+		target->set( -1 );
+
+		return EC_OK;
+	}
+
+	pixels = slReadImage( path, &w, &h, &c, useAlpha );
+
+	slFree( path );
+
+	if ( !pixels ) {
+		slMessage( DEBUG_ALL, "Unrecognized image format in file \"%s\"\n", BRSTRING( &args[0] ) );
+
+		target->set( -1 );
+
+		return EC_OK;
+	}
+
+	target->set(( int )slTextureNew( i->engine->camera ) );
+
+	slUpdateTexture( i->engine->camera, BRINT( target ), pixels, w, h, GL_RGBA );
+
+	slFree( pixels );
+
+	return EC_OK;
+}
+
+/*!
 	\brief Steps the world simulation forward.
 
 	void worldStep(double time, double integrationStep).
@@ -166,7 +207,7 @@ int brIWorldStep( brEval args[], brEval *target, brInstance *i ) {
 	double stepSize = BRDOUBLE( &args[1] );
 	int error;
 
-	i->engine->_iterationStepSize = totalTime;
+	i->engine->iterationStepSize = totalTime;
 
 	target->set( i->engine->world->runWorld( totalTime, stepSize, &error ) );
 
@@ -178,10 +219,11 @@ int brIWorldStep( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
- * Updates the "neighbors" for neighbor-detecting objects.
- * void updateNeighbors().
- */
+/*!
+	\brief Updates the "neighbors" for neighbor-detecting objects.
+
+	void updateNeighbors().
+*/
 
 int brIUpdateNeighbors( brEval args[], brEval *target, brInstance *i ) {
 	i->engine->world->updateNeighbors();
@@ -189,7 +231,279 @@ int brIUpdateNeighbors( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
+/*!
+	\brief Sets the neighborhood size for an object.
 
+	setNeighborhoodSize(slWorld
+
+	The neighborhood size specifies how far an object looks when collecting
+	neighbor information.
+*/
+
+int brISetNeighborhoodSize( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *wo = BRWORLDOBJECTPOINTER( &args[0] );
+	double size = BRDOUBLE( &args[1] );
+
+	wo->setNeighborhoodSize( size );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Set the collision properties (mu, e, eT) of a stationary object.
+
+	void setCollisionProperties(slWorldObject pointer stationary, double e, double eT, double mu).
+*/
+
+int brISetCollisionProperties( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+
+	double e = BRDOUBLE( &args[1] );
+	double eT = BRDOUBLE( &args[2] );
+	double mu = BRDOUBLE( &args[3] );
+
+	o->setCollisionE( e );
+	o->setCollisionET( eT );
+	o->setCollisionMU( mu );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Gets an object's neighbors.
+
+	list getNeighbors(slWorldObject pointer).
+*/
+
+int brIGetNeighbors( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *wo = BRWORLDOBJECTPOINTER( &args[0] );
+	std::vector< void* >::iterator wi;
+	brEval eval;
+
+	target->set( new brEvalListHead() );
+
+	std::vector< void* > &neighbors = wo->getNeighborData();
+
+	for ( wi = neighbors.begin(); wi != neighbors.end(); wi++ ) {
+		// grab the neighbor instances from the userData of the neighbors
+
+		eval.set(( brInstance* )( *wi ) );
+
+		if ( BRINSTANCE( &eval ) && BRINSTANCE( &eval )->status == AS_ACTIVE )
+			brEvalListInsert( BRLIST( target ), 0, &eval );
+	}
+
+	return EC_OK;
+}
+
+/*!
+	\brief Returns the light exposure of a single object in the world, if light
+	exposure detection is in use.
+
+	int worldObjectGetLightExposure(slWorldObject pointer).
+*/
+
+int brIWorldObjectGetLightExposure( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *wo = BRWORLDOBJECTPOINTER( &args[0] );
+
+	target->set( wo->getLightExposure() );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Removes an object from the world and frees it.
+
+	removeObject(slWorldObject pointer).
+*/
+
+int brIRemoveObject( brEval args[], brEval *target, brInstance *i ) {
+	i->engine->world->removeObject( BRWORLDOBJECTPOINTER( &args[0] ) );
+
+	delete BRWORLDOBJECTPOINTER( &args[0] );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Enables or disables drawing of the bounding box for an object.
+
+	setBoundingBox(slWorldObject pointer, int).
+*/
+
+int brISetBoundingBox( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	int value = BRINT( &args[1] );
+
+	if ( value ) o->addDrawMode( DM_BOUND );
+	else o->removeDrawMode( DM_BOUND );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Enables or disables drawing of the axis lines for an object.
+
+	setBoundingBox(slWorldObject pointer, int).
+*/
+
+int brISetDrawAxis( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	int value = BRINT( &args[1] );
+
+	if ( !o ) {
+		slMessage( DEBUG_ALL, "null pointer passed to setDrawAxis\n" );
+		return EC_OK;
+	}
+
+	if ( value ) o->addDrawMode( DM_AXIS );
+	else o->removeDrawMode( DM_AXIS );
+
+	return EC_OK;
+}
+
+int brISetNeighborLines( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	int value = BRINT( &args[1] );
+
+	if ( value ) o->addDrawMode( DM_NEIGHBOR_LINES );
+	else o->removeDrawMode( DM_NEIGHBOR_LINES );
+
+	return EC_OK;
+}
+
+int brISetVisible( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	int visible = BRINT( &args[1] );
+
+	if ( !visible ) o->addDrawMode( DM_INVISIBLE );
+	else o->removeDrawMode( DM_INVISIBLE );
+
+	return EC_OK;
+}
+
+int brISetTexture( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	int value = BRINT( &args[1] );
+
+	o->setTexture( value );
+	o->setTextureMode( BBT_NONE );
+
+	return EC_OK;
+}
+
+int brISetTextureScale( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	float valueX = BRDOUBLE( &args[1] );
+	float valueY = BRDOUBLE( &args[2] );
+
+	if ( valueX < 0.0 ) {
+		slMessage( DEBUG_ALL, "warning: texture scale must be positive (%f)\n", valueX );
+		valueX = 0.001;
+	}
+
+	if ( valueY < 0.0 ) {
+		slMessage( DEBUG_ALL, "warning: texture scale must be positive (%f)\n", valueY );
+		valueY = 0.001;
+	}
+
+	o->setTextureScale( valueX, valueY );
+
+	return EC_OK;
+}
+
+int brISetBitmap( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	int texture = BRINT( &args[1] );
+
+	o->setTexture( texture );
+	o->setTextureMode( BBT_BITMAP );
+
+	return EC_OK;
+}
+
+int brISetBitmapRotation( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+
+	o->setBitmapRotation( RADTODEG( BRDOUBLE( &args[1] ) ) );
+
+	return EC_OK;
+}
+
+/*
+	step 1: compute the vector projection on the viewer's perspective plane.
+			this is c . (nc + v) where c is the camera vector, v is the
+			vector in question, and n is some constant.
+
+			it becomes n * c.c + c.v = 0
+
+			c.c = 1, so n = -c.v
+
+*/
+
+int brISetBitmapRotationTowardsVector( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	slVector *v = &BRVECTOR( &args[1] );
+	slVector offset, vdiff, vproj, up, axis;
+	double dot, rotation;
+
+	slVectorSet( &up, 0, 1, 0 );
+
+	slVectorCopy( &i->engine->camera->_location, &offset );
+	slVectorNormalize( &offset );
+	slVectorNormalize( v );
+
+	slVectorCross( &up, &offset, &axis );
+	slVectorCross( &offset, &axis, &up );
+
+	/* c.v = -n */
+
+	dot = -slVectorDot( &offset, v );
+
+	slVectorMul( &offset, dot, &vdiff );
+	slVectorAdd( &vdiff, v, &vproj );
+
+	// we need to get the scalar rotation of v about offset vector
+
+	rotation = acos( slVectorDot( &up, &vproj ) );
+
+	if ( slVectorDot( &axis, &vproj ) > 0.0 ) rotation = 2 * M_PI - rotation;
+
+	o->setBitmapRotation( RADTODEG( rotation ) );
+
+	return EC_OK;
+}
+
+int brISetAlpha( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+
+	o->setAlpha( BRDOUBLE( &args[1] ) );
+
+	return EC_OK;
+}
+
+int brISetLightmap( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	int value = BRINT( &args[1] );
+
+	o->setTexture( value );
+	o->setTextureMode( BBT_LIGHTMAP );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Sets the color of an object.
+*/
+
+int brISetColor( brEval args[], brEval *target, brInstance *i ) {
+	slWorldObject *o = BRWORLDOBJECTPOINTER( &args[0] );
+	slVector *color = &BRVECTOR( &args[1] );
+
+	o->setColor( color );
+
+	return EC_OK;
+}
 
 int brIGetMainCameraPointer( brEval args[], brEval *target, brInstance *i ) {
 
@@ -258,7 +572,7 @@ int brICameraSetOffset( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Set the size of the main camera's text.
 
 	void cameraSetTextScale(double x, double y).
@@ -269,7 +583,7 @@ int brICameraSetTextScale( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Set a string for display in the main camera.
 
 	void cameraSetText(string message, int slotNumber, double x, double y, vector color).
@@ -281,7 +595,7 @@ int brICameraSetText( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Sets the camera _zoom.
 
 	void cameraSetZoom(double zoom).
@@ -297,7 +611,7 @@ int brICameraSetZoom( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Returns the zoom of the camera.
 */
 
@@ -308,7 +622,7 @@ int brICameraGetZoom( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Returns the current offset of the camera relative to its target.
 
 	vector cameraGetOffset().
@@ -321,7 +635,7 @@ int brICameraGetOffset( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Returns the current target of the camera.
 
 	vector cameraGetTarget().
@@ -334,50 +648,11 @@ int brICameraGetTarget( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
- * \brief Sets the skybox images.
- * 
- * vector setSkyboxImages().
- */
+/*!
+	\brief Sets the background color of the display.
 
-int brISetSkyboxImages( brEval args[], brEval *target, brInstance *i ) {
-	brEvalListHead *head = BRLIST( &args[ 0 ] );
-
-	std::vector< char* > paths;
-	const std::vector< brEval > &l = head -> getVector();
-
-	if( i->engine->camera->_activateContextCallback && i->engine->camera->_activateContextCallback() != 0 )
-		return EC_OK;
-
-	if( l.size() != 6 ) {
-		slMessage( DEBUG_ALL, "setSkyboxImages requires a list of six strings\n" );
-		return EC_ERROR;
-	}
-
-	for( unsigned int n = 0; n < l.size(); n++ ) {
-		const brEval *e = &l[ n ];
-
-		if( e -> type() != AT_STRING ) {
-			slMessage( DEBUG_ALL, "setSkyboxImages requires a list of six strings\n" );
-			return EC_ERROR;
-		}
-
-		char *image = brFindFile( i -> engine, BRSTRING( e ), NULL );
-
-		if( image ) {
-			i -> engine -> world -> _skybox.loadImage( image, n );
-			slFree( image );
-		}
-	}
-
-	return EC_OK;
-}
-
-/**
- * \brief Sets the background color of the display.
- * 
- * vector setBackgroundColor().
- */
+	vector setBackgroundColor().
+*/
 
 int brISetBackgroundColor( brEval args[], brEval *target, brInstance *i ) {
 	i->engine->world->setBackgroundColor( &BRVECTOR( &args[0] ) );
@@ -389,26 +664,50 @@ int brISetBackgroundTextureColor( brEval args[], brEval *target, brInstance *i )
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Sets the background texture.
 
 	void setBackgroundTexture(image number).
 */
 
 int brISetBackgroundTexture( brEval args[], brEval *target, brInstance *i ) {
-	i->engine->world->setBackgroundTexture( ( (brImageData*)BRPOINTER( &args[0] ) ) -> getTexture() );
+	i->engine->world->setBackgroundTexture( BRINT( &args[0] ), 0 );
 	return EC_OK;
 }
 
-/**
- * \brief Sets a the position of the main light.
- * 
- * setLightPosition(vector position).
- */
+/*!
+	\brief Sets the background image.
+
+	void setBackgroundImage(image number).
+*/
+
+int brISetBackgroundImage( brEval args[], brEval *target, brInstance *i ) {
+	i->engine->world->setBackgroundTexture( BRINT( &args[0] ), 1 );
+	return EC_OK;
+}
+
+/*!
+	\brief Gets the position of the main light.
+
+	vector getLightPosition().
+*/
+
+int brIGetLightPosition( brEval args[], brEval *target, brInstance *i ) {
+
+	target->set( i->engine->camera->_lights[0].location );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Sets a the position of the main light.
+
+	setLightPosition(vector position).
+*/
 
 int brISetLightPosition( brEval args[], brEval *target, brInstance *i ) {
-	int n = BRINT( &args[ 1 ] );
-	slVectorCopy( &BRVECTOR( &args[0] ), &i->engine->world->_lights[ n ]._location );
+	slVectorCopy( &BRVECTOR( &args[0] ), &i->engine->camera->_lights[0].location );
+	i->engine->camera->_lights[0].changed = 1;
 	return EC_OK;
 }
 
@@ -423,20 +722,32 @@ int brISetDrawLightExposure( brEval args[], brEval *target, brInstance *i ) {
 }
 
 int brIGetLightExposureCamera( brEval args[], brEval *target, brInstance *i ) {
-	target->set( i->engine->world->getLightExposureCamera() );
+
+	target->set( i->engine->world->getLightExposureCamera( ) );
 
 	return EC_OK;
 }
+
+/*!
+	\brief Sets a the light exposure detection source.
+
+	setLightExposureSource(vector color).
+*/
 
 int brISetLightExposureSource( brEval args[], brEval *target, brInstance *i ) {
 	i->engine->world->setLightExposureSource( &BRVECTOR( &args[0] ) );
 	return EC_OK;
 }
 
-int brISetLightAmbientColor( brEval args[], brEval *target, brInstance *i ) {
-	int n = BRINT( &args[ 1 ] );
-	slVectorCopy( &BRVECTOR( &args[0] ), &i->engine->world->_lights[ n ]._ambient );
+/*!
+	\brief Sets a the ambient color for the light.
 
+	setLightAmbientColor(vector color).
+*/
+
+int brISetLightAmbientColor( brEval args[], brEval *target, brInstance *i ) {
+	slVectorCopy( &BRVECTOR( &args[0] ), &i->engine->camera->_lights[0].ambient );
+	i->engine->camera->_lights[0].changed = 1;
 	return EC_OK;
 }
 
@@ -446,25 +757,12 @@ int brISetLightAmbientColor( brEval args[], brEval *target, brInstance *i ) {
  */
 
 int brISetLightDiffuseColor( brEval args[], brEval *target, brInstance *i ) {
-	int n = BRINT( &args[ 1 ] );
-	slVectorCopy( &BRVECTOR( &args[0] ), &i->engine->world->_lights[ n ]._diffuse );
-
+	slVectorCopy( &BRVECTOR( &args[0] ), &i->engine->camera->_lights[0].diffuse );
+	i->engine->camera->_lights[0].changed = 1;
 	return EC_OK;
 }
 
-/**
- *	\brief Sets a the specular color for the light.
- *	setLightSpecularColor(vector color).
- */
-
-int brISetLightSpecularColor( brEval args[], brEval *target, brInstance *i ) {
-	int n = BRINT( &args[ 1 ] );
-	slVectorCopy( &BRVECTOR( &args[0] ), &i->engine->world->_lights[ n ]._specular );
-
-	return EC_OK;
-}
-
-/**
+/*!
 	\brief Sets a stationary object to be a shadow-catcher.
 
 	The plane normal specifies which plane of the object should catch the
@@ -484,8 +782,16 @@ int brISetShadowCatcher( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
+/*!
+	\brief Enables or disables point drawing for an object.
+*/
 
-/**
+int brISetDrawAsPoint( brEval args[], brEval *target, brInstance *i ) {
+	BRWORLDOBJECTPOINTER( &args[0] )->setDrawAsPoint( BRINT( &args[1] ) );
+	return EC_OK;
+}
+
+/*!
 	\brief Adds a rendered line between two objects.
 
 	void addObjectLine(slWorldObject pointer source, slWorldObject pointer dest, vector color, int style).
@@ -512,7 +818,7 @@ int brIAddObjectLine( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Sets the stipple pattern of an object line.
 */
 
@@ -554,21 +860,21 @@ int brIObjectLineSetTransparency( brEval args[], brEval *target, brInstance *i )
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Removes a specific object line between two objects.
 
 	void removeObjectLine(slWorldObject pointer source, slWorldObject pointer dest).
 */
 
 int brIRemoveObjectLine( brEval args[], brEval *target, brInstance *i ) {
-	slObjectLine *line = ( slObjectLine* )BRPOINTER( &args[0] );
+	slObjectConnection *line = ( slObjectConnection* )BRPOINTER( &args[0] );
 
 	i->engine->world->removeConnection( line );
 
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Sets whether bounds-only collision detection should be used.
 
 	void setBoundsOnlyCollisionDetection(int state).
@@ -582,7 +888,7 @@ int brISetBoundsOnlyCollisionDetection( brEval args[], brEval *target, brInstanc
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief Raytraces from an object in a given direction -- implementation not complete [?]
 */
 
@@ -602,7 +908,7 @@ int brIRaytrace( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
+/*!
 	\brief returns the value a IRSensor would return at the position location and the direction only objects in the neighborhood of the worldobject are detected
 	
 	double slWorldObject::irSense(slVector* direction, slVector* up, std::string sensorType)
@@ -766,13 +1072,14 @@ int brICreateUserSensor(brEval args[], brEval *target, brInstance *i) {
 
 /*@}*/
 
-/**
+/*!
 	\brief Initializes internal breve functions related to the simulated world.
 */
 
 void breveInitWorldFunctions( brNamespace *n ) {
-	brNewBreveCall( n, "worldSetERP", brIWorldSetERP, AT_NULL, AT_DOUBLE, 0 );
-	brNewBreveCall( n, "worldSetCFM", brIWorldSetCFM, AT_NULL, AT_DOUBLE, 0 );
+	brNewBreveCall( n, "worldLoadTigerFile", brIWorldLoadTigerFile, AT_POINTER, AT_STRING, AT_POINTER, 0 );
+
+	brNewBreveCall( n, "worldObjectGetLightExposure", brIWorldObjectGetLightExposure, AT_INT, AT_POINTER, 0 );
 
 	brNewBreveCall( n, "setStepFast", brISetStepFast, AT_NULL, AT_INT, 0 );
 	brNewBreveCall( n, "setStepFastIterations", brISetStepFastIterations, AT_NULL, AT_INT, 0 );
@@ -783,6 +1090,25 @@ void breveInitWorldFunctions( brNamespace *n ) {
 	brNewBreveCall( n, "getTime", brIGetTime, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "worldStep", brIWorldStep, AT_DOUBLE, AT_DOUBLE, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "updateNeighbors", brIUpdateNeighbors, AT_NULL, 0 );
+	brNewBreveCall( n, "getNeighbors", brIGetNeighbors, AT_LIST, AT_POINTER, 0 );
+	brNewBreveCall( n, "setNeighborhoodSize", brISetNeighborhoodSize, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
+
+	brNewBreveCall( n, "removeObject", brIRemoveObject, AT_NULL, AT_POINTER, 0 );
+
+	brNewBreveCall( n, "setBoundingBox", brISetBoundingBox, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setDrawAxis", brISetDrawAxis, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setNeighborLines", brISetNeighborLines, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setVisible", brISetVisible, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setTexture", brISetTexture, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setTextureScale", brISetTextureScale, AT_NULL, AT_POINTER, AT_DOUBLE, AT_DOUBLE, 0 );
+	brNewBreveCall( n, "setBitmap", brISetBitmap, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setBitmapRotation", brISetBitmapRotation, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
+	brNewBreveCall( n, "setBitmapRotationTowardsVector", brISetBitmapRotationTowardsVector, AT_NULL, AT_POINTER, AT_VECTOR, 0 );
+	brNewBreveCall( n, "setAlpha", brISetAlpha, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
+	brNewBreveCall( n, "setLightmap", brISetLightmap, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setColor", brISetColor, AT_NULL, AT_POINTER, AT_VECTOR, 0 );
+
+	brNewBreveCall( n, "loadTexture", brILoadTexture, AT_INT, AT_STRING, AT_INT, 0 );
 
 	brNewBreveCall( n, "getMainCameraPointer", brIGetMainCameraPointer, AT_POINTER, 0 );
 	brNewBreveCall( n, "cameraSetOffset", brICameraSetOffset, AT_NULL, AT_VECTOR, 0 );
@@ -795,22 +1121,23 @@ void breveInitWorldFunctions( brNamespace *n ) {
 	brNewBreveCall( n, "cameraSetText", brICameraSetText, AT_NULL, AT_STRING, AT_INT, AT_DOUBLE, AT_DOUBLE, AT_VECTOR, 0 );
 	brNewBreveCall( n, "cameraSetTextScale", brICameraSetTextScale, AT_NULL, AT_DOUBLE, 0 );
 
+	brNewBreveCall( n, "getLightPosition", brIGetLightPosition, AT_VECTOR, 0 );
+	brNewBreveCall( n, "setLightPosition", brISetLightPosition, AT_NULL, AT_VECTOR, 0 );
 	brNewBreveCall( n, "setDetectLightExposure", brISetDetectLightExposure, AT_NULL, AT_INT, 0 );
 	brNewBreveCall( n, "setDrawLightExposure", brISetDrawLightExposure, AT_NULL, AT_INT, 0 );
 	brNewBreveCall( n, "setLightExposureSource", brISetLightExposureSource, AT_NULL, AT_VECTOR, 0 );
 	brNewBreveCall( n, "getLightExposureCamera", brIGetLightExposureCamera, AT_POINTER, 0 );
 
 	brNewBreveCall( n, "setBackgroundColor", brISetBackgroundColor, AT_NULL, AT_VECTOR, 0 );
-	brNewBreveCall( n, "setBackgroundTexture", brISetBackgroundTexture, AT_NULL, AT_POINTER, 0 );
+	brNewBreveCall( n, "setBackgroundTexture", brISetBackgroundTexture, AT_NULL, AT_INT, 0 );
+	brNewBreveCall( n, "setBackgroundImage", brISetBackgroundImage, AT_NULL, AT_INT, 0 );
 	brNewBreveCall( n, "setBackgroundTextureColor", brISetBackgroundTextureColor, AT_NULL, AT_VECTOR, 0 );
-	brNewBreveCall( n, "setSkyboxImages", brISetSkyboxImages, AT_NULL, AT_LIST, 0 );
 
 	brNewBreveCall( n, "setShadowCatcher", brISetShadowCatcher, AT_NULL, AT_POINTER, AT_VECTOR, 0 );
+	brNewBreveCall( n, "setDrawAsPoint", brISetDrawAsPoint, AT_NULL, AT_POINTER, AT_INT, 0 );
 
-	BRBREVECALL( n, brISetLightPosition, AT_NULL, AT_VECTOR, AT_INT, 0 );
-	BRBREVECALL( n, brISetLightAmbientColor, AT_NULL, AT_VECTOR, AT_INT, 0 );
-	BRBREVECALL( n, brISetLightDiffuseColor, AT_NULL, AT_VECTOR, AT_INT, 0 );
-	BRBREVECALL( n, brISetLightSpecularColor, AT_NULL, AT_VECTOR, AT_INT, 0 );
+	brNewBreveCall( n, "setLightAmbientColor", brISetLightAmbientColor, AT_NULL, AT_VECTOR, 0 );
+	brNewBreveCall( n, "setLightDiffuseColor", brISetLightDiffuseColor, AT_NULL, AT_VECTOR, 0 );
 
 	brNewBreveCall( n, "addObjectLine", brIAddObjectLine, AT_POINTER, AT_POINTER, AT_POINTER, AT_VECTOR, AT_STRING, 0 );
 	brNewBreveCall( n, "removeObjectLine", brIRemoveObjectLine, AT_NULL, AT_POINTER, 0 );
@@ -822,6 +1149,7 @@ void breveInitWorldFunctions( brNamespace *n ) {
 
 	brNewBreveCall( n, "setBoundsOnlyCollisionDetection", brISetBoundsOnlyCollisionDetection, AT_NULL, AT_INT, 0 );
 
+	brNewBreveCall( n, "setCollisionProperties", brISetCollisionProperties, AT_NULL, AT_POINTER, AT_DOUBLE, AT_DOUBLE, AT_DOUBLE, 0 );
 
 	brNewBreveCall( n, "raytrace", brIRaytrace, AT_VECTOR, AT_POINTER, AT_VECTOR, AT_VECTOR, 0 );
 

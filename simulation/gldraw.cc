@@ -1,30 +1,292 @@
+/*****************************************************************************
+ *                                                                           *
+ * The breve Simulation Environment                                          *
+ * Copyright (C) 2000, 2001, 2002, 2003 Jonathan Klein                       *
+ *                                                                           *
+ * This program is free software; you can redistribute it and/or modify      *
+ * it under the terms of the GNU General Public License as published by      *
+ * the Free Software Foundation; either version 2 of the License, or         *
+ * (at your option) any later version.                                       *
+ *                                                                           *
+ * This program is distributed in the hope that it will be useful,           *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
+ * GNU General Public License for more details.                              *
+ *                                                                           *
+ * You should have received a copy of the GNU General Public License         *
+ * along with this program; if not, write to the Free Software               *
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
+ *****************************************************************************/
 
-//
-// FULLY DEPRECATED -- left here for reference and for the good memories.
-//
+#include <vector>
 
+#define MAX(x, y) ((x)>(y)?(x):(y))
 
+#define BUFFER_SIZE 512
+
+#include "simulation.h"
+#include "gldraw.h"
+#include "drawcommand.h"
+#include "world.h"
+#include "lightdetector.h"
+#include "tiger.h"
+#include "shadow.h"
+#include "asciiart.h"
 
 #define REFLECTION_ALPHA	.75
 
 #define LIGHTSIZE 64
 
-#define SELECTION_BUFFER_SIZE 512
+double gReflectionAlpha;
+
+int glActive = 0;
+
+/*!
+	\brief Calls glMultMatrix with 3x3 orientation slMatrix.
+
+	Swaps the rows and columns of the matrix (since GL matrices
+	are the opposite of SL matrices).
+*/
+
+void slMatrixGLMult( double m[3][3] ) {
+	double d[4][4];
+
+	d[0][0] = m[0][0];
+	d[0][1] = m[1][0];
+	d[0][2] = m[2][0];
+	d[0][3] = 0;
+	d[1][0] = m[0][1];
+	d[1][1] = m[1][1];
+	d[1][2] = m[2][1];
+	d[1][3] = 0;
+	d[2][0] = m[0][2];
+	d[2][1] = m[1][2];
+	d[2][2] = m[2][2];
+	d[2][3] = 0;
+	d[3][0] = 0;
+	d[3][1] = 0;
+	d[3][2] = 0;
+	d[3][3] = 1;
+
+	glMultMatrixd(( double * )d );
+}
+
+/*!
+	\brief Creates the texture used for the "lightmaps".
+*/
+
+void slMakeLightTexture( GLubyte *lTexture, GLubyte *dlTexture ) {
+	double x, y, temp, dtemp;
+	int i, j;
+
+	for ( i = 0; i < LIGHTSIZE; i++ ) {
+		for ( j = 0; j < LIGHTSIZE; j++ ) {
+			x = ( float )( i - LIGHTSIZE / 2.0 ) / ( float )( LIGHTSIZE / 2.0 );
+			y = ( float )( j - LIGHTSIZE / 2.0 ) / ( float )( LIGHTSIZE / 2.0 );
+
+			temp = ( 1.0f - ( float )( sqrt(( x * x ) + ( y * y ) ) ) ) * 1.2;
+			dtemp = temp + slRandomDouble() / 10.0;
+
+			if ( temp > 1.0f ) temp = 1.0f;
+
+			if ( temp < 0.0f ) temp = 0.0f;
+
+			if ( dtemp > 1.0f ) dtemp = 1.0f;
+
+			if ( dtemp < 0.0f ) dtemp = 0.0f;
+
+			lTexture[( i * LIGHTSIZE * 2 ) + j * 2] = ( unsigned char )( 255.0f * temp * temp );
+
+			lTexture[( i * LIGHTSIZE * 2 ) + ( j * 2 ) + 1] = ( unsigned char )( 255.0f * temp * temp );
+
+			dlTexture[( i * LIGHTSIZE * 2 ) + j * 2] = ( unsigned char )( 255.0f * dtemp * dtemp );
+
+			dlTexture[( i * LIGHTSIZE * 2 ) + ( j * 2 ) + 1] = ( unsigned char )( 255.0f * temp * temp );
+		}
+	}
+}
+
+void slInitGL( slWorld *w, slCamera *c ) {
+	GLfloat specularColor[4] = { 0.2, 0.2, 0.2, 0.0 };
+	GLubyte lt[LIGHTSIZE * LIGHTSIZE * 2];
+	GLubyte glt[LIGHTSIZE * LIGHTSIZE * 2];
+
+	glActive = 1;
+
+	gReflectionAlpha = REFLECTION_ALPHA;
+
+	slMakeLightTexture( &lt[0], &glt[0] );
+
+	slUpdateTexture( c, slTextureNew( c ), gBrickImage, TEXTURE_WIDTH, TEXTURE_HEIGHT, GL_RGBA );
+	slUpdateTexture( c, slTextureNew( c ), gPlaid, TEXTURE_WIDTH, TEXTURE_HEIGHT, GL_RGBA );
+	slUpdateTexture( c, slTextureNew( c ), lt, LIGHTSIZE, LIGHTSIZE, GL_LUMINANCE_ALPHA );
+	slUpdateTexture( c, slTextureNew( c ), glt, LIGHTSIZE, LIGHTSIZE, GL_LUMINANCE_ALPHA );
+
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glEnable( GL_DEPTH_TEST );
+
+	glEnable( GL_CULL_FACE );
+	glCullFace( GL_BACK );
+
+	glMatrixMode( GL_MODELVIEW );
+	glLoadIdentity();
+
+	glEnable( GL_LINE_SMOOTH );
+	glEnable( GL_POINT_SMOOTH );
+	glLineWidth( 2 );
+
+	glPolygonOffset( -4.0f, -1.0f );
+
+	glHint( GL_LINE_SMOOTH_HINT, GL_NICEST );
+	glHint( GL_POLYGON_SMOOTH_HINT, GL_NICEST );
+	glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+	glEnable( GL_COLOR_MATERIAL );
+	glColorMaterial( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
+
+	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	glPixelStorei( GL_PACK_ALIGNMENT, 1 );
+
+	slClearGLErrors( "init" );
+
+	glMaterialfv( GL_FRONT_AND_BACK, GL_SPECULAR, specularColor );
+	glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 90 );
+}
+
+/*!
+	\brief Initializes 3 sphere draw lists.
+*/
+
+void slCompileSphereDrawList( int l ) {
+	GLUquadricObj *quad;
+
+	for ( int n = 0; n < SPHERE_RESOLUTIONS; ++n ) {
+		glNewList( l + n, GL_COMPILE );
+
+		quad = gluNewQuadric();
+
+		gluQuadricTexture( quad, GL_TRUE );
+		gluQuadricOrientation( quad, GLU_OUTSIDE );
+		gluSphere( quad, 100.0, 6 + n * 3, 6 + n * 3 );
+
+		gluDeleteQuadric( quad );
+
+		glEndList();
+	}
+}
+
+/*!
+	\brief Center the given pixels in a square buffer.
+
+	Used for textures, which must be powers of two.
+*/
+
+void slCenterPixelsInSquareBuffer( unsigned char *pixels, int width, int height, unsigned char *buffer, int newwidth, int newheight ) {
+	int xstart, ystart;
+	int y;
+
+	xstart = ( newwidth - width ) / 2;
+	ystart = ( newheight - height ) / 2;
+
+	for ( y = 0; y < height; y++ )
+		memcpy( &buffer[( y + ystart ) *( newwidth * 4 ) + ( xstart * 4 )],
+		        &pixels[y * width * 4],
+		        width * 4 );
+}
+
+/*!
+	\brief Allocates space for a new texture.
+*/
+
+unsigned int slTextureNew( slCamera *c ) {
+	GLuint texture;
+
+	if ( !glActive ) return 0;
+
+	if ( c->_activateContextCallback ) c->_activateContextCallback();
+
+	glGenTextures( 1, &texture );
+
+	return texture;
+}
+
+void slTextureFree( slCamera *c, const unsigned int n ) {
+	if ( !glActive )
+		return;
+
+	if ( c->_activateContextCallback ) c->_activateContextCallback();
+
+	glDeleteTextures( 1, ( GLuint * )&n );
+}
+
+/*!
+	\brief Adds (or updates) a texture to the camera.
+
+	Returns 0 if there was space, or -1 if all texture positions are used.
+*/
+
+int slUpdateTexture( slCamera *c, GLuint texture, unsigned char *pixels, int width, int height, int format ) {
+	unsigned char *newpixels = NULL;
+	int newheight, newwidth;
+
+	if ( !glActive )
+		return -1;
+
+	if ( c->_activateContextCallback )
+		c->_activateContextCallback();
+
+	newwidth = slNextPowerOfTwo( width );
+
+	newheight = slNextPowerOfTwo( height );
+
+	newwidth = newheight = MAX( newwidth, newheight );
+
+	if ( newwidth != width || newheight != height ) {
+		newpixels = new unsigned char[newwidth * newheight * 4];
+		memset( newpixels, 0, newwidth * newheight * 4 );
+
+		slCenterPixelsInSquareBuffer( pixels, width, height, newpixels, newwidth, newheight );
+	} else
+		newpixels = pixels;
+
+	glBindTexture( GL_TEXTURE_2D, texture );
+
+	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+
+	glTexImage2D( GL_TEXTURE_2D, 0, format, newwidth, newheight, 0, format, GL_UNSIGNED_BYTE, newpixels );
+
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+
+	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+
+	if ( newpixels != pixels )
+		delete[] newpixels;
+
+	if ( slClearGLErrors( "error adding texture" ) )
+		return -1;
+
+	return texture;
+}
 
 int slCamera::select( slWorld *w, int x, int y ) {
+
 	slVector cam;
 	GLuint *selections;
-	GLuint namesInHit, selection_buffer[ SELECTION_BUFFER_SIZE ];
+	GLuint namesInHit, selection_buffer[ BUFFER_SIZE ];
 	GLint hits, viewport[4];
 	unsigned int min, nearest = 0xffffffff;
 	unsigned int hit = w->_objects.size() + 1;
 
-	viewport[ 0 ] = _originx;
-	viewport[ 1 ] = _originy;
-	viewport[ 2 ] = _width;
-	viewport[ 3 ] = _height;
+	viewport[0] = _originx;
+	viewport[1] = _originy;
+	viewport[2] = _width;
+	viewport[3] = _height;
 
-	glSelectBuffer( SELECTION_BUFFER_SIZE, selection_buffer );
+	glSelectBuffer( BUFFER_SIZE, selection_buffer );
 	glRenderMode( GL_SELECT );
 	slClearGLErrors( "selected buffer" );
 
@@ -37,6 +299,7 @@ int slCamera::select( slWorld *w, int x, int y ) {
 
 	gluPickMatrix(( GLdouble )x, ( GLdouble )( viewport[3] - y ), 5.0, 5.0, viewport );
 	slClearGLErrors( "picked matrix" );
+
 	gluPerspective( 40.0, _fov, _frontClip, _zClip );
 
 	// since the selection buffer uses unsigned ints for names, we can't
@@ -89,12 +352,12 @@ int slCamera::select( slWorld *w, int x, int y ) {
 	return hit;
 }
 
-/**
- * Computes the vector corresponding to a drag in the display.
- * 
- * Computes the location in the same plane as dragVertex that the mouse
- * is being dragged to when the window mouse coordinates are x and y.
- */
+/*!
+	\brief Computes the vector corresponding to a drag in the display.
+
+	Computes the location in the same plane as dragVertex that the mouse
+	is being dragged to when the window mouse coordinates are x and y.
+*/
 
 int slCamera::vectorForDrag( slWorld *w, slVector *dragVertex, int x, int y, slVector *dragVector ) {
 	slPlane plane;
@@ -118,12 +381,9 @@ int slCamera::vectorForDrag( slWorld *w, slVector *dragVertex, int x, int y, slV
 
 	glViewport( _originx, _originy, _width, _height );
 	glMatrixMode( GL_PROJECTION );
-
-	glPushMatrix();
-
 	glLoadIdentity();
 
-	gluPerspective( 80.0, _fov, _frontClip, _zClip );
+	gluPerspective( 40.0, _fov, _frontClip, _zClip );
 
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
@@ -144,7 +404,7 @@ int slCamera::vectorForDrag( slWorld *w, slVector *dragVertex, int x, int y, slV
 	// use gluUnProject to get the point in object space where we are clicking
 	// (and at the far reach of our zClip variable).
 
-	gluUnProject( wx, wy, 1.0, model, proj, view, &oxf, &oyf, &ozf );
+	( void )gluUnProject( wx, wy, 1.0, model, proj, view, &oxf, &oyf, &ozf );
 
 	end.x = oxf;
 	end.y = oyf;
@@ -185,7 +445,7 @@ int slCamera::vectorForDrag( slWorld *w, slVector *dragVertex, int x, int y, slV
 void slCamera::renderScene( slWorld *w, int crosshair ) {
 	std::vector< slCamera* >::iterator ci;
 
-	if ( w->detectLightExposure() && !w->drawLightExposure() )
+	if ( w->_detectLightExposure && !w->_drawLightExposure )
 		detectLightExposure( w, 200, NULL );
 
 	renderWorld( w, crosshair, 0 );
@@ -193,7 +453,7 @@ void slCamera::renderScene( slWorld *w, int crosshair ) {
 	for ( ci = w->_cameras.begin(); ci != w->_cameras.end(); ci++ )
 		if ( *ci != this )( *ci )->renderWorld( w, 0, 1 );
 
-	if ( w->detectLightExposure() && w->drawLightExposure() )
+	if ( w->_detectLightExposure && w->_drawLightExposure )
 		detectLightExposure( w, 200, NULL );
 }
 
@@ -201,12 +461,9 @@ void slCamera::renderWorld( slWorld *w, int crosshair, int scissor ) {
 	slVector cam;
 	int flags = 0;
 
-	if ( !w ) 
-		return;
+	if ( !w ) return;
 
 	glViewport( _originx, _originy, _width, _height );
-
-	glEnable( GL_BLEND );
 
 	if ( scissor ) {
 		flags |= DO_NO_AXIS | DO_NO_BOUND;
@@ -227,14 +484,9 @@ void slCamera::renderWorld( slWorld *w, int crosshair, int scissor ) {
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 
-	drawFog();
-
 	if ( w->backgroundTexture > 0 && !( flags & DO_OUTLINE ) )
 		drawBackground( w );
 
-	glEnable( GL_LIGHTING );
-
-	glMatrixMode( GL_PROJECTION );
 	gluPerspective( 40.0, _fov, _frontClip, _zClip );
 
 	glEnable( GL_DEPTH_TEST );
@@ -251,51 +503,41 @@ void slCamera::renderWorld( slWorld *w, int crosshair, int scissor ) {
 
 	updateFrustum();
 
-	w -> _skybox.draw( &this );
+	drawFog();
 
-	//
-	// Lines and draw-commands are special objects which will be rendered before lighting is setup
-	//
-
-	std::vector<slDrawCommandList*>::iterator di;
-	for ( di = w->_drawings.begin(); di != w->_drawings.end(); di++ )( *di )->draw( this );
-
-	//
-	// Setup lighting and effects for the normal objects
-	//
-
-	bool flatShadows = !_drawShadowVolumes && _drawShadow && _shadowCatcher;
-
-	setupLights( _drawShadowVolumes );
-
-	int reflectionFlags = 0;
+	// do a pass through to grab all the billboards--we want to sort them
+	// so that they can be rendered back to front and blended correctly
 
 	if ( _drawLights ) {
-		if ( _drawReflection || flatShadows )
-			stencilFloor( w );
+		if ( _drawShadowVolumes ) drawLights( 1 );
+		else drawLights( 0 );
+
+		if ( _drawReflection || _drawShadow ) stencilFloor( );
 
 		if ( _drawReflection && !( flags & DO_OUTLINE ) ) {
 			slVector toCam;
 
-			if ( !_drawShadowVolumes ) 
-				gReflectionAlpha = REFLECTION_ALPHA;
-			else 
-				gReflectionAlpha = REFLECTION_ALPHA - 0.1;
+			if ( !_drawShadowVolumes ) gReflectionAlpha = REFLECTION_ALPHA;
+			else gReflectionAlpha = REFLECTION_ALPHA - 0.1;
 
 			slVectorSub( &cam, &_shadowPlane.vertex, &toCam );
 
 			if ( slVectorDot( &toCam, &_shadowPlane.normal ) > 0.0 ) {
-				reflectionPass( w, _drawShadowVolumes );
-				reflectionFlags = DO_NO_SHADOWCATCHER;
+				reflectionPass( w );
+
+				if ( _drawShadowVolumes ) drawLights( 1 );
 			}
 		}
-	} 
+	} else
+		glDisable( GL_LIGHTING );
 
-	renderObjects( w, flags | reflectionFlags | DO_NO_ALPHA );
+	// render the mobile objects
+
+	renderObjects( w, flags | DO_NO_ALPHA );
 
 	renderLines( w );
 
-	slClearGLErrors( "drew non-alpha bodies" );
+	slClearGLErrors( "drew multibodies and lines" );
 
 	// now we do transparent objects and billboards.  they have to come last
 	// because they are blended.
@@ -305,32 +547,31 @@ void slCamera::renderWorld( slWorld *w, int crosshair, int scissor ) {
 		renderBillboards( flags );
 	}
 
-	std::vector< slPatchGrid* >::iterator pi;
+	std::vector<slPatchGrid*>::iterator pi;
 
 	for ( pi = w->_patches.begin(); pi != w->_patches.end(); pi++ )
 		( *pi )->draw( this );
 
 	if ( _drawLights ) {
-		if ( _drawShadowVolumes ) 
-			renderShadowVolume( w );
-		else if ( flatShadows ) 
-			drawFlatShadows( w );
+		if ( _drawShadowVolumes ) renderShadowVolume( w );
+		else if ( _drawShadow ) shadowPass( w );
 	}
+
+	std::vector<slDrawCommandList*>::iterator di;
+
+	for ( di = w->_drawings.begin(); di != w->_drawings.end(); di++ )( *di )->draw( this );
 
 	glDepthMask( GL_FALSE );
 
 	renderObjects( w, flags | DO_ONLY_ALPHA );
 
-	slClearGLErrors( "drew alpha bodies" );
-
 	glDepthMask( GL_TRUE );
 
 	renderLabels( w );
 
-	slClearGLErrors( "rendered labels" );
-
 #if HAVE_LIBENET
 	slDrawNetsimBounds( w );
+
 #endif
 
 	if ( w->gisData ) w->gisData->draw( this );
@@ -341,8 +582,7 @@ void slCamera::renderWorld( slWorld *w, int crosshair, int scissor ) {
 
 	glLoadIdentity();
 
-	if ( _drawText ) 
-		renderText( w, crosshair );
+	if ( _drawText ) renderText( w, crosshair );
 
 	if ( _drawText && crosshair && !scissor ) {
 		glPushMatrix();
@@ -381,9 +621,6 @@ void slCamera::renderWorld( slWorld *w, int crosshair, int scissor ) {
 
 		glDisable( GL_SCISSOR_TEST );
 	}
-
-	if( _drawBlur ) 
-		readbackToTexture();
 }
 
 void slCamera::clear( slWorld *w ) {
@@ -392,59 +629,42 @@ void slCamera::clear( slWorld *w ) {
 	else
 		glClearColor( w->backgroundColor.x, w->backgroundColor.y, w->backgroundColor.z, 1.0 );
 
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	if ( !_drawBlur )
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	else {
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-	if( _drawBlur ) { 
-		setBlendMode( SR_ALPHABLEND );
-
-		glColor4f( 1.0f, 1.0f, 1.0f, _blurFactor );
+		glColor4f( w->backgroundColor.x, w->backgroundColor.y, w->backgroundColor.z, 0.5f - ( _blurFactor / 2.0 ) );
 
 		glMatrixMode( GL_PROJECTION );
 		glPushMatrix();
 		glLoadIdentity();
-		glOrtho( -1, 1, -1, 1, -1, 1 );
-
-		glDepthMask( GL_FALSE );
-
-		glEnable( GL_TEXTURE_2D );
-		_readbackTexture -> bind();
-
-		GLenum mode = GL_NEAREST;
-
-		if( _readbackTexture -> _texX != _width || _readbackTexture -> _texY != _height )
-			mode = GL_LINEAR;
-
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mode );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mode );
-
-		if( _readbackTexture -> _texX != 0 && _readbackTexture -> _texY != 0 ) {
-			glBegin( GL_TRIANGLE_STRIP );
-
-			glTexCoord2f( 0, 0 );
-			glVertex2f( -1, -1 );
-			glTexCoord2f( _readbackTexture -> _unitX, 0 );
-			glVertex2f(  1, -1 );
-			glTexCoord2f( 0, _readbackTexture -> _unitY );
-			glVertex2f( -1,  1 );
-			glTexCoord2f( _readbackTexture -> _unitX, _readbackTexture -> _unitY );
-			glVertex2f(  1,  1 );
-
-			glEnd();
-		}
-
-		_readbackTexture -> unbind();
-
+		gluPerspective( 40.0, _fov, _frontClip, _zClip );
+		glBegin( GL_TRIANGLE_STRIP );
+		glVertex3f( -5, -4, -3 );
+		glVertex3f( 5, -4, -3 );
+		glVertex3f( -5, 4, -3 );
+		glVertex3f( 5, 4, -3 );
+		glEnd();
 		glPopMatrix();
-		glDepthMask( GL_TRUE );
+		glDisable( GL_BLEND );
+		glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	}
 }
 
 void slCamera::drawFog() {
 	if ( _drawFog ) {
-		GLfloat color[4] = { _fogColor.x, _fogColor.y, _fogColor.z, 1.0 };
+		GLfloat color[4];
+
+		color[0] = _fogColor.x;
+		color[1] = _fogColor.y;
+		color[2] = _fogColor.z;
+		color[3] = 1.0;
 
 		glEnable( GL_FOG );
 		glFogf( GL_FOG_DENSITY, _fogIntensity );
+		glHint( GL_FOG_HINT, GL_NICEST );
 		glFogi( GL_FOG_MODE, GL_LINEAR );
 		glFogf( GL_FOG_START, _fogStart ) ;
 		glFogf( GL_FOG_END, _fogEnd );
@@ -458,22 +678,17 @@ void slCamera::drawFog() {
 	\brief Puts 1 into the stencil buffer where the shadows and reflections should fall.
 */
 
-void slCamera::stencilFloor( slWorld *inWorld ) {
+void slCamera::stencilFloor() {
 	glEnable( GL_STENCIL_TEST );
 	glDisable( GL_DEPTH_TEST );
-	glDepthMask( GL_FALSE );
-
-	// glDepthFunc( GL_ALWAYS );
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 	glStencilFunc( GL_ALWAYS, 1, 0xffffffff );
-	glStencilOp( GL_REPLACE, GL_REPLACE, GL_REPLACE );
+	glStencilOp( GL_ZERO, GL_ZERO, GL_REPLACE );
 
-	renderObjects( inWorld, DO_ONLY_SHADOWCATCHER );
+	_shadowCatcher->draw( this );
 
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 	glEnable( GL_DEPTH_TEST );
-	// glDepthFunc( GL_LESS );
-	glDepthMask( GL_TRUE );
 	glDisable( GL_STENCIL_TEST );
 }
 
@@ -481,77 +696,74 @@ void slCamera::stencilFloor( slWorld *inWorld ) {
 	\brief Draws a reflection of all multibody objects whereever the stencil buffer is equal to 1.
 */
 
-void slCamera::reflectionPass( slWorld *w, bool inWillDoShadowVolumes ) {
+void slCamera::reflectionPass( slWorld *w ) {
 	glPushMatrix();
 
 	glScalef( 1.0, -1.0, 1.0 );
 	glTranslatef( 0.0, -2 * _shadowPlane.vertex.y, 0.0 );
+	drawLights( 0 );
 
-	glEnable( GL_CULL_FACE );
 	glCullFace( GL_FRONT );
 
 	// render whereever the buffer is 1, but don't change the values
 
 	glEnable( GL_DEPTH_TEST );
+	glEnable( GL_NORMALIZE );
 	glEnable( GL_STENCIL_TEST );
+	glEnable( GL_BLEND );
 
-	glStencilFunc( GL_LESS, 0, 0xffffffff );
+	glStencilFunc( GL_EQUAL, 1, 0xffffffff );
 
-	GLdouble plane[] = { 0, 1, 0, -2 * _shadowPlane.vertex.y };
-	glEnable( GL_CLIP_PLANE0 );						
-	glClipPlane( GL_CLIP_PLANE0, plane );	
+	glStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
+	renderObjects( w, DO_NO_STATIONARY | DO_NO_BOUND | DO_NO_AXIS | DO_NO_TERRAIN );
 
-	glStencilOp( GL_INCR, GL_INCR, GL_INCR );
-	renderObjects( w, DO_NO_SHADOWCATCHER | DO_NO_BOUND | DO_NO_AXIS | DO_NO_TERRAIN );
 	renderBillboards( 0 );
+
+	glDisable( GL_NORMALIZE );
+
+	glCullFace( GL_BACK );
+	glDisable( GL_STENCIL_TEST );
+	glDisable( GL_BLEND );
 
 	glPopMatrix();
 
-	glCullFace( GL_BACK );
-	glDisable( GL_CLIP_PLANE0 );
-
-	glStencilFunc( GL_EQUAL, 1, 0xffffffff );
-	glStencilOp( GL_DECR, GL_DECR, GL_KEEP );
-	renderObjects( w, DO_ONLY_SHADOWCATCHER );
-
-	glDisable( GL_STENCIL_TEST );
-
-
-	setBlendMode( SR_ALPHABLEND );
-
-	renderObjects( w, DO_ONLY_SHADOWCATCHER, inWillDoShadowVolumes ? REFLECTION_ALPHA / 2.0 : REFLECTION_ALPHA );
+	drawLights( 0 );
 }
 
-/**
- * \brief Shadows multibody objects on to the specified shadow plane, expecting
- * that the stencil buffer has already been set to 3.
- *
- * The stencil buffer will be modified to 2 where the shadows are drawn.
- */
+/*!
+	\brief Shadows multibody objects on to the specified shadow plane, expecting
+	that the stencil buffer has already been set to 3.
 
-void slCamera::drawFlatShadows( slWorld *w ) {
+	The stencil buffer will be modified to 2 where the shadows are
+	drawn.
+*/
+
+void slCamera::shadowPass( slWorld *w ) {
 	GLfloat shadowMatrix[4][4];
-	slShadowMatrix( shadowMatrix, &_shadowPlane, &_lights[ 0 ]._location );
+
+	slShadowMatrix( shadowMatrix, &_shadowPlane, &_lights[0].location );
 
 	glPushAttrib( GL_ENABLE_BIT );
 
 	glEnable( GL_STENCIL_TEST );
 	glEnable( GL_DEPTH_TEST );
-
 	glStencilFunc( GL_LESS, 0, 0xffffffff );
-	glStencilOp( GL_REPLACE, GL_REPLACE, GL_REPLACE );
+	glStencilOp( GL_ZERO, GL_ZERO, GL_REPLACE );
+
+	slClearGLErrors( "about to enable polygon" );
 
 	glEnable( GL_POLYGON_OFFSET_FILL );
 
-	setBlendMode( SR_ALPHABLEND );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	glColor4f( 0.0, 0.0, 0.0, 0.3 );
 
 	glPushMatrix();
-	glMultMatrixf( (GLfloat*)shadowMatrix );
+	glMultMatrixf(( GLfloat * )shadowMatrix );
+	renderObjects( w, DO_NO_COLOR | DO_NO_TEXTURE | DO_NO_STATIONARY | DO_NO_BOUND | DO_NO_AXIS | DO_NO_TERRAIN );
 	glDisable( GL_LIGHTING );
 
-	renderObjects( w, DO_NO_COLOR | DO_NO_TEXTURE | DO_NO_SHADOWCATCHER | DO_NO_BOUND | DO_NO_AXIS | DO_NO_TERRAIN );
 	renderBillboards( DO_NO_COLOR | DO_NO_BOUND );
 
 	glPopMatrix();
@@ -566,12 +778,12 @@ void slCamera::drawFlatShadows( slWorld *w ) {
 void slCamera::renderText( slWorld *w, int crosshair ) {
 	double fromLeft;
 	unsigned int n;
-	char textStr[ 128 ];
+	char textStr[128];
 
 	glDisable( GL_DEPTH_TEST );
-	glDisable( GL_TEXTURE_2D );
-	glColor4f( _textColor.x, _textColor.y, _textColor.z, 1.0 );
-
+	glDisable( GL_STENCIL_TEST );
+	glDisable( GL_BLEND );
+	glColor4f( 0.0, 0.0, 0.0, 1.0 );
 	snprintf( textStr, sizeof( textStr ), "%.2f", w->_age );
 
 	fromLeft = -1.0 + ( 5.0 / _width );
@@ -592,29 +804,64 @@ void slCamera::renderText( slWorld *w, int crosshair ) {
 	}
 }
 
-/**
- * \brief Draw a texture as a background.
- */
+/*!
+	\brief Draw a texture as a background.
+*/
 
 void slCamera::drawBackground( slWorld *w ) {
 	static float transX = 0.0, transY = 0.0;
 
+	GLfloat textColor[4];
+
 	glDisable( GL_DEPTH_TEST );
-	glDepthMask( GL_FALSE );
+
+	glPushAttrib( GL_LIGHTING_BIT | GL_TRANSFORM_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT );
+
+	glEnable( GL_BLEND );
 
 	glColor4f( w->backgroundTextureColor.x, w->backgroundTextureColor.y, w->backgroundTextureColor.z, 1.0 );
 
+	textColor[0] = w->backgroundTextureColor.x;
+
+	textColor[1] = w->backgroundTextureColor.y;
+
+	textColor[2] = w->backgroundTextureColor.z;
+
+	textColor[3] = 1.0;
+
 	glDisable( GL_LIGHTING );
 
+	glMatrixMode( GL_TEXTURE );
+
+	glLoadIdentity();
+
+	glPushMatrix();
+
+	// this is likely an Apple driver bug, but on my machine it's
+	// taking the color from the glColor, while on Nils' machine it's
+	// taking in the color from the GL_TEXTURE_ENV_COLOR--we'll just
+	// set both.
+
+	if ( w->isBackgroundImage ) {
+		textColor[0] = 1.0;
+		textColor[1] = 1.0;
+		textColor[2] = 1.0;
+		glEnable( GL_TEXTURE_2D );
+		glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
+		glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, textColor );
+	} else {
+		glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, textColor );
+		glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND );
+	}
+
 	transX += _backgroundScrollX;
+
 	transY += _backgroundScrollY;
 
-	glMatrixMode( GL_TEXTURE );
-	glPushMatrix();
-	glTranslatef( transX, transY, 0 );
-	
-	w -> backgroundTexture -> bind();
-	
+	glTranslated( transX - ( .8 * 2*_ry ), ( .8 * 2*_rx ) - transY, 0 );
+	glDepthRange( 1, .9 );
+	glEnable( GL_TEXTURE_2D );
+	glBindTexture( GL_TEXTURE_2D, w->backgroundTexture );
 	glBegin( GL_QUADS );
 	glTexCoord2f( .0, .0 );
 	glVertex3f( -1, -1, -.1 );
@@ -625,12 +872,11 @@ void slCamera::drawBackground( slWorld *w ) {
 	glTexCoord2f( .0, 1.0 );
 	glVertex3f( -1, 1, -.1 );
 	glEnd();
-	
-	w -> backgroundTexture -> unbind();
+	glDepthRange( 0, 1 );
 
+	glDisable( GL_BLEND );
 	glPopMatrix();
-
-	glDepthMask( GL_TRUE  );
+	glPopAttrib();
 	glEnable( GL_DEPTH_TEST );
 }
 
@@ -658,21 +904,114 @@ void slCamera::renderLabels( slWorld *w ) {
 	glEnable( GL_DEPTH_TEST );
 }
 
-void slCamera::setBlendMode( slRenderBlendMode inBlendMode ) {
-	switch( inBlendMode ) {
-		case SR_ALPHABLEND:
-			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-			break;
-		case SR_LIGHTBLEND:
-			glBlendFunc( GL_ONE, GL_ONE );
-			break;
+/*!
+	\brief Renders preprocessed billboards.
+*/
+
+void slCamera::renderBillboards( int flags ) {
+	slVector normal;
+	slBillboardEntry *b;
+	unsigned int n;
+	int lastTexture = -1;
+
+	slVectorCopy( &_location, &normal );
+	slVectorNormalize( &normal );
+
+	if ( !( flags & DO_NO_TEXTURE ) ) {
+		glPushAttrib( GL_LIGHTING_BIT | GL_TRANSFORM_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT );
+		glEnable( GL_TEXTURE_2D );
+		glEnable( GL_BLEND );
 	}
+
+	glPushAttrib( GL_TRANSFORM_BIT );
+
+	glMatrixMode( GL_TEXTURE );
+	glLoadIdentity();
+	glPopAttrib();
+
+	// we do want to have a depth test against other objects in the world.
+	// but we do our own back-to-front billboard sort and we do not want
+	// them fighting in the depth buffer.  so we'll disable depth-buffer
+	// writing so that no new info goes there.
+
+	glDepthMask( GL_FALSE );
+
+	for ( n = 0; n < _billboardCount; ++n ) {
+		slWorldObject *object;
+		int bound;
+
+		glPushMatrix();
+
+		b = _billboards[n];
+
+		object = b->object;
+
+		bound = ( object->_drawMode & DM_BOUND );
+
+		if ( object->_textureMode == BBT_LIGHTMAP )
+			glBlendFunc( GL_ONE, GL_ONE );
+		else {
+			glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		}
+
+		if ( !( flags & DO_NO_COLOR ) )
+			glColor4f( object->_color.x, object->_color.y, object->_color.z, object->_alpha );
+
+		if ( lastTexture != object->_texture )
+			glBindTexture( GL_TEXTURE_2D, object->_texture );
+
+		lastTexture = object->_texture;
+
+		glTranslated( object->_position.location.x, object->_position.location.y, object->_position.location.z );
+
+		glRotatef( object->_billboardRotation, normal.x, normal.y, normal.z );
+
+		glScalef( b->size, b->size, b->size );
+
+		glCallList( _billboardDrawList );
+
+		if ( bound && !( flags & DO_NO_BOUND ) ) {
+			if ( !( flags & DO_NO_TEXTURE ) ) glDisable( GL_TEXTURE_2D );
+
+			glPushMatrix();
+
+			glScalef( 1.1, 1.1, 1.1 );
+
+			glColor4f( 0.0, 0.0, 0.0, 1.0 );
+
+			glBegin( GL_LINE_LOOP );
+
+			glVertex3f( _billboardX.x + _billboardY.x,  _billboardX.y + _billboardY.y,  _billboardX.z + _billboardY.z );
+
+			glVertex3f( -_billboardX.x + _billboardY.x, -_billboardX.y + _billboardY.y, -_billboardX.z + _billboardY.z );
+
+			glVertex3f( -_billboardX.x - _billboardY.x, -_billboardX.y - _billboardY.y, -_billboardX.z - _billboardY.z );
+
+			glVertex3f( _billboardX.x - _billboardY.x,  _billboardX.y - _billboardY.y,  _billboardX.z - _billboardY.z );
+
+			glEnd();
+
+			glPopMatrix();
+
+			if ( !( flags & DO_NO_TEXTURE ) ) glEnable( GL_TEXTURE_2D );
+		}
+
+		glPopMatrix();
+	}
+
+	glDepthMask( GL_TRUE );
+
+	if ( !( flags & DO_NO_TEXTURE ) ) glPopAttrib();
 }
 
 void slStrokeText( double x, double y, const char *string, double scale, void *font ) {
 	int c;
 
 	glPushMatrix();
+
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	glLineWidth( 1.0 );
 	glTranslatef( x, y, 0 );
@@ -691,38 +1030,132 @@ void slText( double x, double y, const char *string, void *font ) {
 
 	glRasterPos2f( x, y );
 
-	while (( c = *( string++ ) ) != 0 ) 
-		glutBitmapCharacter( font, c );
+	while (( c = *( string++ ) ) != 0 ) glutBitmapCharacter( font, c );
 }
-	
-/*!
- * \brief Renders a stationary object.
- */
 
-void slCamera::processBillboards( slWorld *inWorld ) {
-	GLfloat matrix[ 16 ];
+/*!
+	\brief Sets up lighting for a scene.
+
+	If noDiff is set, no diffusion color is used.  This is used for
+	drawing the shadowed pass of a shadow volume algorithm.
+*/
+
+void slCamera::drawLights( int noDiffuse ) {
+	GLfloat dif[4];
+	GLfloat dir[4];
+	GLfloat amb[4];
+
+	dir[0] = _lights[0].location.x;
+	dir[1] = _lights[0].location.y;
+	dir[2] = _lights[0].location.z;
+	dir[3] = 1.0;
+
+	if ( noDiffuse ) {
+		dif[0] = 0.0;
+		dif[1] = 0.0;
+		dif[2] = 0.0;
+		dif[3] = 0.0;
+	} else {
+		dif[0] = _lights[0].diffuse.x;
+		dif[1] = _lights[0].diffuse.y;
+		dif[2] = _lights[0].diffuse.z;
+		dif[3] = 0.0;
+	}
+
+	amb[0] = _lights[0].ambient.x;
+
+	amb[1] = _lights[0].ambient.y;
+	amb[2] = _lights[0].ambient.z;
+	amb[3] = 0.0;
+
+	if ( _drawSmooth ) glShadeModel( GL_SMOOTH );
+	else glShadeModel( GL_FLAT );
+
+	glEnable( GL_LIGHTING );
+
+	glEnable( GL_LIGHT0 );
+
+	glLightf( GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0 );
+
+	glLightf( GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.00 );
+
+	glLightfv( GL_LIGHT0, GL_DIFFUSE, dif );
+
+	glLightfv( GL_LIGHT0, GL_AMBIENT, amb );
+
+	glLightfv( GL_LIGHT0, GL_POSITION, dir );
+
+	glLightfv( GL_LIGHT0, GL_SPECULAR, amb );
+}
+
+/*!
+	\brief Set up the rendering matrix for flat shadows on a given plane.
+*/
+
+void slShadowMatrix( GLfloat matrix[4][4], slPlane *p, slVector *light ) {
+	GLfloat dot, groundplane[4], lightpos[4];
+
+	lightpos[0] = light->x;
+	lightpos[1] = light->y;
+	lightpos[2] = light->z;
+	lightpos[3] = 0.0;
+
+	groundplane[0] = p->normal.x;
+	groundplane[1] = p->normal.y;
+	groundplane[2] = p->normal.z;
+	groundplane[3] = -slVectorDot( &p->normal, &p->vertex );
+
+	// Find dot product between light position vector and ground plane normal.
+
+	dot = groundplane[0] * lightpos[0] + groundplane[1] * lightpos[1] + groundplane[2] * lightpos[2] + groundplane[3] * lightpos[3];
+
+	matrix[0][0] = dot - lightpos[0] * groundplane[0];
+	matrix[1][0] = 0.f - lightpos[0] * groundplane[1];
+	matrix[2][0] = 0.f - lightpos[0] * groundplane[2];
+	matrix[3][0] = 0.f - lightpos[0] * groundplane[3];
+
+	matrix[0][1] = 0.f - lightpos[1] * groundplane[0];
+	matrix[1][1] = dot - lightpos[1] * groundplane[1];
+	matrix[2][1] = 0.f - lightpos[1] * groundplane[2];
+	matrix[3][1] = 0.f - lightpos[1] * groundplane[3];
+
+	matrix[0][2] = 0.f - lightpos[2] * groundplane[0];
+	matrix[1][2] = 0.f - lightpos[2] * groundplane[1];
+	matrix[2][2] = dot - lightpos[2] * groundplane[2];
+	matrix[3][2] = 0.f - lightpos[2] * groundplane[3];
+
+	matrix[0][3] = 0.f - lightpos[3] * groundplane[0];
+	matrix[1][3] = 0.f - lightpos[3] * groundplane[1];
+	matrix[2][3] = 0.f - lightpos[3] * groundplane[2];
+	matrix[3][3] = dot - lightpos[3] * groundplane[3];
+}
+
+/*!
+	\brief Renders a stationary object.
+*/
+
+void slCamera::processBillboards( slWorld *w ) {
+	GLfloat matrix[16];
 	std::vector<slWorldObject*>::iterator wi;
+	slSphere *ss;
 
 	glGetFloatv( GL_MODELVIEW_MATRIX, matrix );
 
 	_billboardCount = 0;
 
-	for ( wi = inWorld->_objects.begin(); wi != inWorld->_objects.end(); wi++ ) {
+	for ( wi = w->_objects.begin(); wi != w->_objects.end(); wi++ ) {
 		slWorldObject *wo = *wi;
 
-		if ( wo && wo->_textureMode != BBT_NONE && wo->_displayShape && wo->_displayShape->_type == ST_SPHERE ) {
+		if ( wo && wo->_textureMode != BBT_NONE && wo->_shape && wo->_shape->_type == ST_SPHERE ) {
 			double z = 0;
 
-			slSphere *ss = static_cast< slSphere* >( wo->_displayShape );
+			ss = static_cast<slSphere*>( wo->_shape );
 
 			z = matrix[2] * wo->_position.location.x + matrix[6] * wo->_position.location.y + matrix[10] * wo->_position.location.z;
 
 			addBillboard( wo, ss->_radius, z );
 		}
 	}
-
-	if( _billboardCount == 0 ) 
-		return;
 
 	sortBillboards();
 
@@ -737,76 +1170,70 @@ void slCamera::processBillboards( slWorld *inWorld ) {
 	_billboardZ.x = matrix[2];
 	_billboardZ.y = matrix[6];
 	_billboardZ.z = matrix[10];
-	
-	
-	float *v;
-	
-	v = _billboardBuffer.texcoord( 0 );
-	v[ 0 ] = 1.0;
-	v[ 1 ] = 1.0;
 
-	v = _billboardBuffer.texcoord( 1 );
-	v[ 0 ] = 0.0;	
-	v[ 1 ] = 1.0;
-	
-	v = _billboardBuffer.texcoord( 2 );
-	v[ 0 ] = 1.0;
-	v[ 1 ] = 0.0;
-	
-	v = _billboardBuffer.texcoord( 3 );
-	v[ 0 ] = 0.0;
-	v[ 1 ] = 0.0;
+	if ( _billboardDrawList == 0 ) _billboardDrawList = glGenLists( 1 );
 
-	v = _billboardBuffer.vertex( 0 );
-	v[ 0 ] =  _billboardX.x + _billboardY.x;  
-	v[ 1 ] =  _billboardX.y + _billboardY.y;
-	v[ 2 ] =  _billboardX.z + _billboardY.z;
+	glNewList( _billboardDrawList, GL_COMPILE );
 
-	v = _billboardBuffer.vertex( 1 );
-	v[ 0 ] = -_billboardX.x + _billboardY.x;
-	v[ 1 ] = -_billboardX.y + _billboardY.y;
-	v[ 2 ] = -_billboardX.z + _billboardY.z;
+	glBegin( GL_TRIANGLE_STRIP );
 
-	v = _billboardBuffer.vertex( 2 );
-	v[ 0 ] =  _billboardX.x - _billboardY.x;
-	v[ 1 ] =  _billboardX.y - _billboardY.y;
-	v[ 2 ] =  _billboardX.z - _billboardY.z;
+	glTexCoord2f( 1.0, 1.0 );
 
-	v = _billboardBuffer.vertex( 3 );
-	v[ 0 ] = -_billboardX.x - _billboardY.x;
-	v[ 1 ] = -_billboardX.y - _billboardY.y;
-	v[ 2 ] = -_billboardX.z - _billboardY.z;
+	glVertex3f( _billboardX.x + _billboardY.x,  _billboardX.y + _billboardY.y,  _billboardX.z + _billboardY.z );
 
+	glTexCoord2f( 0.0, 1.0 );
+
+	glVertex3f( -_billboardX.x + _billboardY.x, -_billboardX.y + _billboardY.y, -_billboardX.z + _billboardY.z );
+
+	glTexCoord2f( 1.0, 0.0 );
+
+	glVertex3f( _billboardX.x - _billboardY.x,  _billboardX.y - _billboardY.y,  _billboardX.z - _billboardY.z );
+
+	glTexCoord2f( 0.0, 0.0 );
+
+	glVertex3f( -_billboardX.x - _billboardY.x, -_billboardX.y - _billboardY.y, -_billboardX.z - _billboardY.z );
+
+	glEnd();
+
+	glEndList();
 }
 
-/**
- * \brief Renders the objects, assuming that all necessary transformations
- * have been set up.
- */
+/*!
+	\brief Renders the objects, assuming that all necessary transformations
+	have been set up.
+*/
 
-void slCamera::renderObjects( slWorld *w, unsigned int flags, float inAlphaScale ) {
+void slCamera::renderObjects( slWorld *w, unsigned int flags ) {
 	slWorldObject *wo;
 	unsigned int n;
-	bool color = true;
+	bool color = 1;
 
 	const int loadNames = ( flags & DO_LOAD_NAMES );
+
 	const int doNoAlpha = ( flags & DO_NO_ALPHA );
+
 	const int doOnlyAlpha = ( flags & DO_ONLY_ALPHA );
-	const int doNoShadowCatcher = ( flags & DO_NO_SHADOWCATCHER );
-	const int doOnlyShadowCatcher = ( flags & DO_ONLY_SHADOWCATCHER );
+
+	const int doNoStationary = ( flags & DO_NO_STATIONARY );
+
 	const int doNoTerrain = ( flags & DO_NO_TERRAIN );
+
 	const int doNoTexture = ( flags & DO_NO_TEXTURE );
 
 	_points.clear();
 
-	if ( doOnlyAlpha ) 
-		setBlendMode( SR_ALPHABLEND );
+	if ( doOnlyAlpha ) {
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	}
 
-	if ( flags & ( DO_OUTLINE | DO_NO_COLOR ) ) 
-		color = 0;
+	if ( flags & ( DO_OUTLINE | DO_NO_COLOR ) ) color = 0;
 
-	if ( flags & DO_OUTLINE ) 
-		glColor4f( 1, 1, 1, 1 );
+	if ( flags & DO_OUTLINE ) glColor4f( 1, 1, 1, 0 );
+
+	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+
+	// glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 
 	for ( n = 0; n < w->_objects.size(); ++n ) {
 		int skip = 0;
@@ -816,8 +1243,7 @@ void slCamera::renderObjects( slWorld *w, unsigned int flags, float inAlphaScale
 		else if ( wo->_drawMode == DM_INVISIBLE ) skip = 1;
 		else if ( doNoAlpha && wo->_alpha != 1.0 ) skip = 1;
 		else if ( doOnlyAlpha && wo->_alpha == 1.0 ) skip = 1;
-		else if ( doNoShadowCatcher && wo == _shadowCatcher ) skip = 1;
-		else if ( doOnlyShadowCatcher && wo != _shadowCatcher ) skip = 1;
+		else if ( doNoStationary && wo->_type == WO_STATIONARY ) skip = 1;
 		else if ( doNoTerrain && wo->_type == WO_TERRAIN ) skip = 1;
 		else if ( wo->_textureMode != BBT_NONE && !( flags & DO_BILLBOARDS_AS_SPHERES ) ) skip = 1;
 
@@ -827,31 +1253,39 @@ void slCamera::renderObjects( slWorld *w, unsigned int flags, float inAlphaScale
 
 			if ( !wo->_drawAsPoint ) {
 				if ( color )
-					glColor4f( wo->_color.x, wo->_color.y, wo->_color.z, wo->_alpha * inAlphaScale );
+					glColor4d( wo->_color.x, wo->_color.y, wo->_color.z, wo->_alpha );
 
-				if ( !doNoTexture && wo->_texture ) {
-
-					if ( wo->_textureMode == BBT_LIGHTMAP )
-						setBlendMode( SR_LIGHTBLEND );
+				if ( wo->_alpha != 1.0 ) {
+					if ( !doNoTexture && wo->_texture > 0 )
+						glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 					else
-						setBlendMode( SR_ALPHABLEND );
+						glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-					wo -> _texture -> bind();
+					glDisable( GL_CULL_FACE );
+				}
+
+				// 0 or -1 can be used to indicate no texture
+
+				if ( !doNoTexture && wo->_texture > 0 ) {
+					glBindTexture( GL_TEXTURE_2D, wo->_texture );
+					glEnable( GL_TEXTURE_2D );
 				}
 
 				wo->draw( this );
 
-				if ( !doNoTexture && wo -> _texture )
-					wo -> _texture -> unbind();
+				if ( wo->_alpha != 1.0 )
+					glEnable( GL_CULL_FACE );
 
+				if ( wo->_texture > 0 )
+					glDisable( GL_TEXTURE_2D );
 			} else
 				_points.push_back( std::pair< slVector, slVector>( wo->getPosition().location, wo->_color ) );
 		}
 	}
 
-	if ( !doOnlyAlpha && _points.size() ) {
+	if ( !doOnlyAlpha ) {
+		glEnable( GL_BLEND );
 		glPointSize( 2.0 );
-
 		glEnable( GL_POINT_SMOOTH );
 		glBegin( GL_POINTS );
 
@@ -864,20 +1298,18 @@ void slCamera::renderObjects( slWorld *w, unsigned int flags, float inAlphaScale
 		}
 
 		glEnd();
-		glDisable( GL_POINT_SMOOTH );
 	}
+
+	if ( doOnlyAlpha )
+		glDisable( GL_BLEND );
 
 	if ( loadNames )
 		glLoadName( w->_objects.size() + 1 );
-
-	// Restore the default blend func
-
-	setBlendMode( SR_ALPHABLEND );
 }
 
-/**
- * \brief Renders object neighbor lines.
- */
+/*!
+	\brief Renders object neighbor lines.
+*/
 
 void slCamera::renderLines( slWorld *w ) {
 	slWorldObject *neighbor;
@@ -885,16 +1317,13 @@ void slCamera::renderLines( slWorld *w ) {
 	unsigned int n;
 
 	glLineWidth( 1.2 );
-	setBlendMode( SR_ALPHABLEND );
-	glDepthFunc( GL_ALWAYS );
-	glEnable( GL_LINE_SMOOTH );
-	glDepthMask( GL_FALSE );
 
 	for ( n = 0; n < w->_objects.size(); ++n ) {
 		if ( w->_objects[n] && !( w->_objects[n]->_drawMode & DM_INVISIBLE ) ) {
 			if ( w && w->_objects[n]->_drawMode & DM_NEIGHBOR_LINES ) {
 				std::vector<slWorldObject*>::iterator wi;
 
+				glEnable( GL_BLEND );
 				glColor4f( 0.0, 0.0, 0.0, 0.5 );
 
 				x = &w->_objects[n]->_position.location;
@@ -913,22 +1342,26 @@ void slCamera::renderLines( slWorld *w ) {
 				}
 
 				glEnd();
+
+				glDisable( GL_BLEND );
 			}
 		}
 	}
 
-	glDisable( GL_LINE_SMOOTH );
+	glDisable( GL_LIGHTING );
 
+	// glDisable( GL_DEPTH_TEST );
+	glEnable( GL_BLEND );
+	glHint (GL_LINE_SMOOTH_HINT, GL_NICEST);
+	glEnable( GL_LINE_SMOOTH );
 	glLineWidth( 1.0 );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-	std::vector< slObjectConnection* >::iterator li;
+	std::vector<slObjectConnection*>::iterator li;
 
 	for ( li = w->_connections.begin(); li != w->_connections.end(); li++ ) {
 		( *li )->draw( this );
 	}
-
-	glDepthFunc( GL_LESS );
-	glDepthMask( GL_TRUE );
 }
 
 /*!
@@ -938,8 +1371,6 @@ void slCamera::renderLines( slWorld *w ) {
 void slDrawAxis( double x, double y ) {
 	x += .02;
 	y += .02;
-
-	glEnable( GL_LINE_SMOOTH );
 
 	glBegin( GL_LINES );
 	glVertex3f( 0, 0, 0 );
@@ -959,18 +1390,16 @@ void slDrawAxis( double x, double y ) {
 	glScaled( .005, .005, .005 );
 	glutStrokeCharacter( GLUT_STROKE_ROMAN, 'y' );
 	glPopMatrix();
-
-	glDisable( GL_LINE_SMOOTH );
 }
 
-/**
- * \brief Compiles a shape into a draw list.
- * The draw list is generated or updated as needed.
- */
+/*!
+	\brief Compiles a shape into a draw list.
+
+	The draw list is generated or updated as needed.
+*/
 
 int slCompileShape( slShape *s, int drawMode, int flags ) {
-	if ( !s->_drawList ) 
-		s->_drawList = glGenLists( 1 );
+	if ( !s->_drawList ) s->_drawList = glGenLists( 1 );
 
 	s->_recompile = 0;
 
@@ -983,12 +1412,12 @@ int slCompileShape( slShape *s, int drawMode, int flags ) {
 	return s->_drawList;
 }
 
-/**
- * \brief Render a shape.
- * 
- * Typically only called when compiling a drawlist for a shape, this does
- * the actual rendering.
- */
+/*!
+	\brief Render a shape.
+
+	Typically only called when compiling a drawlist for a shape, this does
+	the actual rendering.
+*/
 
 void slRenderShape( slShape *s, int drawMode, int flags ) {
 	GLUquadricObj *quad;
@@ -1008,8 +1437,11 @@ void slRenderShape( slShape *s, int drawMode, int flags ) {
 			gluQuadricDrawStyle( quad, GLU_LINE );
 
 		gluQuadricTexture( quad, GL_TRUE );
+
 		gluQuadricOrientation( quad, GLU_OUTSIDE );
+
 		gluSphere( quad, radius, divisions, divisions );
+
 		gluDeleteQuadric( quad );
 	} else {
 		std::vector<slFace*>::iterator fi;
@@ -1019,14 +1451,42 @@ void slRenderShape( slShape *s, int drawMode, int flags ) {
 	}
 }
 
-/**
- * \brief Draws a face, breaking it down into smaller triangles if necessary.
- */
+/*!
+	\brief Gives vectors perpendicular to v.
+
+	Uses cross-products to find two vectors perpendicular to v.
+	Uses either (0, 1, 0) or (1, 0, 0) as the first cross product
+	vector (depending on whether v is already set to one of these).
+*/
+
+void slPerpendicularVectors( slVector *v, slVector *p1, slVector *p2 ) {
+	slVector neg;
+
+	slVectorSet( p1, 0, 1, 0 );
+
+	slVectorMul( v, -1, &neg );
+
+	if ( !slVectorCompare( p1, v ) || !slVectorCompare( &neg, p1 ) )
+		slVectorSet( p1, 1, 0, 0 );
+
+	slVectorCross( p1, v, p2 );
+
+	slVectorCross( p2, v, p1 );
+
+	slVectorNormalize( p1 );
+
+	slVectorNormalize( p2 );
+}
+
+/*!
+	\brief Draws a face, breaking it down into smaller triangles if necessary.
+*/
 
 void slDrawFace( slFace *f, int drawMode, int flags ) {
 	slVector xaxis, yaxis;
 	slVector *norm, *v;
-	int pointCount;
+	slPoint *p;
+	int edgeCount;
 
 	norm = &f->plane.normal;
 
@@ -1034,15 +1494,27 @@ void slDrawFace( slFace *f, int drawMode, int flags ) {
 
 	glNormal3f( norm->x, norm->y, norm->z );
 
-	// if they're drawing lines, or if the face isn't broken down, do a normal polygon
+	if ( f->drawFlags & SD_REFLECT ) {
+		GLfloat v[4];
+
+		glPushAttrib( GL_ENABLE_BIT );
+
+		glGetFloatv( GL_CURRENT_COLOR, v );
+		v[3] = gReflectionAlpha;
+		glColor4fv( v );
+		glEnable( GL_BLEND );
+	}
+
+	// if they're drawing lines, or if the face
+	// isn't broken down, do a normal polygon
 
 	if ( drawMode == GL_LINE_LOOP || !slBreakdownFace( f ) ) {
 		glBegin( drawMode );
 
-		for ( pointCount = 0;pointCount < f-> _pointCount ;pointCount++ ) {
-			slPoint *p = ( slPoint * )f->points[pointCount];
+		for ( edgeCount = 0;edgeCount < f->edgeCount;edgeCount++ ) {
+			p = ( slPoint * )f->points[edgeCount];
 
-			v = &p->vertex;
+			v = &(( slPoint * )p )->vertex;
 
 			glTexCoord2f( slVectorDot( v, &xaxis ), slVectorDot( v, &yaxis ) );
 
@@ -1051,13 +1523,17 @@ void slDrawFace( slFace *f, int drawMode, int flags ) {
 
 		glEnd();
 	}
+
+	if ( f->drawFlags & SD_REFLECT )
+		glPopAttrib();
 }
 
-/**
- * \brief Recursively break down and draw a face.
- *
- * Breaks down faces into smaller polygons in order to improve the quality of lighting and other effects.
- */
+/*!
+	\brief Recursively break down and draw a face.
+
+	Breaks down faces into smaller polygons in order to improve
+	the quality of lighting and other effects.
+*/
 
 int slBreakdownFace( slFace *f ) {
 	slVector diff, middle, subv[3], total, xaxis, yaxis;
@@ -1070,10 +1546,10 @@ int slBreakdownFace( slFace *f ) {
 
 	slVectorZero( &total );
 
-	for ( n = 0; n < f-> _pointCount; ++n ) {
+	for ( n = 0; n < f->edgeCount; ++n ) {
 		n2 = n + 1;
 
-		if ( n2 == f-> _pointCount )
+		if ( n2 == f->edgeCount )
 			n2 = 0;
 
 		p = f->points[n];
@@ -1091,16 +1567,16 @@ int slBreakdownFace( slFace *f ) {
 		length += slVectorLength( &diff );
 	}
 
-	slVectorMul( &total, 1.0 / f-> _pointCount, &total );
+	slVectorMul( &total, 1.0 / f->edgeCount, &total );
 
 	if ( length < 30 ) return 0;
 
 	glBegin( GL_TRIANGLES );
 
-	for ( n = 0; n < f-> _pointCount; ++n ) {
+	for ( n = 0; n < f->edgeCount; ++n ) {
 		n2 = n + 1;
 
-		if ( n2 == f -> _pointCount )
+		if ( n2 == f->edgeCount )
 			n2 = 0;
 
 		p = f->points[n];
@@ -1112,17 +1588,23 @@ int slBreakdownFace( slFace *f ) {
 		v2 = &p->vertex;
 
 		slVectorSub( v2, v1, &diff );
+
 		slVectorMul( &diff, .5, &diff );
+
 		slVectorAdd( v1, &diff, &middle );
 
 		slVectorCopy( v1, &subv[0] );
+
 		slVectorCopy( &middle, &subv[1] );
+
 		slVectorCopy( &total, &subv[2] );
 
 		slBreakdownTriangle( &subv[0], 0, &xaxis, &yaxis );
 
 		slVectorCopy( &middle, &subv[0] );
+
 		slVectorCopy( v2, &subv[1] );
+
 		slVectorCopy( &total, &subv[2] );
 
 		slBreakdownTriangle( &subv[0], 0, &xaxis, &yaxis );
@@ -1154,7 +1636,7 @@ void slBreakdownTriangle( slVector *v, int level, slVector *xaxis, slVector *yax
 		slVectorAdd( &v[n], &diff, &mids[n] );
 	}
 
-	if ( length < 120.0f || level > 4 ) {
+	if ( length < 200 || level > 3 ) {
 		for ( n = 0; n < 3; ++n ) {
 			glTexCoord2f( slVectorDot( &v[n], xaxis ), slVectorDot( &v[n], yaxis ) );
 			glVertex3f( v[n].x, v[n].y, v[n].z );
@@ -1188,21 +1670,16 @@ void slBreakdownTriangle( slVector *v, int level, slVector *xaxis, slVector *yax
 	}
 }
 
-/**
- * \brief Prints out and clears OpenGL errors.
- */
+/*!
+	\brief Prints out and clears OpenGL errors.
+*/
 
-inline int slClearGLErrors( const char *inID ) {
+inline int slClearGLErrors( char *id ) {
 	unsigned int n;
 	int c = 0;
 
-	while ( ( n = glGetError() ) ) {
-		#ifdef OPENGLES
-			slMessage( DEBUG_ALL, "%s: OpenGL error %d\n", inID, n );
-		#else
-			slMessage( DEBUG_ALL, "%s: OpenGL error %s\n", inID, gluErrorString( n ) );		
-		#endif
-		
+	while (( n = glGetError() ) ) {
+		slMessage( DEBUG_ALL, "%s: OpenGL error %s\n", id, gluErrorString( n ) );
 		c++;
 	}
 

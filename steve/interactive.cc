@@ -7,25 +7,23 @@ void stSetParseObjectAndMethod( stObject *o, stMethod *m );
 extern const char *yyfile;
 extern int lineno;
 
-/**
- * \brief Parse a single steve statement.
- * This prepares the statement for interactive evaluation.
- */
+/*!
+	\brief Parse a single steve statement.
 
-int stRunSingleStatement( stSteveData *inSteveData, brEngine *inEngine, const char *inStatement ) {
-	const char *file = "<user input>";
-	int length, r;
+	This prepares the statement for interactive evaluation.
+*/
+
+int stRunSingleStatement( stSteveData *sd, brEngine *engine, char *statement ) {
+	char *file = "<user input>";
+	int length;
 	brInstance *controller;
 	char *fixedStatement;
 	brEval target;
 	stInstance *i;
 	stRunInstance ri;
+	int r;
 
-	if ( !inStatement ) 
-		return 0;
-
-	char *statement = slStrdup( inStatement );
-
+	if ( !statement ) return 0;
 
 	length = strlen( statement ) - 1;
 
@@ -33,35 +31,32 @@ int stRunSingleStatement( stSteveData *inSteveData, brEngine *inEngine, const ch
 
 	// put in the dot to make steve happy!
 
-	while ( statement[length] == '\n' || statement[length] == ' ' || statement[length] == '\t' ) 
-		length--;
 
-	if ( length > 0 && statement[length	] != '.' ) 
-		statement[length + 1] = '.';
+	while ( statement[length] == '\n' || statement[length] == ' ' || statement[length] == '\t' ) length--;
+
+	if ( length > 0 && statement[length] != '.' ) statement[length + 1] = '.';
 
 	fixedStatement = new char[strlen( statement ) + 5];
-
-	// std::string fixedStatement = "> ";
-	// fixedStatement += statement;
 
 	sprintf( fixedStatement, "> %s", statement );
 
 	yyfile = file;
 
-	inSteveData -> singleStatement = NULL;
+	sd->singleStatement = NULL;
 
-	stSetParseData( inSteveData, fixedStatement, strlen( fixedStatement ) );
+	stSetParseData( sd, fixedStatement, strlen( fixedStatement ) );
 
-	controller = inEngine -> getController();
+	controller = brEngineGetController( engine );
 
-	stParseSetEngine( inEngine );
-	stParseSetObjectAndMethod( ( stObject* )controller->object->userData, inSteveData -> singleStatementMethod );
+	stParseSetObjectAndMethod(( stObject* )controller->object->userData, sd->singleStatementMethod );
 
-	brClearError( inEngine );
+	stParseSetEngine( engine );
 
-	if ( yyparse() || brGetError( inEngine ) ) {
+	brClearError( engine );
+
+	if ( yyparse() || brGetError( engine ) ) {
 		slFree( fixedStatement );
-		inSteveData -> singleStatement = NULL;
+		sd->singleStatement = NULL;
 		return BPE_SIM_ERROR;
 	}
 
@@ -70,12 +65,10 @@ int stRunSingleStatement( stSteveData *inSteveData, brEngine *inEngine, const ch
 	ri.instance = i;
 	ri.type = i->type;
 
-	r = stExpEval( inSteveData -> singleStatement, &ri, &target, NULL );
+	r = stExpEval( sd->singleStatement, &ri, &target, NULL );
 
-	delete inSteveData -> singleStatement;
+	delete sd->singleStatement;
 	delete[] fixedStatement;
-
-	slFree( statement );
 
 	return r;
 }

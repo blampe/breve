@@ -74,10 +74,7 @@ enum {
 	IBOutlet id displayView;
 	
 	IBOutlet id demoMenu;
-
-	IBOutlet id _stDocsMenu;
-	IBOutlet id _pyDocsMenu;
-
+	IBOutlet id docsMenu;
 	IBOutlet id simMenu;
 
 	IBOutlet id runButton;
@@ -109,8 +106,7 @@ enum {
 	char *demoPath;
 	char *classPath;
 	char *docsPath;
-	char *_pyClassDocsPath;
-	char *_stClassDocsPath;
+	char *classDocsPath;
 	
 	IBOutlet id preferences;
 
@@ -146,7 +142,6 @@ enum {
 - (IBAction)newWithTemplate:sender;
 
 - (void)buildDemoMenuForDir:(char*)directory forMenu:(slDemoMenu*)menu;
-- (void)buildDocsMenuForDir:(char*)directory forMenu:(id)menu;
 
 - (IBAction)showHTMLHelp:sender;
 
@@ -184,7 +179,7 @@ void updateMenu(brInstance *i);
 - (NSString*)saveNameForType:(NSString *)type withAccView:(NSView*)view;
 - (NSString*)loadNameForTypes:(NSArray*)types withAccView:(NSView*)view;
 
-int isBreveFile(struct dirent *d);
+int isTZfile(struct dirent *d);
 int isHTMLfile(struct dirent *d);
 
 - (IBAction)find:sender;

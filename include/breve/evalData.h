@@ -18,22 +18,28 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-/**
- * \brief Pointer data with a length value attached
- */
+/*!
+	\brief Holds arbitrary data of a given length.
+*/
 
 class brData: public brEvalObject {
 	public:
-		brData( const void *inData, int inLength );
+		brData( void *inData, int inLength );
 		~brData();
 
 		unsigned char *data;
 		int length;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+void brDataRetain(brData *);
+void brDataUnretain(brData *);
 void brDataCollect(brData *);
 
-char *brDataHexEncode( brData * );
-char *brHexEncode( const char *inStr, int inLength );
-
-brData *brDataHexDecode( const char * );
+char *brDataHexEncode(brData *);
+brData *brDataHexDecode(char *);
+#ifdef __cplusplus
+}
+#endif

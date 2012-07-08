@@ -1,23 +1,22 @@
-CC		= @CC@
-CXX		= @CXX@
-LEX		= @LEX@
+CC			= @CC@
+CXX			= @CXX@
+JAR			= @JAR@
+JAVAC		= @JAVAC@
+LEX			= @LEX@
 RANLIB		= @RANLIB@
-AR		= @AR@
+AR			= @AR@
 YACC		= @YACC@
-HAVEPERL 	= @HAVEPERL@
 
 @SET_MAKE@
 
 VERSION		= @VERSION@
 
-ACLOCAL_AMFLAGS = -I m4
-
 CFLAGS		= @CFLAGS@
-CPPFLAGS	= @CPPFLAGS@ -Iinclude/breve -DdDOUBLE @DEFS@
-LDFLAGS		= -Lbin @LDFLAGS@
+CPPFLAGS	= @CPPFLAGS@ -Iinclude/breve @DEFS@
+LDFLAGS		= @LDFLAGS@
 
 EXTRACFLAGS	= -g
-OPTFLAGS	= -O4 @EXTRAOPTFLAGS@
+OPTFLAGS	= -O3 @EXTRAOPTFLAGS@
 
 CXXFLAGS	= $(EXTRACFLAGS) @CXXFLAGS@ -pipe -Wall -fpermissive
 YFLAGS		= -d
@@ -34,21 +33,21 @@ LIBS		= @LIBS@
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 
-all: depend lib/libbreve.a bin/osmesaloader.o bin/breve@EXE_SUFFIX@ README.txt README_SOURCE.txt
+all: depend lib/libbreve.a bin/osmesaloader.o bin/breve_cli@EXE_SUFFIX@ bin/breve@EXE_SUFFIX@ \
+	README.txt README_SOURCE.txt
 
 include simulation/Makefile
 include kernel/Makefile
+include graph/Makefile
 include neural/Makefile
 include neural/Network/Makefile
 include steve/Makefile
 include python/Makefile
-# include perl/Makefile
-include lisp/Makefile
-include scheme/Makefile
+# include lisp/Makefile
 include util/Makefile
 include WinSaver/Makefile
 
-DEPS := $(SRC) bin/breve.cc 
+DEPS := $(SRC) bin/breve.cc bin/breve_cli.cc
 DEPS := $(DEPS:.cc=.d)
 DEPS := $(DEPS:.c=.d)
 
@@ -58,10 +57,13 @@ OBJ	:= $(SRC:.cc=.o)
 OBJ	:= $(OBJ:.c=.o)
 
 bin/breve@EXE_SUFFIX@: bin/breve.o $(OBJ)
-	$(CXX) -o $@ $(CFLAGS) $^ $(LDFLAGS) @PLUGINIMP@ $(LIBS)
+	$(CXX) -o $@ $(CFLAGS) $(LDFLAGS) $^ @PLUGINIMP@ $(LIBS)
+
+bin/breve_cli@EXE_SUFFIX@: bin/breve_cli.o $(OBJ)
+	$(CXX) -o $@ $(CFLAGS) $(LDFLAGS) $^ @PLUGINIMP@ $(LIBS)
 
 bin/osmesaloader.o: bin/osmesaloader.cc
-	-$(CXX) -shared -o $@ $^ $(LDFLAGS) -lOSMesa
+	-$(CXX) -shared -o $@ $(LDFLAGS) $^ -lOSMesa
 
 breve.dll: $(OBJ)
 	$(CXX) @PLUGINFLAGS@ -o $@ @PLUGINIMP@ $^ $(LIBS)
@@ -75,17 +77,15 @@ breve.dll: $(OBJ)
 %.tab.c: %.y
 	$(YACC) $(YFLAGS) -o $@ $<
 
-
-%.d: %.cc 
+%.d: %.cc
 	@echo "Generating dependencies for $<"
-	@/bin/echo -n $(@D)/ > $@
-	@$(CXX) -MM $(CPPFLAGS) $< >> $@ || rm $@
-     
+	@echo -n $(@D)/ > $@
+	@$(CXX) -MM $(CPPFLAGS) $< >> $@
+
 %.d: %.c
 	@echo "Generating dependencies for $<"
-	@/bin/echo -n $(@D)/ > $@  
-	@$(CXX) -MM $(CPPFLAGS) $< >> $@ || rm $@
-
+	@echo -n $(@D)/ > $@
+	@$(CXX) -MM $(CPPFLAGS) $< >> $@
 
 debug: all
 
@@ -100,6 +100,8 @@ lib/libbreve.a: $(OBJ)
 	$(AR) -cr $@ $(OBJ)
 	$(RANLIB) $@
 
+depend:: $(DEPS)
+
 .PHONY: clean OSX_build OSX_clean OSX_release CLI_release install
 
 %.txt: %.m4
@@ -109,15 +111,13 @@ clean:
 	cd docBuild; make clean
 
 	rm -f README.txt README_SOURCE.txt
-	rm -f bin/breve@EXE_SUFFIX@ 
+	rm -f bin/breve@EXE_SUFFIX@ bin/breve_cli@EXE_SUFFIX@
 	rm -f .depend breve.dll lib/*.a
 	rm -f steve/format.c steve/stevelex.c
 	rm -f steve/steveparse.tab.c steve/steveparse.tab.h
 	find . -name 'core' -exec rm -f {} \;
 	find . -name '*.o' -exec rm -f {} \;
 	find . -name '*.d' -exec rm -f {} \;
-
-depend:: $(DEPS)
 
 documentation:
 	cd docBuild; make html
@@ -129,12 +129,12 @@ OSX_build: optimize lib/libbreve.a
 	m4 -D_VERSION_=$(VERSION) -D_DATE_=`date +'%m-%d-%y'` OSX/README.html.m4 > OSX/README.html
 	-mkdir docs
 	cd plugins; $(MAKE)
-	cd OSX; xcodebuild -configuration Deployment-Universal CC= LIBS='@LDFLAGS@ $(LIBS)' BREVE_VERSION=$(VERSION)
+	cd OSX; xcodebuild -buildstyle Deployment-Universal CC= LIBS='@LDFLAGS@ $(LIBS)' BREVE_VERSION=$(VERSION)
 
 OSX_debug: optimize_debug lib/libbreve.a
 	-mkdir docs
 	cd plugins; $(MAKE)
-	cd OSX; xcodebuild -configuration Deployment-Universal CC= LIBS='@LDFLAGS@ $(LIBS)' BREVE_VERSION=$(VERSION)
+	cd OSX; xcodebuild -buildstyle Deployment-Universal CC= LIBS='@LDFLAGS@ $(LIBS)' BREVE_VERSION=$(VERSION)
 
 OSX_clean: clean
 	rm -f $(DMG_FILE)
@@ -152,7 +152,7 @@ else
 endif
 
 OSX_release: 
-	$(MAKE) -j1 documentation
+	$(MAKE) documentation
 	$(MAKE) OSX_build
 	rm -f $(DMG_FILE)
 	rm -rf breve_image_folder
@@ -160,7 +160,7 @@ OSX_release:
 	cp -R OSX/build/Deployment-Universal/breve.app breve_image_folder
 	cp OSX/README.html breve_image_folder
 	cp docBuild/images/breve_icon.jpg breve_image_folder/breve_icon.jpg
-	cp -R docs breve_image_folder/Documentation
+	cp OSX/Documentation.txt breve_image_folder
 	cp Changes.html GPL.txt breve_image_folder
 	mkdir breve_image_folder/plugins
 	cp -R plugins/samples breve_image_folder/plugins
@@ -170,20 +170,22 @@ OSX_release:
 	rm -rf breve_image_folder
 
 CLI_release: clean
+	$(MAKE) documentation
 	$(MAKE) optimize
-	$(MAKE) -j1 documentation
 	rm -rf $(CLI_FOLDER)
 	mkdir -p $(CLI_FOLDER)/bin
 	mkdir $(CLI_FOLDER)/lib
 	cp bin/breve@EXE_SUFFIX@ $(CLI_FOLDER)/bin
+	cp bin/breve_cli@EXE_SUFFIX@ $(CLI_FOLDER)/bin
 
 ifeq ($(PLATFORM),linux-gnu)
 	mv $(CLI_FOLDER)/bin/breve@EXE_SUFFIX@ $(CLI_FOLDER)/bin/breve_ex@EXE_SUFFIX@
+	mv $(CLI_FOLDER)/bin/breve_cli@EXE_SUFFIX@ $(CLI_FOLDER)/bin/breve_cli_ex@EXE_SUFFIX@
 	cp bin/breve.sh $(CLI_FOLDER)/bin/breve@EXE_SUFFIX@
 	cp bin/breve_cli.sh $(CLI_FOLDER)/bin/breve_cli@EXE_SUFFIX@
 	cp bin/libpython2.4.so.1.0 $(CLI_FOLDER)/bin
-	cp bin/libOSMesa.so $(CLI_FOLDER)/bin
 endif
+
 	-cp bin/osmesaloader.o $(CLI_FOLDER)/bin
 	cp -R docs $(CLI_FOLDER)
 	cp -R lib $(CLI_FOLDER)
@@ -193,8 +195,7 @@ endif
 	cp -R plugins/samples $(CLI_FOLDER)/plugins
 	rm -f $(CLI_FOLDER)/plugins/samples/Makefile.in
 ifeq ($(PLATFORM),windows)
-	cp lib/brevePlugin.lib $(CLI_FOLDER)/plugins
-	cp lib/breveIDEPlugin.lib $(CLI_FOLDER)/plugins
+	cp lib/brevePlugin.a $(CLI_FOLDER)/plugins
 	cp bin/glut32.dll $(CLI_FOLDER)/bin
 	cp bin/python23.dll $(CLI_FOLDER)/bin
 	cp bin/mingwm10.dll $(CLI_FOLDER)/bin
@@ -206,51 +207,48 @@ endif
 	find $(CLI_FOLDER) -name '.svn' -prune -exec rm -rf {} \;
 	rm -f breve_$(LPLATFORM)_@VERSION@.@ARCHIVE_SUFFIX@
 	@ARCHIVER@ breve_$(LPLATFORM)_@VERSION@.@ARCHIVE_SUFFIX@ $(CLI_FOLDER)
-	rm -rf $(CLI_FOLDER)
 
 WX_release: clean
+	$(MAKE) documentation
 	$(MAKE) optimize
-	$(MAKE) -j1 documentation
 	cd wx; make
 	rm -rf $(IDE_FOLDER)
 	mkdir $(IDE_FOLDER)
 	mkdir $(IDE_FOLDER)/lib
 	cp wx/breveIDE@EXE_SUFFIX@ $(IDE_FOLDER)
-ifeq ($(PLATFORM),linux-gnu)
-	mv $(IDE_FOLDER)/breveIDE@EXE_SUFFIX@ $(IDE_FOLDER)/breveIDE_ex@EXE_SUFFIX@
-	cp bin/breveIDE.sh $(IDE_FOLDER)/breveIDE@EXE_SUFFIX@
-	cp bin/libpython2.4.so.1.0 $(IDE_FOLDER)/lib
-	cp bin/libOSMesa.so $(IDE_FOLDER)/lib
+
+ifeq ($(PLATFORM),Linux)
+	mv wx/breveIDE@EXE_SUFFIX@ wx/breveIDE_ex@EXE_SUFFIX@
+	cp bin/breveIDE.sh wx/breveIDE@EXE_SUFFIX@
+	cp bin/libpython2.4.so.1.0 wx
 endif
+
 	-mkdir docs
 	cp -R docs $(IDE_FOLDER)
-	cp -R lib $(IDE_FOLDER)
+	cp -R lib/classes $(IDE_FOLDER)/lib
 	cp -R demos $(IDE_FOLDER)
 	rm -rf $(IDE_FOLDER)/demos/Music
 	mkdir $(IDE_FOLDER)/plugins
 	cp -R plugins/samples $(IDE_FOLDER)/plugins
 	rm -f $(IDE_FOLDER)/plugins/samples/Makefile.in
-	cp plugins/slBrevePluginAPI.h plugins/README.txt $(IDE_FOLDER)/plugins
-	cp Changes.html GPL.txt README.txt $(IDE_FOLDER)
 ifeq ($(PLATFORM),windows)
-	cp lib/brevePlugin.lib $(IDE_FOLDER)/plugins
-	cp lib/breveIDEPlugin.lib $(IDE_FOLDER)/plugins
+	cp wx/lib/brevePlugin.a $(IDE_FOLDER)/plugins
 	cp bin/glut32.dll $(IDE_FOLDER)
 	cp bin/python23.dll $(IDE_FOLDER)
 	cp bin/mingwm10.dll $(IDE_FOLDER)
-	unix2dos $(IDE_FOLDER)/README.txt
-	unix2dos $(IDE_FOLDER)/GPL.txt
 endif
+	cp plugins/slBrevePluginAPI.h plugins/README.txt $(IDE_FOLDER)/plugins
+	cp Changes.html GPL.txt README.txt $(IDE_FOLDER)
 	find $(IDE_FOLDER) -name CVS -prune -exec rm -rf {} \;
 	find $(IDE_FOLDER) -name '.cvsignore' -prune -exec rm -rf {} \;
 	find $(IDE_FOLDER) -name '.svn' -prune -exec rm -rf {} \;
 	rm -f breveIDE_$(LPLATFORM)_@VERSION@.@ARCHIVE_SUFFIX@
 	@ARCHIVER@ breveIDE_$(LPLATFORM)_@VERSION@.@ARCHIVE_SUFFIX@ $(IDE_FOLDER)
-	rm -rf $(IDE_FOLDER)
 
 install: optimize
 	mkdir -p @bindir@
 	cp bin/breve @bindir@
+	cp bin/breve_cli @bindir@
 	mkdir -p @libdir@/breve
 	rm -rf @libdir@/breve/classes
 	cp -R lib/classes @libdir@/breve

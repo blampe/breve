@@ -1,7 +1,7 @@
 
                   - breve source code release - version _VERSION_ -
                          http://www.spiderland.org/breve
-                              jk [at] spiderland.org
+                              jk@spiderland.org
 
                              -- INTRODUCTION --
 
@@ -81,7 +81,7 @@ as well, though some work may be required:
 	Microsoft Visual C++
 
 Please report successful ports and the changes required back to the author 
-at jk [at] spiderland.org.
+at jk@spiderland.org.
 
                     --- EXTERNAL LIBRARIES: SUMMARY ---
 
@@ -114,7 +114,6 @@ Optional:
   libpush
   libenet
   libqgame++
-  lib3ds
 
                     --- EXTERNAL LIBRARIES: DETAILS ---
 
@@ -130,18 +129,12 @@ Optional:
 + [required] ODE, physical simulation library 
   http://www.ode.org
 
-  Use version 0.9 or later and run configure with the following flags:
-
-  --enable-double-precision --enable-release
-
   Be sure to compile with "dReal" as "double", as opposed to "float".
 
   Some versions of ODE make liberal use of alloca() to allocate memory 
-  on the stack during simulation.  This can cause crashes if the simulation 
-  becomes too complex and causes a stack overflow.  For this reason, official 
-  builds of breve use a modified version of the ODE source.
-
-
+  on the stack during a function call.  This can cause crashes if the 
+  simulation becomes too complex and causes a stack overflow.  For this 
+  reason, official builds of breve use a modified version of the ODE source.
 
 + [required for breveIDE build] wxwidgets, wx Interface Library
   http://www.wxwidgets.org
@@ -212,12 +205,8 @@ Optional:
   Provides support for exporting MPEG movies of simulations.  This library
   is optional.  If it is not available, movie export will not be supported.
 
-  The ffmpeg maintainers do not typically make official release versions, 
-  and the ffmpeg APIs do change from time to time.  Because of this, it can
-  sometimes be difficult to get ffmpeg working with breve.
-
-  Version 2.6 of breve is reported to compile correctly with ffmpeg subversion 
-  revision 4709.
+  Use most recent CVS source for ffmpeg.  As of the breve 2.4 release, breve 
+  will not compile with the most recent official ffmpeg release.
 
 + [optional] libpush, push language libary 
   http://push-evolve.sourceforge.net
@@ -235,18 +224,13 @@ Optional:
   http://hampshire.edu/lspector/qgame++
 
   Very optional.  A library for simulating quantum computing.
-  
-+ [optional] lib3ds, lib3ds , for loading 3d model files
-  http://lib3ds.sourceforge.net/
-
-  A free and open source library that support loading 3DS files (aka 3d loading 3d models). (GNU GPL)
 
                                 -- License --
 
 /*****************************************************************************
  *                                                                           *
  * The breve Simulation Environment                                          *
- * Copyright (C) 2000-2007 Jonathan Klein                                    *
+ * Copyright (C) 2000-2006 Jonathan Klein                                    *
  *                                                                           *
  * This program is free software; you can redistribute it and/or modify      *
  * it under the terms of the GNU General Public License as published by      *

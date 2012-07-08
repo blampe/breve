@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "slutil.h"
+#include "util.h"
 #include "shape.h"
 #include "volInt.h"
 
@@ -91,7 +91,7 @@ int slConvertShapeToPolyhedron( slShape *s, slMPPolyhedron *p ) {
 
 		p->faces[p->numFaces].numVerts = 0;
 
-		for ( edge = 0;edge < theFace->_pointCount; edge++ ) {
+		for ( edge = 0;edge < theFace->edgeCount;edge++ ) {
 			slPoint *thePoint = theFace->points[edge];
 
 			pointNumber = slFindPointNumber( s, thePoint );
@@ -114,8 +114,14 @@ int slConvertShapeToPolyhedron( slShape *s, slMPPolyhedron *p ) {
 }
 
 int slFindPointNumber( slShape *s, slPoint *p ) {
-	for ( unsigned int n = 0; n < s->points.size(); n++ ) {
-		if ( s->points[n] == p ) return n;
+
+	unsigned int n;
+	int number = 0;
+
+	for ( n = 0;n < s->features.size();n++ ) {
+		if ( s->features[n] == p ) return number;
+
+		if ( s->features[n]->type == FT_POINT ) number++;
 	}
 
 	return -1;

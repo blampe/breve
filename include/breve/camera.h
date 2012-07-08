@@ -18,30 +18,40 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
+#include "util.h"
+#include "shape.h"
+#include "glIncludes.h"
+
 #ifndef _CAMERA_H
 #define _CAMERA_H
 
-#include <string>
-#include <vector>
-#include "vector.h"
+#define SPHERE_RESOLUTIONS	10
 
 class slWorldObject;
 class slWorld;
 class slStationary;
-class slRenderGL;
-class slTexture2D;
-class slVertexBufferGL;
 
-enum slBillboardType {
-	slBitmapNone = 0,
-	slBitmap,
-	slLightmap
+enum billboardType {
+	BBT_NONE = 0,
+	BBT_BITMAP,
+	BBT_LIGHTMAP
 };
 
+/*!
+	\brief Holds location and color information for a light.
+*/
+
+struct slLight {
+	slVector location;
+	slVector diffuse;
+	slVector ambient;
+
+	unsigned char changed;
+};
 
 /*!
- * brief A string of text printed to the GL view.
- */
+	\brief A string of text printed to the GL view.
+*/
 
 class slCameraText {
 	public:
@@ -54,38 +64,16 @@ class slCameraText {
 		unsigned char size;
 };
 
-class slSceneNode {
-	public:
-		
-	private:
-		// slTransform 		_transform;
-};
-
-class slSceneObject : public slSceneNode {
-
-};
-
-class slSceneImage : public slSceneObject {
-	public: 
-							slSceneImage( slTexture2D* inTexture ) { _texture = inTexture; }
-
-	private:
-		slTexture2D* 		_texture;
-};
-
-class slSceneText : public slSceneObject {
-
-};
-
-class slSceneGroup : public slSceneNode {
-	public:
-	private:
-		std::vector< slSceneNode* > _nodes;
-};
-
 /*!
- * \brief Data for billboarded bitmaps.
- */
+	\brief Data for billboarded bitmaps.
+
+	Billboards, no matter how damn simple they should be, turn out to be 
+	a huge pain in the ass.  It is very hard to handle the billboards 
+	properly when they contain alpha info, and also on multiple pass 
+	algorithms.  Therefore, we make a first pass through to find the 
+	billboards and compute their current coordinates, sort them back 
+	to front and then finally draw them.
+*/
 
 struct slBillboardEntry {
 	float size;
@@ -94,16 +82,16 @@ struct slBillboardEntry {
 	slWorldObject *object;
 };
 
-/** 
- * \brief The camera for the graphical display.
- * Holds camera position/location, as well as a variety of other
- * rendering data.
- */
+/*!
+	\brief The camera for the graphical display.
+
+	Holds camera position/location, as well as a variety of other
+	rendering data.
+*/
 
 #include <vector>
 
 class slCamera {
-	friend class slRenderGL;
 	public:
 		slCamera( int width = 200, int height = 200 );
 		~slCamera();
@@ -111,7 +99,8 @@ class slCamera {
 		void renderWorld( slWorld *w, int crosshair, int scissor );
 		void renderScene( slWorld *w, int crosshair );
 
-		void detectLightExposure( slWorld *w, int size, unsigned char *buffer );
+
+		void detectLightExposure( slWorld *w, int size, GLubyte *buffer );
 
 		void updateFrustum();
 
@@ -122,10 +111,9 @@ class slCamera {
 		void setBounds(unsigned int, unsigned int);
 		void getBounds(unsigned int *, unsigned int *);
 		void getRotation(double *, double *);
-		void getPosition(double *, double *, double *);
 		void setRecompile();
 
-		void renderBillboards( slRenderGL& inRenderer );
+		void renderBillboards( int flags );
 		void processBillboards( slWorld *w );
 		void addBillboard( slWorldObject *object, float size, float z );
 		void sortBillboards();	
@@ -141,8 +129,8 @@ class slCamera {
 		void setActivateContextCallback( int (*f)() );
 		void setCameraText( int n, char *string, float x, float y, slVector *v );
 	
-		slWorldObject *select( slWorld *inWorld, int inScreenX, int inScreenY ) const { fprintf( stderr, "Selection not implemented." ); return NULL; }
-		int vectorForDrag( slWorld *w, slVector *dragVertex, int x, int y, slVector *dragVector ) const { fprintf( stderr, "Vector for drag not implemented." ); return 0; }
+		int select( slWorld *w, int x, int y );
+		int vectorForDrag( slWorld *w, slVector *dragVertex, int x, int y, slVector *dragVector );
 
 		void renderShadowVolume( slWorld *w );
 		void renderObjectShadowVolumes( slWorld *w );
@@ -161,6 +149,7 @@ class slCamera {
 		slBillboardEntry **_billboards;
 		unsigned int _billboardCount;
 		unsigned int _maxBillboards;
+		GLuint _billboardDrawList;
 	
 		slVector _billboardX;
 		slVector _billboardY;
@@ -171,93 +160,85 @@ class slCamera {
 	
 		unsigned char _recompile;
 	
-		slVector _textColor;
-		
-		slSceneNode*				_overlay;
+		std::vector<slCameraText> _text;
+	
+		double _textScale;
+	
+		unsigned char _drawMode;
+		bool _drawLights;
+		bool _drawFog;
+		bool _drawSmooth;
+		bool _drawShadow;
+		bool _drawShadowVolumes;
+		bool _drawOutline;
+		bool _drawReflection;
+		bool _drawText;
+		bool _drawBlur;
 
-		std::vector<slCameraText> 	_text;
+		double _blurFactor;
 	
-		float						_textScale;
+		slVector _fogColor;
 	
-		bool						_drawLights;
-		bool						_drawFog;
-		bool						_drawShadow;
-		bool						_drawShadowVolumes;
-		bool						_drawOutline;
-		bool						_drawReflection;
-		bool						_drawText;
-		bool						_drawBlur;
-
-		float						_blurFactor;
+		double _fogIntensity;
+		double _fogStart;
+		double _fogEnd;
 	
-		slVector					_fogColor;
-	
-		double						_fogIntensity;
-		double						_fogStart;
-		double						_fogEnd;
-	
-		slPlane						_shadowPlane;
+		slPlane _shadowPlane;
+		slLight _lights[8];
+		int _nLights;
 	
 		// offset & target of camera
 	
-		slVector					_location;
-		slVector					_target; 
-		double						_rotation[3][3];
+		slVector _location;
+		slVector _target; 
+		double _rotation[3][3];
 	
 		// rotation & zoom 
 
-		double						_rx, _ry;
-		double						_zoom;
+		double _rx, _ry;
+		double _zoom;
 	
-		double						_backgroundScrollX, _backgroundScrollY;
+		double _backgroundScrollX, _backgroundScrollY;
 	
 		// the window's perspective of x and y axis at the current rotation 
 	
-		slVector					_xAxis;
-		slVector					_yAxis;
+		slVector _xAxis;
+		slVector _yAxis;
 	
-		slPlane						_frustumPlanes[ 6 ];
+		slPlane _frustumPlanes[6];
 	
 		// camera size 
 		
-		int							_width;
-		int							_height;
+		int _width;
+		int _height;
 	
 		// camera origin on screen view coords 
 	
-		int							_originx;
-		int							_originy;
+		int _originx;
+		int _originy;
 	
-		double						_fov;
+		double _fov;
 
-		int							(*_activateContextCallback)();
-		void						(*_renderContextCallback)(slWorld *w, slCamera *c);
+		int  (*_activateContextCallback)();
+		void (*_renderContextCallback)(slWorld *w, slCamera *c);
 
-		void						clear( slWorld *w );
-
-		void						setTextColor( slVector *inColor ) { slVectorCopy( inColor, &_textColor ); }
-
-		slTexture2D*					readbackTexture() const { return _readbackTexture; }
-
-		void						initGL();
+		void clear( slWorld *w );
 
 	private:
+		void stencilFloor();
+		void reflectionPass( slWorld *w );
+		void shadowPass( slWorld *w );
+		void renderObjects( slWorld *w, unsigned int flags );
+		void renderText( slWorld *w, int crosshair );
+		void renderLabels( slWorld *w );
+		void renderLines( slWorld *w );
+		void drawLights( int noDiffuse );
+		void drawBackground( slWorld *w );
+		void drawFog();
 
-		slTexture2D*					_readbackTexture;
-		int						_readbackX;
-		int						_readbackY;
 
-		void 						stencilFloor( slWorld *w );
-		void 						reflectionPass( slWorld *w, bool inWillDoVolumeShadow );
-		void 						drawFlatShadows( slWorld *w );
-		void 						renderObjects( slWorld *w, unsigned int flags, float inAlphaScale = 1.0f );
-		void 						renderText( slWorld *w, int crosshair );
-		void 						renderLabels( slWorld *w );
-		void 						renderLines( slWorld *w );
-		void 						drawBackground( slWorld *w );
-		void 						drawFog();
-
-		slVertexBufferGL*			_billboardBuffer;
 };
+
+int slBillboardSortFunc(const void *, const void *);
 
 #endif /* _CAMERA_H */

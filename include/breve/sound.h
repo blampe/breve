@@ -18,9 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#ifndef _SOUND_H
-#define _SOUND_H
-
 #if defined(HAVE_LIBPORTAUDIO) && defined(HAVE_LIBSNDFILE)
 
 #include <portaudio.h>
@@ -71,7 +68,4 @@ void brFreeSoundData(brSoundData *data);
 
 int brPASoundCallback(void *ibuf, void *obuf, unsigned long fbp, PaTimestamp outTime, void *data);
 
-
-
-#endif // defined(HAVE_LIBPORTAUDIO) && defined(HAVE_LIBSNDFILE)
-#endif // _SOUND_H
+#endif

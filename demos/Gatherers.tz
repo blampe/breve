@@ -17,7 +17,6 @@
 # agents.
 #
 
-
 @include "Mobile.tz"
 @include "Wanderer.tz"
 @include "Control.tz"
@@ -45,6 +44,8 @@ Control : Gatherers {
 		COLLECTOR_COUNT new Collectors.
 		foodList = FOOD_COUNT new Foods.
 	
+	foodList set-bitmap to 2.
+
 		# this sim can run a bit slowly, but doesn't need a lot of 
 		# accuracy, so we can set up the integration step a bit.
 
@@ -53,7 +54,6 @@ Control : Gatherers {
 		self add-menu named "Randomize Food" for-method "randomize-food".
 
 		self point-camera at (0, 0, 0) from (0, 0, -80).
-		self enable-lighting.
 
 	+ to randomize-food:
 		# randomize the location of all of the elements in foodList.
@@ -99,7 +99,7 @@ Wanderer : Collector (aka Collectors) {
 
 		# if the food we hit is being dragged by another collector, let it go
 
-		if ( food get-owner ): return.
+		if (food get-owner) != 0: return.
 
 		# if we have collided too recently, skip this collision, we don't 
 		# want to pick things up and then drop them immediately.

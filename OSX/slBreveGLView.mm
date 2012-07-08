@@ -37,10 +37,9 @@
 }
 
 - (void)initGL {
-	if( camera ) 
-		camera -> initGL();
+	if(viewEngine) slInitGL(world, camera);
 
-	// no padding when we get gl pixels 
+	/* no padding when we get gl pixels */
 
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 }
@@ -110,7 +109,6 @@
 		NSOpenGLPFAAccelerated,
 		NSOpenGLPFAWindow,
 		NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute)24,
-		NSOpenGLPFASampleBuffers, (NSOpenGLPixelFormatAttribute)4,
 		NSOpenGLPFAAlphaSize, (NSOpenGLPixelFormatAttribute)8,
 		NSOpenGLPFAStencilSize, (NSOpenGLPixelFormatAttribute)8,
 		(NSOpenGLPixelFormatAttribute)0, (NSOpenGLPixelFormatAttribute)0
@@ -247,18 +245,17 @@
 */
 
 - (void)drawRect:(NSRect)r {
+	brEngineLock(viewEngine);
 
 	[[self openGLContext] makeCurrentContext];
 
 	drawing = 1;
 
 	if(viewEngine) {
-    viewEngine->lock();
 	   	if(!fullScreen) {
-        viewEngine->draw();
+			camera->renderScene( world, drawCrosshair );
 			if(theMovie) [theMovie addFrameFromRGBPixels: [self updateRGBPixels]];
 		}
-    viewEngine->unlock();
 	} else {
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
@@ -268,11 +265,12 @@
 
 	drawing = 0;
 
+	brEngineUnlock(viewEngine);
 }
 
 - (void)drawFullScreen {
 	if(fullScreen && viewEngine) {
-		viewEngine->lock();
+		brEngineLock(viewEngine);
 		CGLSetCurrentContext([fullScreenView context]);
 
 		if(firstFullScreen) {
@@ -281,10 +279,10 @@
 			camera->setRecompile();
 		}
 
-    viewEngine->draw();
+		camera->renderScene( world, drawCrosshair );
 		firstFullScreen = 0;
 		CGLFlushDrawable([fullScreenView context]);
-		viewEngine->unlock();
+		brEngineUnlock(viewEngine);
 	}
 }
 
@@ -396,7 +394,7 @@
 		return;
 	}
 
-	viewEngine->lock();
+	brEngineLock(viewEngine);
 	switch(key) {
 		case NSUpArrowFunctionKey:
 			brSpecialKeyCallback(viewEngine, "up", 1);
@@ -414,7 +412,7 @@
 			brKeyCallback(viewEngine, key, 1);
 			break;
 	}
-	viewEngine->unlock();
+	brEngineUnlock(viewEngine);
 }
 
 - (void)keyUp:(NSEvent *)theEvent {
@@ -427,7 +425,7 @@
 	if([str length] != 1) return;
 	key = [str characterAtIndex: 0];
 
-	viewEngine->lock();
+	brEngineLock(viewEngine);
 	switch(key) {
 		case NSUpArrowFunctionKey:
 			brSpecialKeyCallback(viewEngine, "up", 0);
@@ -445,7 +443,7 @@
 			brKeyCallback(viewEngine, key, 0);
 			break;
 	}
-	viewEngine->unlock();
+	brEngineUnlock(viewEngine);
 }
 
 - (unsigned char*)updateRGBPixels {
@@ -525,7 +523,7 @@
 		if(!strcmp(menuEntry->title, "")) {
 			[menu addItem: [NSMenuItem separatorItem]];
 		} else {
-			menuItem = [menu addItemWithTitle: [NSString stringWithCString: menuEntry->title encoding:NSUTF8StringEncoding] action: @selector(contextualMenu:) keyEquivalent: @""];
+			menuItem = [menu addItemWithTitle: [NSString stringWithCString: menuEntry->title] action: @selector(contextualMenu:) keyEquivalent: @""];
 	
 			[menuItem setTag: n];
 	

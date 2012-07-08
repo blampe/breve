@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdarg.h>
 
 #include <string>
 
@@ -10,7 +9,9 @@
 #include "engine.h"
 #include "namespace.h"
 
-void breveInitURLFunctions(brNamespace *);
+#ifdef __cplusplus
+extern "C" {
+#endif
 void breveInitCameraFunctions(brNamespace *);
 void breveInitJointFunctions(brNamespace *);
 void breveInitControlFunctions(brNamespace *);
@@ -18,7 +19,6 @@ void breveInitFileFunctions(brNamespace *);
 void breveInitGraphFunctions(brNamespace *);
 void breveInitImageFunctions(brNamespace *);
 void breveInitLinkFunctions(brNamespace *);
-void breveInitRealFunctions(brNamespace *);
 void breveInitMathFunctions(brNamespace *);
 void breveInitMenuFunctions(brNamespace *);
 void breveInitMovieFunctions(brNamespace *);
@@ -43,20 +43,21 @@ void breveInitStatisticsFunctions(brNamespace *n);
 void breveInitQGAMEFunctions(brNamespace *);
 void breveInitDrawFunctions(brNamespace *);
 
-#define BRBREVECALL( n, name, rvalue, ... )		brNewBreveCall( n, "" #name "", name, rvalue, __VA_ARGS__, 0 ) 
-DLLEXPORT int brNewBreveCall(brNamespace *, const char *, int (*)(brEval *, brEval *, brInstance *), int, ...);
+DLLEXPORT int brNewBreveCall(brNamespace *, char *, int (*)(brEval *, brEval *, brInstance *), int, ...);
 DLLEXPORT FILE *slGetLogFilePointer(brInstance *);
+#ifdef __cplusplus
+}
+#endif
 
 void breveInitPythonFunctions(brNamespace *);
-void breveInitPerlFunctions(brNamespace *);
 
 void brLoadInternalFunctions(brEngine *);
 void brFreeBreveCall(void *);
 
 
-/**
- * \brief An internal function provided by breve.
- */
+/*!
+	\brief An internal function provided by breve.
+*/
 
 #define ST_CMAX_ARGS 16
 

@@ -1,8 +1,5 @@
 /* include/breve/config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Darwin */
-#undef DARWIN
-
 /* Define to 1 if you have the `getopt_long' function. */
 #undef HAVE_GETOPT_LONG
 
@@ -18,9 +15,6 @@
 /* Define to 1 if you have the `3ds' library (-l3ds). */
 #undef HAVE_LIB3DS
 
-/* Define to 1 if you have the `assimp' library (-lassimp). */
-#undef HAVE_LIBASSIMP
-
 /* Define to 1 if you have the `avcodec' library (-lavcodec). */
 #undef HAVE_LIBAVCODEC
 
@@ -30,14 +24,17 @@
 /* Define to 1 if you have the `avutil' library (-lavutil). */
 #undef HAVE_LIBAVUTIL
 
-/* Define to 1 if you have the `bz2' library (-lbz2). */
-#undef HAVE_LIBBZ2
-
-/* Define to 1 if you have the `curl' library (-lcurl). */
-#undef HAVE_LIBCURL
+/* Define to 1 if you have the `cmp' library (-lcmp). */
+#undef HAVE_LIBCMP
 
 /* Define to 1 if you have the `ecl' library (-lecl). */
 #undef HAVE_LIBECL
+
+/* Define to 1 if you have the `eclgc' library (-leclgc). */
+#undef HAVE_LIBECLGC
+
+/* Define to 1 if you have the `eclgmp' library (-leclgmp). */
+#undef HAVE_LIBECLGMP
 
 /* Define to 1 if you have the `enet' library (-lenet). */
 #undef HAVE_LIBENET
@@ -48,14 +45,8 @@
 /* Define to 1 if you have the `FLAC' library (-lFLAC). */
 #undef HAVE_LIBFLAC
 
-/* Define to 1 if you have the `freetype' library (-lfreetype). */
-#undef HAVE_LIBFREETYPE
-
 /* Define to 1 if you have the `ftgl' library (-lftgl). */
 #undef HAVE_LIBFTGL
-
-/* Define to 1 if you have the `GIMPACT' library (-lGIMPACT). */
-#undef HAVE_LIBGIMPACT
 
 /* Define to 1 if you have the `GL' library (-lGL). */
 #undef HAVE_LIBGL
@@ -75,20 +66,20 @@
 /* Define to 1 if you have the `history' library (-lhistory). */
 #undef HAVE_LIBHISTORY
 
+/* JVM library for JNI */
+#undef HAVE_LIBJAVA
+
 /* Define to 1 if you have the `jpeg' library (-ljpeg). */
 #undef HAVE_LIBJPEG
 
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
+/* Define to 1 if you have the `ncurses' library (-lncurses). */
+#undef HAVE_LIBNCURSES
+
 /* Define to 1 if you have the `ode' library (-lode). */
 #undef HAVE_LIBODE
-
-/* Define to 1 if you have the `OSMesa' library (-lOSMesa). */
-#undef HAVE_LIBOSMESA
-
-/* Define to 1 if you have the `perl' library (-lperl). */
-#undef HAVE_LIBPERL
 
 /* Define to 1 if you have the `png' library (-lpng). */
 #undef HAVE_LIBPNG
@@ -105,6 +96,18 @@
 /* Have the required Python libraries */
 #undef HAVE_LIBPYTHON
 
+/* Define to 1 if you have the `python23' library (-lpython23). */
+#undef HAVE_LIBPYTHON23
+
+/* Define to 1 if you have the `python24' library (-lpython24). */
+#undef HAVE_LIBPYTHON24
+
+/* Define to 1 if you have the `python2.3' library (-lpython2.3). */
+#undef HAVE_LIBPYTHON2_3
+
+/* Define to 1 if you have the `python2.4' library (-lpython2.4). */
+#undef HAVE_LIBPYTHON2_4
+
 /* Define to 1 if you have the `qgame++' library (-lqgame++). */
 #undef HAVE_LIBQGAME__
 
@@ -114,8 +117,8 @@
 /* Define to 1 if you have the `sndfile' library (-lsndfile). */
 #undef HAVE_LIBSNDFILE
 
-/* Define to 1 if you have the `swscale' library (-lswscale). */
-#undef HAVE_LIBSWSCALE
+/* Define to 1 if you have the `sockets' library (-lsockets). */
+#undef HAVE_LIBSOCKETS
 
 /* Define to 1 if you have the `termcap' library (-ltermcap). */
 #undef HAVE_LIBTERMCAP
@@ -186,17 +189,11 @@
 /* Define to 1 if you have the <wctype.h> header file. */
 #undef HAVE_WCTYPE_H
 
-/* iPhone */
-#undef IPHONE
-
 /* Mac OS X */
 #undef MACOSX
 
 /* MinGW */
 #undef MINGW
-
-/* OpenGL ES */
-#undef OPENGLES
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
@@ -238,5 +235,5 @@
 #undef inline
 #endif
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t

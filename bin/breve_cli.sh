@@ -10,6 +10,4 @@
 DIRECTORY=`dirname $0`
 
 export LD_LIBRARY_PATH=$DIRECTORY:$LD_LIBRARY_PATH
-export PYTHONHOME=$DIRECTORY/../
-
-$DIRECTORY/breve -x $*
+$DIRECTORY/breve_cli_ex $*

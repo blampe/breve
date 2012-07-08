@@ -50,7 +50,6 @@ typedef struct slGLUTWindow slGLUTWindow;
 
 const struct option gCLIOptions[] = {
         { "archive",    required_argument, 0, 'a' }, 
-        { "time",       required_argument, 0, 't' },
         { "debug",      required_argument, 0, 'd' },
         { "fullscreen", no_argument,       0, 'f' },
         { "help",       no_argument,       0, 'h' },
@@ -64,13 +63,13 @@ const struct option gCLIOptions[] = {
         { "version",    no_argument,       0, 'v' }, 
         { "format",     no_argument,       0, 'F' },
         { "master",     no_argument,       0, 'M' },
-        { "slave",      required_argument, 0, 'S' },
-        { "python",		no_argument 	 , 0, 'Y' } 
+        { "slave",      required_argument, 0, 'S' }
 };
 
-int brParseArgs(int, const char **);
+int brParseArgs(int, char **);
 
 __dead void brPrintUsage(const char *);
+
 __dead void brQuit(brEngine *);
 
 void brClick(int);
@@ -80,9 +79,9 @@ void brMainMenu(int);
 
 void brGlutMenuUpdate(brInstance *);
 
-void brGlutLoop();
+void brGlutLoop(void);
 
-void slInitGlut( int inArgc, char **inArgv, const char *);
+void slInitGlut(int, char **, char *);
 
 void slDemoReshape(int, int);
 void slDemoDisplay(void);
@@ -94,12 +93,12 @@ void slDemoSpecialUp(int, int, int);
 void slDemoKeyboard(unsigned char, int, int);
 void slDemoKeyboardUp(unsigned char, int, int);
 
-int brGLUTDialogCallback(char *, char *, char *, char *);
-const char *brGLUTInterfaceVersionCallback(void);
-const char *brGLUTGetSavename(void);
-const char *brGLUTGetLoadname(void);
-int brGLUTSoundCallback(void);
-int brGLUTPauseCallback(void);
-int brGLUTUnpauseCallback(void);
+int brCLIDialogCallback(char *, char *, char *, char *);
+char *interfaceVersionCallback(void);
+char *getSavename(void);
+char *getLoadname(void);
+int soundCallback(void);
+int pauseCallback(void);
 
-extern const char *interfaceID;
+extern char **gErrorNames;
+extern char *interfaceID;

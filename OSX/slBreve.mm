@@ -29,11 +29,11 @@
 */
 
 /*
- * aim:goim?screenname=rockstjaerna@mac.com
- */
+	aim:goim?screenname=rockstjaerna@mac.com
+*/
 
 #import "slBreve.h"
-#import "slutil.h"
+#import "util.h"
 
 extern BOOL _engineWillPause;
 
@@ -66,16 +66,20 @@ static NSRecursiveLock *gLogLock;
 }
 
 - (void)applicationWillFinishLaunching:(NSNotification*)note {
+	struct direct **docsArray;
+	int demoCount, n;
+	NSString *name;
 	NSString *bundlePath;
 	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
 #define stringify(x) #x
 #define expand_macro_stringify(x) stringify(x)
 
-	_versionString = [ [ NSString stringWithCString: expand_macro_stringify( BREVE_VERSION )  encoding:NSUTF8StringEncoding] retain ];
+	_versionString = [ [ NSString stringWithCString: expand_macro_stringify( BREVE_VERSION ) ] retain ];
+
 	[_versionField setStringValue: [ NSString stringWithFormat: @"version %@", _versionString ] ];
 	
-	// NSLog(@ "version = %@\n", [ NSString stringWithFormat: @"version %@", _versionString ]  );
+	NSLog(@ " version = %@\n", [ NSString stringWithFormat: @"version %@", _versionString ]  );
 
 	_engineWillPause = NO;
 	
@@ -110,17 +114,25 @@ static NSRecursiveLock *gLogLock;
 	demoPath = strdup([[NSString stringWithFormat: @"%@/demos", bundlePath] cString]);
 	classPath = strdup([[NSString stringWithFormat: @"%@/classes", bundlePath] cString]);
 	docsPath = strdup([[NSString stringWithFormat: @"%@/docs", bundlePath] cString]);
-
-	_stClassDocsPath = strdup([[NSString stringWithFormat: @"%@/docs/steveclasses", bundlePath] cString]);
-	_pyClassDocsPath = strdup([[NSString stringWithFormat: @"%@/docs/pythonclasses", bundlePath] cString]);
+	classDocsPath = strdup([[NSString stringWithFormat: @"%@/docs/classes", bundlePath] cString]);
 
 	srand(time(NULL));
 	srandom(time(NULL));
 	
-	[ self buildDemoMenuForDir: demoPath forMenu: demoMenu ];
+	[self buildDemoMenuForDir: demoPath forMenu: demoMenu];
 
-	[ self buildDocsMenuForDir: _stClassDocsPath forMenu: _stDocsMenu ];
-	[ self buildDocsMenuForDir: _pyClassDocsPath forMenu: _pyDocsMenu ];
+	demoCount = scandir(classDocsPath, &docsArray, isHTMLfile, alphasort);
+
+	if(demoCount > 0) {
+		for(n=0;n<demoCount;n++) {
+			name = [NSString stringWithCString: docsArray[n]->d_name];
+			[docsMenu insertItemWithTitle: name action: @selector(docsMenu:) keyEquivalent: @"" atIndex: n];
+
+			free(docsArray[n]);
+		}
+
+		if(demoCount) free(docsArray);
+	}
 
 	[runWindow setFrameAutosaveName: @"runWindow"];
 
@@ -148,34 +160,16 @@ static NSRecursiveLock *gLogLock;
 	[NSTimer scheduledTimerWithTimeInterval: 1.0 target: self selector: @selector(updateSelectionWindow:) userInfo: NULL repeats: YES];
 }
 
-- (void)buildDocsMenuForDir: (char*)inDirectory forMenu:(id)inMenu {
-	struct direct **docsArray;
-	int n, count;
-
-	count = scandir( inDirectory, &docsArray, isHTMLfile, alphasort );
-
-	if( count > 0 ) {
-		for( n = 0; n< count; n++ ) {
-			NSString *name = [ NSString stringWithCString: docsArray[n]->d_name  encoding:NSUTF8StringEncoding];
-			[ inMenu insertItemWithTitle: name action: @selector(docsMenu:) keyEquivalent: @"" atIndex: n ];
-
-			free(docsArray[n]);
-		}
-
-		free( docsArray );
-	}
-}
-
 - (void)buildDemoMenuForDir:(char*)directory forMenu:(slDemoMenu*)menu {
 	struct direct **demoArray;
 	struct stat st;
 	char *fullpath;
 	int n;
 	int menuCount = 0;
-	int demoCount = scandir(directory, &demoArray, isBreveFile, alphasort);
+	int demoCount = scandir(directory, &demoArray, isTZfile, alphasort);
 	NSString *name;
 
-	[menu setPath: [NSString stringWithCString: directory encoding:NSUTF8StringEncoding]];
+	[menu setPath: [NSString stringWithCString: directory]];
 
 	for(n=0;n<demoCount;n++) {
 		fullpath = (char*)slMalloc(strlen(directory) + strlen(demoArray[n]->d_name) + 2);
@@ -184,7 +178,7 @@ static NSRecursiveLock *gLogLock;
 
 		stat(fullpath, &st);
 		
-		name = [NSString stringWithCString: demoArray[n]->d_name encoding:NSUTF8StringEncoding];
+		name = [NSString stringWithCString: demoArray[n]->d_name];
 
 		if(st.st_mode & S_IFDIR && ![[name pathExtension] isEqualToString: @"nib"]) {
 			id item, submenu;
@@ -225,12 +219,12 @@ static NSRecursiveLock *gLogLock;
 
 	if(!currentDocument) return;
 
-	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
+	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cString]);
 
-	file = [[currentDocument fileURL] path];
+	file = [currentDocument fileName];
 	if(!file) file = [currentDocument displayName];
 
-	(char*)[file cStringUsingEncoding:NSUTF8StringEncoding];
+	(char*)[file cString];
 
 	if([breveEngine checkSyntax: buffer withFilename: name]) {
 		[self runErrorWindow];
@@ -274,17 +268,17 @@ static NSRecursiveLock *gLogLock;
 
 	if(!saved) return;
 
-	csaved = (char*)[saved cStringUsingEncoding:NSUTF8StringEncoding];
+	csaved = (char*)[saved cString];
 
 	if(!currentDocument) return;
 
 
-	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
+	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cString]);
 
-	file = [[currentDocument fileURL] path];
+	file = [currentDocument fileName];
 	if(!file) file = [currentDocument displayName];
 
-	name = slStrdup((char*)[file cStringUsingEncoding:NSUTF8StringEncoding]);
+	name = slStrdup((char*)[file cString]);
 
 	[self clearLog: self];
 
@@ -360,18 +354,12 @@ static NSRecursiveLock *gLogLock;
 		return;
 	}
 
-	NSData *data = [ [ (slBreveSourceDocument*)currentDocument documentText] dataUsingEncoding: NSASCIIStringEncoding allowLossyConversion: YES ];
+	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cString]);
 
-	buffer = (char*)slMalloc( [ data length ] + 1 );
-	strncpy( buffer, (char*)[ data bytes ], [ data length ] );
-	buffer[ [ data length ] ] = 0;
+	file = [currentDocument fileName];
+	if(!file) file = [currentDocument displayName];
 
-	file = [[currentDocument fileURL] path];
-
-	if( !file ) 	
-		file = [currentDocument displayName];
-
-	name = slStrdup((char*)[file cStringUsingEncoding:NSUTF8StringEncoding]);
+	name = slStrdup((char*)[file cString]);
 
 	[self clearLog: self];
 
@@ -450,7 +438,7 @@ static NSRecursiveLock *gLogLock;
 	
 	if(!engine) return;
 
-  controller = engine->getController();
+	controller = brEngineGetController(engine);
 
 	i = [breveEngine getSelectedInstance];
 
@@ -484,19 +472,12 @@ static NSRecursiveLock *gLogLock;
 - (IBAction)docsMenu:sender {
 	NSString *filePath;
 	NSURL *path;
-	
-	char *dir;
-	
-	if( [ sender menu ] == _stDocsMenu )
-		dir = _stClassDocsPath;
-	else
-		dir = _pyClassDocsPath;
-		
-	filePath = [NSString stringWithFormat: @"%s/%@", dir, [ sender title ] ];
 
-	path = [ NSURL fileURLWithPath: filePath ];
+	filePath = [NSString stringWithFormat: @"%s/%@", classDocsPath, [sender title]];
 
-	[ [ NSWorkspace sharedWorkspace ] openURL: path ];
+	path = [NSURL fileURLWithPath: filePath];
+
+	[[NSWorkspace sharedWorkspace] openURL: path];
 }
 
 - (IBAction)showHTMLHelp:sender {
@@ -509,8 +490,8 @@ static NSRecursiveLock *gLogLock;
 
 - (IBAction)simMenu:sender {
 	brEngine *e = [breveEngine getEngine];
-	brInstance *controller = e->getController();
-  [self doMenuCallbackForInstance: controller item: [sender tag]];
+	brInstance *controller = brEngineGetController(e);
+	[self doMenuCallbackForInstance: controller item: [sender tag]];
 }
 
 - (IBAction)contextualMenu:sender {
@@ -555,7 +536,7 @@ static NSRecursiveLock *gLogLock;
 - (IBAction)saveLog:sender {
 	NSString *logFile = [self saveNameForType: @"txt" withAccView: NULL];
 
-   if(logFile) [[logText string] writeToFile: logFile atomically: YES encoding:NSUTF8StringEncoding error:nil];
+	if(logFile) [[logText string] writeToFile: logFile atomically: YES];
 }
 
 - (IBAction)snapshot:sender {
@@ -609,7 +590,7 @@ void slPrintLog( const char *text ) {
 		pool = [ [NSAutoreleasePool alloc] init ];
 
 	[ gLogLock lock];
-	[ gLogString appendString: [NSString stringWithCString: text encoding:NSUTF8StringEncoding] ];
+	[ gLogString appendString: [NSString stringWithCString: text] ];
 	[ gLogLock unlock ];
 }
 
@@ -646,7 +627,7 @@ void slPrintLog( const char *text ) {
 	error = brEngineGetErrorInfo(engine);
 
 	if(error->file) {
-		simpleFilename = (char*)[[[NSString stringWithCString: error->file encoding:NSUTF8StringEncoding] lastPathComponent] cStringUsingEncoding:NSUTF8StringEncoding];
+		simpleFilename = (char*)[[[NSString stringWithCString: error->file] lastPathComponent] cString];
 	} else {
 		// this shouldn't happen, but it happened once and caused a crash, so I'm
 		// fixing the symptom instead of the disease.  for shame.
@@ -657,8 +638,8 @@ void slPrintLog( const char *text ) {
 	for(n=0;n<[documents count];n++) {
 		slBreveSourceDocument *doc = [documents objectAtIndex: n];
 
-		if([[doc fileURL] path]) {
-			currentCName = (char*)[[[[doc fileURL] path] lastPathComponent] cStringUsingEncoding:NSUTF8StringEncoding];
+		if([doc fileName]) {
+			currentCName = (char*)[[[doc fileName] lastPathComponent] cString];
 
 			if(!strcmp(currentCName, simpleFilename)) {
 				[[doc text] goToLine: error->line];
@@ -740,7 +721,7 @@ void slPrintLog( const char *text ) {
 	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: @"mailto:jklein@spiderland.org"]];
 }
 
-int isBreveFile(struct dirent *d) {
+int isTZfile(struct dirent *d) {
 	char *filename = d->d_name;
 	int m;
 
@@ -750,7 +731,7 @@ int isBreveFile(struct dirent *d) {
    
 	if(m < 4) return 0;
 
-	return !strcmp(&filename[m - 3], ".tz") || !strcmp( &filename[m - 3], ".py" );
+	return !strcmp(&filename[m - 3], ".tz");
 }
 
 int isHTMLfile(struct dirent *d) {
@@ -768,7 +749,7 @@ void updateMenu(brInstance *i) {
 	id menuItem;
 	unsigned int n;
 
-	if(!i->engine || i != i->engine->getController()) return;
+	if(!i->engine || i != brEngineGetController(i->engine)) return;
 
 	[gSelf clearSimulationMenu];
 
@@ -778,7 +759,7 @@ void updateMenu(brInstance *i) {
 		if(!strcmp(entry->title, "")) {
 			[gSimMenu addItem: [NSMenuItem separatorItem]];
 		} else {
-			menuItem = [gSimMenu addItemWithTitle: [NSString stringWithCString: entry->title encoding:NSUTF8StringEncoding] action: @selector(simMenu:) keyEquivalent: @""];
+			menuItem = [gSimMenu addItemWithTitle: [NSString stringWithCString: entry->title] action: @selector(simMenu:) keyEquivalent: @""];
 
 			[menuItem setTag: n];
 
@@ -798,7 +779,7 @@ void updateMenu(brInstance *i) {
 
 	if([savePanel runModal] == NSFileHandlingPanelCancelButton) return NULL;
 
-	return [[savePanel fileURL] path];
+	return [savePanel filename];
 }
 
 - (NSString*)loadNameForTypes:(NSArray*)types withAccView:(NSView*)view {
@@ -930,7 +911,7 @@ void updateMenu(brInstance *i) {
 
 - (NSMutableDictionary*)parseDocsIndex {
 	NSString *index = [NSString stringWithFormat: @"%s/index.txt", docsPath];
-	NSString *text = [NSString stringWithContentsOfFile:index encoding:NSUTF8StringEncoding error:nil];
+	NSString *text = [NSString stringWithContentsOfFile: index];
 	NSScanner *scanner;
 	NSString *name, *title, *location;
 	NSMutableCharacterSet *set;

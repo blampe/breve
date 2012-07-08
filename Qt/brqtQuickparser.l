@@ -58,8 +58,7 @@ void slObjectParseCountNewlines(char *text);
 
 
 WORD	[_a-zA-Z][\-_a-zA-Z0-9]*
-WHITE		[\t\ \n]*
-WHITENONL	[\t\ ]*
+WHITE	[\t\ \n]*
 AKA		\({WHITE}*aka{WHITE}+{WORD}{WHITE}*\)
 
 %x OBJECT
@@ -73,28 +72,25 @@ AKA		\({WHITE}*aka{WHITE}+{WORD}{WHITE}*\)
 
 {WORD}{WHITE}:{WHITE}{WORD}{WHITE}{AKA}?{WHITE}/\{	{ slObjectParseText = yytext; BEGIN(OBJECT); slQPLevel = 0; return TZ_OBJECT; }
 
-^{WHITENONL}*def.*{WORD}.*:		{ slObjectParseText = yytext; return TZ_METHOD; }
-^{WHITENONL}*class.*{WORD}.*:		{ slObjectParseText = yytext; return TZ_OBJECT; }
-
 <OBJECT>\{				{ yytext = NULL; slQPLevel++; return TZ_NOTHING; }
+
 <OBJECT>\}				{ yytext = NULL; slQPLevel--; if(slQPLevel == 0) BEGIN(0); return TZ_NOTHING; }
 <OBJECT>\"[^\"]\"			;
 
 <OBJECT>\+{WHITE}to[\t\ \n][^:]*	{ slObjectParseText = yytext; slObjectParseCountNewlines(yytext); return TZ_METHOD; }
 
-<OBJECT>\n				{ slObjectParseLine++; }
-<OBJECT>\r				{ slObjectParseLine++; }
 <OBJECT>.				;
+<OBJECT>\n				{ slObjectParseLine++; }
 
-\r					{ slObjectParseLine++; }
 \n					{ slObjectParseLine++; }
+\r					{ slObjectParseLine++; }
 .					;
 
 %%
 
 void slObjectParseCountNewlines(char *text) {
 	while(*text) {
-		if( *text == '\n' || *text == '\r' ) slObjectParseLine++;
+		if(*text == '\n') slObjectParseLine++;
 		text++;
 	}
 }

@@ -161,7 +161,6 @@ int brIReadFileAsString( brEval args[], brEval *target, brInstance *i ) {
 	char *text = new char[ p->st.st_size + 1 ];
 
 	slUtilFread( text, 1, p->st.st_size, p->file );
-	text[ p->st.st_size ] = 0;
 
 	target->set( text );
 
@@ -190,6 +189,7 @@ int brIReadLine( brEval args[], brEval *target, brInstance *i ) {
 	slFgets( line, sizeof( line ) - 1, p->file );
 	
 	char *last = &line[ strlen( line ) - 1 ];
+
 	if( *last == '\n' || *last == '\r' ) *last = '\0';
 
 	target->set( line );
@@ -197,29 +197,41 @@ int brIReadLine( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
- * \brief Reads list data delimited with a specified string.
- */
+/*!
+	\brief Reads list data delimited with a specified string.
+*/
 
 int brIReadDelimitedList( brEval args[], brEval *target, brInstance *i ) {
 	brEval eval;
 	brEvalListHead *head;
-	char *str;
-	int n = 0;
+	brFilePointer *p;
+	int n;
+	char line[ 10240 ];
 
-	// reuse the single line reading code
-	brIReadLine( args, target, i );
-
+	p = BRFILEPOINTER( &args[0] );
 
 	head = new brEvalListHead();
 
-	while ( ( str = slSplit( BRSTRING( target ), BRSTRING( &args[1] ), n++ ) ) ) {
+	target->set( head );
+
+	if ( !p || !p->file ) {
+		slMessage( DEBUG_ALL, "readDelimitedList called with uninitialized file\n" );
+		return EC_ERROR;
+	}
+
+	slFgets( line, sizeof( line ) - 1, p->file );
+	if( line[ strlen( line ) - 1 ] == '\n' ) line[ strlen( line ) - 1 ] = 0;
+
+	n = 0;
+
+	char *str;
+
+	while ( ( str = slSplit( line, BRSTRING( &args[1] ), n++ ) ) ) {
 		eval.set( str );
 		brEvalListInsert( head, head->_vector.size(), &eval );
 		delete[] str;
 	}
 
-	target->set( head );
 
 	return EC_OK;
 }

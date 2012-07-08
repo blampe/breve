@@ -23,7 +23,7 @@
 
 #include <vector>
 
-#include "slutil.h"
+#include "util.h"
 #include "glIncludes.h"
 #include "graphTypedefs.h"
 

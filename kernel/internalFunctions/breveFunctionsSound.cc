@@ -71,7 +71,7 @@ int brIFreeSoundData( brEval args[], brEval *target, brInstance *i ) {
 */
 
 int brIPlaySoundData( brEval args[], brEval *target, brInstance *i ) {
-	i->engine->_soundMixer.NewPlayer( BRSOUNDDATAPOINTER( &args[0] ), BRFLOAT( &args[1] ) );
+	i->engine->soundMixer->NewPlayer( BRSOUNDDATAPOINTER( &args[0] ), BRFLOAT( &args[1] ) );
 	return EC_OK;
 }
 
@@ -83,7 +83,7 @@ int brIPlaySoundData( brEval args[], brEval *target, brInstance *i ) {
 
 int brINewSinewave( brEval args[], brEval *target, brInstance *i ) {
 
-	target->set( i->engine->_soundMixer.NewSinewave( BRINT( &args[0] ) ) );
+	target->set( i->engine->soundMixer->NewSinewave( BRINT( &args[0] ) ) );
 
 	return EC_OK;
 }
@@ -181,12 +181,11 @@ void breveInitSoundFunctions( brNamespace *n ) {
 	brNewBreveCall( n, "setBalance", brISetBalance, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
 #else
 	brNewBreveCall( n, "loadSoundData", brISoundUnsupported, AT_POINTER, AT_STRING, 0 );
-	brNewBreveCall( n, "playSoundData", brISoundUnsupported, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
+	brNewBreveCall( n, "playSoundData", brISoundUnsupported, AT_NULL, AT_POINTER, 0 );
 	brNewBreveCall( n, "freeSoundData", brISoundUnsupported, AT_NULL, AT_POINTER, 0 );
 	brNewBreveCall( n, "newSinewave", brISoundUnsupported, AT_POINTER, AT_INT, 0 );
 	brNewBreveCall( n, "freeSinewave", brISoundUnsupported, AT_NULL, AT_POINTER, 0 );
-	brNewBreveCall( n, "setFrequency", brISoundUnsupported, AT_NULL, AT_POINTER, AT_INT, 0 );
-	brNewBreveCall( n, "setVolume", brISoundUnsupported, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
-	brNewBreveCall( n, "setBalance", brISoundUnsupported, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
+	brNewBreveCall( n, "setVolume", brISoundUnsupported, AT_NULL, AT_POINTER, AT_INT, 0 );
+	brNewBreveCall( n, "setFrequency", brISoundUnsupported, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
 #endif
 }

@@ -112,7 +112,11 @@ Control : Swarm {
 			location += (item get-location).
 		}
 
-		location /= | birds |.
+		# in the context of a number, the list represents the number of items 
+		# in the list.
+
+		location /= birds.
+		# print "the highest location is $location".
 
 		topDiff = 0.0.
 
@@ -395,14 +399,8 @@ Mobile : Bird (aka Birds) {
 
 	+ to get-angle to otherMobile (object):
 		tempVector (vector).
-		velocity (vector).
-
-		velocity = ( self get-velocity ).
-
-		if | velocity | == 0.0:
-			return 0.
 		
 		tempVector = (otherMobile get-location) - (self get-location).
-		return angle( velocity, tempVector).
+		return angle((self get-velocity), tempVector).
 }
  

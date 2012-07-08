@@ -37,10 +37,6 @@
 	Creates a new brEvalListHead
 */
 
-brEvalListHead *brEvalListNew() {
-	return new brEvalListHead();
-}
-
 brEvalListHead::brEvalListHead() : brEvalObject() {}
 
 /*!
@@ -60,24 +56,17 @@ brEvalListHead::~brEvalListHead() {
 	the given pointer.
 */
 
-int brEvalListInsert( brEvalListHead *head, int index, brEval *inEval ) {
-	int size = (int)head->_vector.size();
-
-	if ( index > size ) {
+int brEvalListInsert( brEvalListHead *head, int index, brEval *value ) {
+	if ( index > ( int )head->_vector.size() ) {
 		return EC_ERROR;
-	} else if ( index == size ) {
-		head->_vector.push_back( *inEval );
+	} else if ( index == ( int )head->_vector.size() ) {
+		head->_vector.push_back( *value );
 	} else {
 		std::vector< brEval >::iterator i = head->_vector.begin() + index;
 
-		head->_vector.insert( i, 1, *inEval );
+		head->_vector.insert( i, 1, *value );
 	}
 
-	return EC_OK;
-}
-
-int brEvalListAppend( brEvalListHead *inList, brEval *inEval ) {
-	inList -> _vector.push_back( *inEval );
 	return EC_OK;
 }
 
@@ -91,10 +80,6 @@ int brEvalListRemove( brEvalListHead *head, int index, brEval *value ) {
 	head->_vector.erase( i );
 
 	return index;
-}
-
-int brEvalListLength( brEvalListHead *inHead ) {
-	return inHead->_vector.size();
 }
 
 brEval *brEvalListIndexLookup( brEvalListHead *head, int index ) {

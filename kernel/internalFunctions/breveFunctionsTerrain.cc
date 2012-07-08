@@ -32,9 +32,7 @@ int brITerrainNew( brEval args[], brEval *target, brInstance *i ) {
 
 	t = new slTerrain( 5, BRDOUBLE( &args[0] ), i );
 
-	i->engine->world->addObject( t );
-
-	target->set( t );
+	target->set( i->engine->world->addObject( t ) );
 
 	return EC_OK;
 }

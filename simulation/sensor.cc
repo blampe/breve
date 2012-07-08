@@ -1,9 +1,13 @@
-
+#include <stdio.h>
+#include <math.h>
 #include "simulation.h"
-#include "worldObject.h"
-#include "sensor.h"
+#include "glIncludes.h"
+#include "gldraw.h"
+#include "camera.h"
+#include "volInt.h"
 #include "vclip.h"
-
+#include "vclipData.h"
+#include "sensor.h"
 using std::vector;
 using std::string;
 
@@ -372,7 +376,7 @@ void Sensor::sense(const slShape *shape, slPosition *shapePos, slPosition *senso
 					slVectorMul(&dir, dist, &pointOnPlane);
 					slVectorAdd(&pointOnPlane, &sensorPos->location, &pointOnPlane);
 					// now figure out if the point in question is within the face 
-					result = slClipPoint(&pointOnPlane, f->voronoi, shapePos, f-> _pointCount, &update, &distance);
+					result = slClipPoint(&pointOnPlane, f->voronoi, shapePos, f->edgeCount, &update, &distance);
 					if(result == 1) { // point inside the face
 						if(rayValues [i][j].distance > dist){//we have a better hit
 							rayValues[i][j].distance = dist;
@@ -599,11 +603,32 @@ bool Sensor::freePath(vector<slWorldObject*>* neighbors, slPosition* sensorPos, 
 			slVectorMul(&dir, dist, &pointOnPlane);
 			slVectorAdd(&pointOnPlane, &sensorPos->location, &pointOnPlane);
 			// now figure out if the point in question is within the face 
-			result = slClipPoint(&pointOnPlane, f->voronoi, shapePos, f-> _pointCount, &update, &distance);
+			result = slClipPoint(&pointOnPlane, f->voronoi, shapePos, f->edgeCount, &update, &distance);
 			if(result != 1) { continue;}
 
 			// point inside the face
 			if(exact){
+				/*
+				printf("vertex: ");
+				slVectorPrint(&wcPlane.vertex);
+				printf("sensor location: ");
+				slVectorPrint(&sensorPos->location);
+				
+				printf("normal: ");
+				slVectorPrint(&wcPlane.normal);
+				printf("posToPlane: ");
+				slVectorPrint(&posToPlane);
+
+				printf("slVectorDot(&wcPlane.normal, &posToPlane %f\n",slVectorDot(&wcPlane.normal, &posToPlane));
+				printf("slVectorDot(&wcPlane.normal, &dir)%f\n",slVectorDot(&wcPlane.normal, &dir));
+				printf("dist:  %f\n",dist);
+				printf(" slVectorAngle(&middleDirection, &wcPlane.normal %f\n",( slVectorAngle(&dir, &wcPlane.normal))*180/M_PI);
+				printf("point on plane: ");
+				slVectorPrint(&pointOnPlane);
+				printf("dir: ");
+				slVectorPrint(&dir);
+				printf("\n");
+				*/
 				if( dist < shortestDist ){ shortestDist = dist;}
 				if(isTarget){
 					if(dist < targetDist){targetDist = dist;}

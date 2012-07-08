@@ -47,37 +47,22 @@ Abstract : Shape (aka Shapes) [version 2.0] {
 		density = newDensity.
 		shapeSetDensity(shapePointer, density).
 
-	+ to set-inertia-matrix to newInertia (matrix):
-		% Sets the 3x3 matrix representing the shape's inertia.  Appropriate
-		% intertia matrices are automatically computed for all shapes, so this 
-		% method is for advanced customization only.
-		% 
-		% Any calls that change the shape's density, mass or structure will 
-		% recompute the inertia matrix, so this method should be called only 
-		% after the final structure, mass and density of the shape have been set.
-
-		shapeSetInertiaMatrix( shapePointer, newInertia ).
-
   + section "Dynamically Changing the Size of a Shape"
 
-	+ to set-scale to scale (vector):
+	+ to scale by scale (vector):
 		% If the shape is <i>not</i> a sphere, scales the shape by the x, y 
 		% and z elements of scale.  If the shape <i>is</i> a sphere, scales 
 		% the shape by only the x element such that the shape always remains 
 		% spherical.
 		% <p>
-		% After the size has been changed, the instances announces a "size-changed" notification.
+		% After the size has been changed, the instances announces a 
+		% "size-changed" notification.
 
-		shapeSetScale( shapePointer, scale ).
+		scaleShape(shapePointer, scale).
+
+		lastScale = scale.
+
 		self announce message "size-changed".
-
-	+ to get-scale:
-		return shapeGetScale( shapePointer ).
-
-	- to scale by scale (vector):
-		current (vector).
-		current = (self get-scale).
-		self set-scale to ( scale::x * current::x, scale::y * current::y, scale::z * current::z ).
 
 	- to get-last-scale:
 		% Used internally...
@@ -85,10 +70,10 @@ Abstract : Shape (aka Shapes) [version 2.0] {
 
   + section "Initializing the Shape"
 		
-	+ to init-with-sphere radius theRadius = 1.0 (float):
-		% Sets this Shape object to a sphere with radius theRadius.
+	+ to init-with-sphere radius r (float):
+		% Sets this Shape object to a sphere with radius r.
 
-		shapePointer = newSphere( theRadius, density).
+		shapePointer = newSphere(r, density).
 
 		return self.
 
@@ -99,7 +84,7 @@ Abstract : Shape (aka Shapes) [version 2.0] {
 
 		return self.
 
-	+ to init-with-polygon-disk sides sideCount (int) height theHeight (float) radius theRadius = 1.0 (float):
+	+ to init-with-polygon-disk radius theRadius (float) sides sideCount (int) height theHeight (float):
 		% Sets this Shape object to an extruded n-gon of sideCount sides, in other words,
 		% a disk with sideCount sides.
 		% <p>
@@ -115,7 +100,7 @@ Abstract : Shape (aka Shapes) [version 2.0] {
  
 		return self.
 
-	+ to init-with-polygon-cone sides sideCount (int) height theHeight (float) radius theRadius = 1.0 (float):
+	+ to init-with-polygon-cone radius theRadius (float) sides sideCount (int) height theHeight (float):
 		% Sets this Shape object to a cone-like shape with sideCount sides.
 		% <p>
 		% The distance from the center of the n-gon faces to the vertices 
@@ -218,13 +203,10 @@ Shape : CustomShape (aka CustomShapes) {
 Shape : Sphere (aka Spheres) {
 	% This class is used to create a sphere shape.
 
-	+ to init-with radius theRadius (double):
-		% Initializes the sphere with the radius theRadius.
+	+ to init-with radius r (double):
+		% Initializes the sphere with the given radius.
 
-		shapePointer = newSphere( theRadius, density ).
-
-		if !shapePointer:
-			die "Could not create Sphere: invalid arguments".
+		shapePointer = newSphere(r, density).
 
 		return self.
 }
@@ -234,13 +216,10 @@ Shape : Cube (aka Cubes) {
 	% is named "Cube", the shapes do not need to be perfect cubes--they can be 
 	% rectangular solids of all sizes.
 
-	+ to init-with size cubeSize (vector):
-		% Initializes the cube to a rectangular solid with size cubeSize. 
+	+ to init-with size s (vector):
+		% Initializes the cube to a rectangular solid with size v.  
 
-		shapePointer = newCube( cubeSize, density ).
-
-		if !shapePointer:
-			die "Could not create Cube: invalid arguments".
+		shapePointer = newCube(s, density).
 
 		return self.
 }
@@ -249,7 +228,7 @@ Shape : PolygonDisk (aka PolygonDisks) {
 	% This class is used to create a polygon-disk.  This is a shape which can be 
 	% described as an extruded polygon. 
 
-	+ to init-with sides sideCount (int) height theHeight (float) radius theRadius = 1.0 (float):
+	+ to init-with radius theRadius = 1 (float) sides sideCount (int) height theHeight (float):
 		% Initializes the polygon-disk.
 		% <p>
 		% The distance from the center of the n-gon faces to the vertices 
@@ -260,9 +239,6 @@ Shape : PolygonDisk (aka PolygonDisks) {
  
 		shapePointer = newNGonDisc(sideCount, theRadius, theHeight, density).
  
-		if !shapePointer:
-			die "Could not create PolygonDisk: invalid arguments".
-
 		return self.
 }
 
@@ -272,7 +248,7 @@ Shape : PolygonCone (aka PolygonCones) {
 	% 4 sides.  As the number of sides increases, the base becomes more circular and the
 	% resulting shape will more closely resemble a true cone.
 
-	+ to init-with sides sideCount (int) height theHeight (float) radius theRadius = 1.0 (float):
+	+ to init-with radius theRadius (float) sides sideCount (int) height theHeight (float):
 		% Initializes the polygon-cone.
 		% <p>
 		% The distance from the center of the n-gon faces to the vertices 
@@ -283,29 +259,23 @@ Shape : PolygonCone (aka PolygonCones) {
 
 		shapePointer = newNGonCone(sideCount, theRadius, theHeight, density).
 
-		if !shapePointer:
-			die "Could not create PolygonCone: invalid arguments".
-
 		return self.
 }
 
 Shape : MeshShape {
-	% A class to load arbitrary 3d mesh shapes.  
+	% An experimental class to load arbitrary 3d mesh shapes.  
+	% <p>
+    % <b>Full collision detection is not currently supported for MeshShapes</b>.
+    % MeshShapes are currently collision detected using spheres, with the radius
+    % defined by the maximum reach of the mesh.
 
-	+ to load-from-3ds file filename (string) with-size size = 1.0 (float):
+	+ to load-from-3ds file filename (string) with-node nodename = "" (string): 
 		% Attempts to load a mesh from a 3D Studio scene file named filename.
 		% The optional argument nodename specifies which mesh in the scene 
 		% should be loaded.  If nodename is not provided, the first mesh found  
 		% in the scene is loaded.
-		% <p>
-		% The size argument specifies the maximum size for the imported shape.  
-		% Because sizes may vary between different models, shapes are normalized
-		% to the size specified, which is 1.0 by default.
 
-		shapePointer = meshShapeNew(filename, "", size ).
-
-		if !shapePointer:
-			die "Could not create MeshShape: invalid arguments".
+        shapePointer = meshShapeNew(filename, nodename).
 
 		return self.
 }

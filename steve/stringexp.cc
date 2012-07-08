@@ -100,7 +100,7 @@ stStringExp::stStringExp( char *theString, stMethod *m, stObject *o, const char 
 						number[numend - ( varend + 1 )] = 0;
 						offset = atoi( number );
 
-						index = stIntExp( offset, file, line );
+						index = new stIntExp( offset, file, line );
 						delete[] number;
 
 						if ( *varend == '{' ) {
@@ -178,7 +178,7 @@ stStringExp::stStringExp( char *theString, stMethod *m, stObject *o, const char 
 
 	theString[baseSize] = 0;
 
-	string = theString;
+	string = slStrdup( theString );
 
 	type = ET_STRING;
 }

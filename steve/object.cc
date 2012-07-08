@@ -32,22 +32,25 @@
 	 Requires = the engine, the object name and the super object.
 */
 
-stObject *stObjectNew( brEngine *engine, stSteveData *sdata, char *name, char *alias, stObject *super, float version, const char *inFilename ) {
+stObject *stObjectNew( brEngine *engine, stSteveData *sdata, char *name, char *alias, stObject *super, float version ) {
 	stObject *o;
 	brObject *bo;
 
-	// check to see if the object exists 
+	/* check to see if the object exists */
 
-	if ( brObjectFindWithTypeSignature( engine, name, STEVE_TYPE_SIGNATURE ) ) 
-		return NULL;
+	if ( brObjectFind( engine, name ) ) return NULL;
 
 	o = new stObject;
+
 	o->version = version;
+
 	o->engine = engine;
+
 	o->steveData = sdata;
+
 	o->super = super;
+
 	o->name = name;
-	o->_file = inFilename;
 
 	// before any variables are added here, our variable vector
 	// the size of our parent's variable vector.  our vector
@@ -75,13 +78,38 @@ stObject *stObjectNew( brEngine *engine, stSteveData *sdata, char *name, char *a
 	return o;
 }
 
-/**
- * Instantiate a steve object, but do NOT call the init methods.
- * This creates an sets up an stInstance, but does not call the init
- * method.  There are situations when calling functions need to have
- * a pointer to the instance before init is called, so initialization
- * is a seperate step.
- */
+/*!
+	\brief Instantiates a steve object and adds it to the breve engine.
+
+	This method also fills in the "breveInstance" pointer in the steve object.
+*/
+
+brInstance *stInstanceCreateAndRegister( stSteveData *sdata, brEngine *e, brObject *object ) {
+	stInstance *newi = NULL;
+	brInstance *bi;
+
+	bi = brObjectInstantiate( e, object, NULL, 0 );
+
+	if ( !bi ) return NULL;
+
+	if ( bi->object->type->_typeSignature == STEVE_TYPE_SIGNATURE ) {
+		newi = ( stInstance* )bi->userData;
+		newi->breveInstance = bi;
+
+		if ( stInstanceInit( newi ) != EC_OK ) return NULL;
+	}
+
+	return bi;
+}
+
+/*!
+	\brief Instantiate a steve object, but do NOT call the init methods.
+
+	This creates an sets up an stInstance, but does not call the init
+	method.  There are situations when calling functions need to have
+	a pointer to the instance before init is called, so initialization
+	is a seperate step.
+*/
 
 stInstance *stInstanceNew( stObject *o ) {
 	stInstance *i;
@@ -100,7 +128,6 @@ stInstance *stInstanceNew( stObject *o ) {
 
 	i->status = AS_ACTIVE;
 	i->gc = 0;
-
 	i->retainCount = 1;
 
 	// if(pthread_mutex_init(&i->lock, NULL))
@@ -127,6 +154,37 @@ int stInstanceInit( stInstance *i ) {
 	if (( r = stMethodTrace( &ri, "init" ) ) != EC_OK ) return r;
 
 	return EC_OK;
+}
+
+/*!
+	\brief Adds an instance to another's dependencies list.
+*/
+
+void stInstanceAddDependency( stInstance *i, stInstance *dependency ) {
+	if ( !i || !dependency ) return;
+
+	i->dependencies.insert( dependency );
+
+	dependency->dependents.insert( i );
+}
+
+/*!
+	\brief Removes an instance from another's dependencies list.
+*/
+
+void stInstanceRemoveDependency( stInstance *i, stInstance *dependency ) {
+
+	std::set< stInstance*, stInstanceCompare>::iterator ii;
+
+	if ( !i || !dependency ) return;
+
+	ii = i->dependencies.find( dependency );
+
+	if ( ii != i->dependencies.end() ) i->dependencies.erase( ii );
+
+	ii = dependency->dependents.find( i );
+
+	if ( ii != dependency->dependents.end() ) dependency->dependents.erase( ii );
 }
 
 /*!
@@ -176,9 +234,16 @@ void stInstanceCollect( stInstance *i ) {
 */
 
 void stInstanceFree( stInstance *i ) {
+	while ( i->dependencies.size() )
+		stInstanceRemoveDependency( i, *i->dependencies.begin() );
+
+	while ( i->dependents.size() )
+		stInstanceRemoveDependency( *i->dependents.begin(), i );
+
 	stInstanceFreeNoInstanceLists( i );
 
 	stRemoveFromInstanceLists( i );
+
 
 	if ( i->type->steveData->retainFreedInstances )
 		i->type->steveData->freedInstances.push_back( i );
@@ -266,7 +331,9 @@ void stInstanceFreeInternals( stInstance *i ) {
 */
 
 void stObjectFreeAllInstances( stObject *o ) {
+
 	std::set< stInstance*, stInstanceCompare> all;
+
 	std::set< stInstance*, stInstanceCompare>::iterator ii;
 
 	// it's possible that the allInstances list will change while
@@ -327,7 +394,7 @@ void stObjectFree( stObject *o ) {
 	called for an entire instance hierarchy.
 */
 
-int stMethodTrace( stRunInstance *i, const char *name ) {
+int stMethodTrace( stRunInstance *i, char *name ) {
 	brEval e;
 	stMethod *meth;
 	stRunInstance ri;
@@ -408,19 +475,40 @@ stVar *stFindLocal( const char *name, stMethod *m ) {
 */
 
 stKeywordEntry *stNewKeywordEntry( char *keyword, stVar *v, brEval *defValue ) {
-	if ( !v || !keyword ) 
-		return NULL;
+	stKeywordEntry *e;
+	brEval *copy;
 
-	stKeywordEntry *e = new stKeywordEntry;
+	e = new stKeywordEntry;
+
+	if ( !e || !v || !keyword ) return NULL;
+
 
 	e->keyword = keyword;
+
 	e->var = v;
+
 	e->defaultKey = NULL;
 
-	if ( defValue )
-		e->defaultKey = new stKeyword( keyword, new stEvalExp( defValue, NULL, 0 ) );
+	if ( defValue ) {
+		copy = new brEval;
+		brEvalCopy( defValue, copy );
+
+		e->defaultKey = new stKeyword( keyword, new stEvalExp( copy, NULL, 0 ) );
+	}
 
 	return e;
+}
+
+/*!
+	\brief Frees a stKeywordEntry.
+*/
+
+void stFreeKeywordEntry( stKeywordEntry *k ) {
+	delete k->var;
+
+	if ( k->defaultKey ) delete k->defaultKey;
+
+	delete k;
 }
 
 /*!
@@ -475,17 +563,9 @@ stMethod::~stMethod() {
 
 	for ( n = 0;n < code.size();n++ ) delete code[n];
 
-	for ( n = 0;n < keywords.size();n++ ) 
-		delete keywords[ n ];
+	for ( n = 0;n < keywords.size();n++ ) stFreeKeywordEntry( keywords[n] );
 
 	for ( vi = variables.begin(); vi != variables.end(); vi++ ) delete *vi;
-}
-
-stKeywordEntry::~stKeywordEntry() {
-	delete var;
-
-	if ( defaultKey ) 
-		delete defaultKey;
 }
 
 /*!
@@ -657,9 +737,6 @@ int stUnusedInstanceVarWarning( stObject *o ) {
 */
 
 stVar *stObjectLookupVariable( stObject *ob, const char *word ) {
-	if( !word )
-		return NULL;
-
 	do {
 		std::map< std::string, stVar* >::iterator vi;
 
@@ -770,7 +847,7 @@ stMethod *stFindInstanceMethodWithMinArgs( stObject *object, const char *word, u
 	\brief Stores an instance method in an object.
 */
 
-int stStoreInstanceMethod( stObject *o, const char *word, stMethod *method ) {
+int stStoreInstanceMethod( stObject *o, char *word, stMethod *method ) {
 	unsigned int n;
 	std::vector< stMethod* > &mlist = o->methods[ word];
 
@@ -804,7 +881,7 @@ void stAddToInstanceLists( stInstance *i ) {
 	stObject *type = i->type;
 
 	while ( type ) {
-		type -> allInstances.insert( i );
+		type->allInstances.insert( i );
 		type = type->super;
 	}
 }

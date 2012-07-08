@@ -5,17 +5,16 @@
 
 enum allocStatus { 
 	AS_RELEASED = -1,	// still allocated, but ready to be freed
-	AS_FREED,			// all memory freed--don't try to use 
-	AS_ACTIVE			// active object
+	AS_FREED,		// all memory freed--don't try to use 
+	AS_ACTIVE		// active object
 };
 
-class brObjectType;
-class brMethod;
-class brCollisionHandler;
+typedef struct brObjectType brObjectType;
+typedef struct brMethod brMethod;
+typedef struct brCollisionHandler brCollisionHandler;
+
 class brEngine;
 class brEval;
-class brMenuEntry;
-class brObserver;
 
 /** \addtogroup breveObjectAPI */
 /*@{*/
@@ -31,19 +30,8 @@ class brObserver;
  * provide it with functions to do the various tasks.
  */
 
-/**
- * The following types are accessed as opaque void data pointers and 
- * may be used in any way your language frontend needs to.
- */
-
-typedef void	brMethodCallbackData;
-typedef void	brObjectCallbackData;
-typedef void	brInstanceCallbackData;
-typedef void	brFrontendCallbackData;
-
 struct brObjectType {
 	brObjectType() {
-		runCommand			= NULL;
 		findMethod 			= NULL;
 		findObject			= NULL;
 		instantiate			= NULL;
@@ -54,11 +42,6 @@ struct brObjectType {
 		destroyInstance 		= NULL;
 		destroyObjectType		= NULL;
 		userData			= NULL;
-		load				= NULL;
-		canLoad				= NULL;
-		encodeToString			= NULL;
-		decodeFromString		= NULL;
-		finishDearchive			= NULL;
 		_typeSignature 			= 0;
 	}
 
@@ -68,90 +51,69 @@ struct brObjectType {
 	}
 
 	/**
- 	 *  
-	 */
-
-	int			(*runCommand)( void *inObjectTypeUserData, brEngine *inEngine, const char *inCommand );
-
-	/**
 	 * Finds an object class in the given language frontend
 	 */
-	brObjectCallbackData	*(*findObject)( void *inObjectTypeUserData, const char *inName );
+	void					*(*findObject)( void *inObjectTypeUserData, const char *inName );
 
 	/**
 	 * Finds a method in a given class
 	 */
-	brMethodCallbackData	*(*findMethod)( void *inObjectUserData, const char *inName, unsigned char *inTypes, int inTypeCount );
+	void					*(*findMethod)( void *inObjectUserData, const char *inName, unsigned char *inTypes, int inTypeCount );
 
 	/**
 	 * Creates a new instance of the given class.  The constructor arguments are currently unused.
 	 */
-	brInstance	  	*(*instantiate)( brEngine *inEngine, brObject *inObject, const brEval **inArguments, int inArgCount, bool inSkipInit );
+	brInstance			  	*(*instantiate)( brEngine *inEngine, brObject *inObject, const brEval **inArguments, int inArgCount );
 
 	/**
 	 * Calls a method in the language frontend
 	 */
-	int			 (*callMethod)( brInstanceCallbackData *inInstanceUserData, brMethodCallbackData *inMethodUserData, const brEval **inArguments, brEval *inResult );
+	int					 (*callMethod)( void *inInstanceUserData, void *inMethodUserData, const brEval **inArguments, brEval *inResult );
 
 	/**
-	 * Should return 1 if child is a subclass of parent, 0 otherwise
+	 * Returns 1 if parent is a subclass of parent.
 	 */
-	int			 (*isSubclass)( brObjectType *inType, void *inChild, void *inParent );
+	int					 (*isSubclass)( void *inChild, void *inParent );
 
 	/**
 	 * Destroys an instance of a language object previously created with instantiate.
 	 */
-	void			(*destroyObject)( brObjectCallbackData *inObject );
+	void					(*destroyObject)( void *inObject );
 
 	/**
 	 * Destroys an instance of a language method previously created with findMethod.
 	 */
-	void			(*destroyMethod)( brMethodCallbackData *inMethod );
+	void					(*destroyMethod)( void *inMethod );
 
 	/**
 	 * Destroys an instance of a language instance previously created with instantiate.
 	 */
-	void			(*destroyInstance)( brInstanceCallbackData *inInstance );
+	void					(*destroyInstance)( void *inInstance );
 
 	/**
 	 * Frees any leftover memory associated with the frontend, typically _userData.
 	 */
-	void			(*destroyObjectType)( brObjectCallbackData *inObjectType );
+	void					(*destroyObjectType)( void *inObjectType );
 
 	/**
 	 * A function to determine whether or not the given code can be loaded based on the file extension
 	 */
-	int			(*canLoad)( brFrontendCallbackData *inFrontendData, const char *inFileExtension );
+	int					(*canLoad)( void *inObjectTypeUserData, const char *inFileExtension );
 
 	/**
 	 * A function to execute code in this frontend language.
 	 */
-	int			(*load)( brEngine *inEngine, brFrontendCallbackData *inFrontendData, const char *inFilename, const char *inFiletext );
+	int					(*load)( brEngine *inEngine, void *inObjectTypeUserData, const char *inFilename, const char *inFiletext );
 
 	/**
 	 * A function to execute code in this frontend language.
 	 */
-	int			(*loadWithArchive)( brEngine *inEngine, brFrontendCallbackData *inFrontendData, const char *inFilename, const char *inFiletext, const char *inArchive );
-
-	/**
-	 * A function to encode instances of this language to a string
-	 */
-	char*			(*encodeToString)( brEngine *inEngine, brInstanceCallbackData *inInstanceData, brEvalHash *inInstanceToIndexMapping );
-
-	/**
-	 * A function to decode instances of this language from a string.
-	 */
-	brInstance*		(*decodeFromString)( brEngine *inEngine, const char *inData );
-
-	/**
-	 * A function to finish dearchiving when all objects have been created.
-	 */
-	int			(*finishDearchive)( brEngine *inEngine, brEvalHash *inIndexToInstanceMapping );
+	int					(*loadWithArchive)( brEngine *inEngine, void *inObjectTypeUserData, const char *inFilename, const char *inFiletext, const char *inArchive );
 
 	/**
 	 * A user-data callback pointer.
 	 */
-	brFrontendCallbackData	*userData;
+	void					*userData;
 
 	/**
 	 * A unique identifier which will be set for all objects of this object type.  This
@@ -159,7 +121,7 @@ struct brObjectType {
 	 * a certain object type.
 	 */
 
-	long			_typeSignature;
+	long					_typeSignature;
 };
 
 /**
@@ -177,17 +139,6 @@ struct brObject {
 
 	std::vector< brCollisionHandler* > collisionHandlers;
 };
-
-/**
- * Compare two brInstances
- */
-
-struct brInstanceCompare {
-	bool operator()(const brInstance* s1, const brInstance* s2) const {
-		return s1 < s2;
-	}
-};
-
 
 /**
  * \brief A breve instance, of any language.
@@ -223,10 +174,6 @@ struct brInstance {
 
 	std::vector< brObserver* > observers;
 	std::vector< brInstance* > observees;
-
-	std::set< brInstance*, brInstanceCompare > _dependencies;
-	std::set< brInstance*, brInstanceCompare > _dependents;
-
 };
 
 /**
@@ -274,7 +221,7 @@ struct brMethod {
  */
 
 struct brObserver {
-	brObserver( brInstance *obs, brMethod *meth, const char *note ) {
+	brObserver( brInstance *obs, brMethod *meth, char *note ) {
 		instance = obs;
 		method = meth;
 		notification = slStrdup( note );
@@ -303,30 +250,23 @@ DLLEXPORT void brEngineUnlock( brEngine * );
 
 DLLEXPORT void brEngineRegisterObjectType(brEngine *, brObjectType * );
 
-// Run a command in the controller's frontend language
-
-DLLEXPORT int brRunCommand( brEngine *inEngine, const char *inCommand );
-
 // locating objects and methods within objects
 
-DLLEXPORT brMethod *brMethodFind( brObject *inObject, const char *inName, unsigned char *inTypes, int inArgCount );
-DLLEXPORT brMethod *brMethodFindWithArgRange( brObject *inObject, const char *inName, unsigned char *inTypes, int inMinArgs, int inMaxArgs );
+DLLEXPORT brMethod *brMethodFind(brObject *, const char *, unsigned char *, int);
+DLLEXPORT brMethod *brMethodFindWithArgRange(brObject *, const char *, unsigned char *, int, int);
 
-DLLEXPORT brObject *brObjectFind( brEngine *inEngine, const char *inType );
-DLLEXPORT brObject *brObjectFindWithPreferredType( brEngine *e, const char *name, int inSignature );
-DLLEXPORT brObject *brObjectFindWithTypeSignature( brEngine *inEngine, const char *inType, int inSignature );
-DLLEXPORT brObject *brUnknownObjectFind( brEngine *inEngine, const char *inType );
+DLLEXPORT brObject *brObjectFind(brEngine *, const char *);
+DLLEXPORT brObject *brUnknownObjectFind(brEngine *, const char *);
 
 // functions for getting user data
 
-DLLEXPORT void *brInstanceGetUserData( brInstance *inInstance );
-DLLEXPORT void *brObjectGetUserData( brObject *inObject );
+DLLEXPORT void *brInstanceGetUserData(brInstance *);
+DLLEXPORT void *brObjectGetUserData(brInstance *);
 
 // functions for calling methods with breve instances
 
 DLLEXPORT int brMethodCall(brInstance *, brMethod *, const brEval **, brEval *);
 DLLEXPORT int brMethodCallByName(brInstance *, const char *, brEval *);
-DLLEXPORT int brMethodCallByNameWithArgs(brInstance *, const char *, const brEval **, int, brEval *);
 DLLEXPORT int brMethodCallByNameWithArgs(brInstance *, const char *, const brEval **, int, brEval *);
 
 // functions related to adding and removing classes and instances to the breve engine
@@ -334,11 +274,7 @@ DLLEXPORT int brMethodCallByNameWithArgs(brInstance *, const char *, const brEva
 DLLEXPORT brObject *brEngineAddObject(brEngine *, brObjectType *, const char *, void *);
 DLLEXPORT void brEngineAddObjectAlias(brEngine *, char *, brObject *);
 
-DLLEXPORT brInstance *brObjectInstantiate(brEngine *, brObject *, const brEval **, int, bool inSkipInit );
-
-DLLEXPORT char *brInstanceEncodeToString( brEngine *inEngine, brInstance *inInstance, brEvalHash *inInstanceToIndexMapping );
-DLLEXPORT brInstance *brInstanceDecodeFromString( brEngine *inEngine, int inTypeSignature, const char *inData );
-DLLEXPORT int brFinishDearchive( brEngine *inEngine, int inTypeSignature, brEvalHash *inIndexToInstanceMapping );
+DLLEXPORT brInstance *brObjectInstantiate(brEngine *, brObject *, const brEval **, int);
 
 DLLEXPORT brInstance *brEngineAddInstance(brEngine *, brObject *, void *);
 DLLEXPORT brInstance *brEngineAddBreveInstance(brEngine *, brObject *, brInstance * );
@@ -348,15 +284,12 @@ DLLEXPORT void brEngineRemoveInstance(brEngine *, brInstance *);
 DLLEXPORT int brObjectAddCollisionHandler(brObject *, brObject *, char *);
 DLLEXPORT int brObjectSetIgnoreCollisionsWith(brObject *, brObject *, int);
 
-DLLEXPORT bool brObjectIsSubclass( brObject *inA, brObject *inB );
-
 // adding and removing dependencies and observers 
 
-DLLEXPORT int brInstanceAddDependency( brInstance *i, brInstance *dependency );
-DLLEXPORT int brInstanceRemoveDependency( brInstance *i, brInstance *dependency );
-
-DLLEXPORT int brInstanceAddObserver(brInstance *i, brInstance *inObserver, const char *inNotification, const char *inMethod );
-DLLEXPORT void brEngineRemoveInstanceObserver(brInstance *i, brInstance *observerInstance, const char *notification);
+DLLEXPORT int brInstanceAddDependency(brInstance *i, brInstance *dependency);
+DLLEXPORT int brInstanceAddObserver(brInstance *i, brInstance *observer, char *notification, char *mname);
+DLLEXPORT int brEngineRemoveInstanceDependency(brInstance *i, brInstance *dependency);
+DLLEXPORT void brEngineRemoveInstanceObserver(brInstance *i, brInstance *observerInstance, char *notification);
 
 // cleaning up 
 

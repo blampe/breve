@@ -27,7 +27,7 @@
     = their final contents.
 */
 
-#include "slutil.h"
+#include "util.h"
 
 /*
     = slListPrepend prepends an element (of type void*) onto a list.

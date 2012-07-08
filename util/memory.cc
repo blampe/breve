@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#include "slutil.h"
+#include "util.h"
 
 #undef slMalloc
 #undef slRealloc

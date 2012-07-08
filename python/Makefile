@@ -1,1 +1,1 @@
-SRC	+= python/pythonFrontend.cc python/breveFunctionsPython.cc
+SRC	+= python/python.cc python/breveFunctionsPython.cc

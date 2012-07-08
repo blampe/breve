@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-struct slList;
-
 /*!
 	\brief A simple reusable hash-table structure.
 */
@@ -41,13 +39,13 @@ struct slHashEntry {
     void *key;
 };
 
-#define slDehashData(h, k) slDehashDataAndKey( (h), (k), NULL, 0 )
+#define slDehashData(h, k) slDehashDataAndKey((h), (k), NULL)
 
 slHash *slNewHash(unsigned int, unsigned int (*)(void *, unsigned int), unsigned int (*)(void *, void *));
 void slFreeHash(slHash *);
 
 void *slHashData(slHash *, void *, void *);
-void *slDehashDataAndKey(slHash *, void *, void **, int inRemove );
+void *slDehashDataAndKey(slHash *, void *, void **);
 
 slList *slHashKeys(slHash *);
 slList *slHashValues(slHash *);

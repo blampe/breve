@@ -157,7 +157,6 @@ slRoamTriangle *slRoamPatch::nextTriangle() {
 	t = &_triangles[ _triangleCount++ ];
 
 	t->reset();
-	t->_terrain = _terrain;
 
 	return t;
 }
@@ -330,7 +329,6 @@ void slRoamPatch::tessellate( slCamera *c, slRoamTriangle *t, int node ) {
 int slRoamPatch::render( slCamera *c, int mode ) {
 	int n;
 
-#ifndef OPENGLES
 	glDisable( GL_CULL_FACE );
 	//glDisable(GL_LIGHTING);
 
@@ -355,7 +353,6 @@ int slRoamPatch::render( slCamera *c, int mode ) {
 	glEnd();
 
 	if ( !mode ) glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-#endif
 
 	return n;
 }
@@ -372,27 +369,28 @@ int slRoamPatch::render( slCamera *c, int mode ) {
 */
 
 int slRoamPatch::render( slRoamTriangle *triangle, slCamera *c ) {
+	double color;
+
 	if ( triangle->_leftChild )
 		return render( triangle->_leftChild, c ) + render( triangle->_rightChild, c );
 
-	slVector color;
+	color = ( triangle->_points[0].y ) / 100;
 
-#ifndef OPENGLES
-	_terrain -> colorForHeight( triangle->_points[0].y, &color );
-	glColor3f( color.x, color.y, color.z );
+	glColor3f( 1.0 - color, 1.0, 1.0 - color );
+
+	// if( triangle->_clipped) return 0;
+
 	glTexCoord3f( triangle->_leftX / _terrain->_textureScaleX,  triangle->_leftY / _terrain->_textureScaleY, 0 );
+
 	glVertex3f( triangle->_points[0].x, triangle->_points[0].y, triangle->_points[0].z );
 
-	_terrain -> colorForHeight( triangle->_points[1].y, &color );
-	glColor3f( color.x, color.y, color.z );
 	glTexCoord3f( triangle->_apexX / _terrain->_textureScaleX, triangle->_apexY / _terrain->_textureScaleY, 0 );
+
 	glVertex3f( triangle->_points[1].x, triangle->_points[1].y, triangle->_points[1].z );
 
-	_terrain -> colorForHeight( triangle->_points[2].y, &color );
-	glColor3f( color.x, color.y, color.z );
 	glTexCoord3f( triangle->_rightX / _terrain->_textureScaleX, triangle->_rightY / _terrain->_textureScaleY, 0 );
+
 	glVertex3f( triangle->_points[2].x, triangle->_points[2].y, triangle->_points[2].z );
-#endif
 
 	return 1;
 }

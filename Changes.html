@@ -49,99 +49,11 @@ h5 {
 
 The <a href="http://www.spiderland.org/breve">breve</a> simulation environment change log.
 
-<h5>version 2.7.x [XX/XX/2008]</h5>
-<ul>
-<li>Fixed Python matrix transpose problem (reversed connections of joints)
-<li>Fixed Push macro instructions being cleared with clear-stacks
-<li>Fixed PatchToroid get-neighbor wraparound for grid size = 1
-<li>Added variable neighborhood size for Patch neighbor methods
-<li>Added DTDs of breve XML formats
-</ul>
-
-<h5>version 2.7.2 [02/25/2008]</h5>
-<ul>
-<li>Fixed locale related simulation errors in breveIDE
-<li>Fixed crash after right-click in Linux command-line breve with freeglut
-<li>Fixed object deletion problem in Python simulations
-<li>Fixed missing Python demos in breveIDE menu
-<li>Better memory management
-</ul>
-
-<h5>version 2.7.1 [02/21/2008]</h5>
-<ul>
-<li>Fixed startup quit on Mac OS X
-</ul>
-
-<h5>version 2.7 [02/19/2008]</h5>
-
-<h5>New Features</h5>
-<ul>
-<li>Added URL class for downloading data from and uploading data URLs
-<li>Better Python compatibility for simulations ported from steve language
-<li>Major improvements and performance updates for physical simulation
-<li>Added support for loading mesh objects from 3DS files (both as display and collision shapes)
-<li>Added support for non-convex objects
-<li>Added new demo: 3DSImport.tz
-<li>Enhanced terrain support
-<li>Improvements to shadows and reflections to reduce artifacts
-<li>Improved quality of texturing and other material effects
-<li>Improved quality of fog rendering
-<li>Improved lighting quality
-<li>Shadows now correctly rendered for display shape instead of collision shape
-<li>Added support for more than one light source
-<li>Added abililty to load and display "skybox" images for realistic 3D simulation backgrounds
-<li>Major fixes and improvements to simulation archiving and dearchiving
-<li>Fixed quit after internal simulation errors with Python frontend
-<li>Improvements to texture loading and management, textures can now be archived
-<li>Demos updated, deprecated code removed.
-</ul>
-
-<h5>version 2.6 [10/08/2007]</h5>
-
-<h5>New Features</h5>
-<ul>
-<li><b>Added full Python language frontend support</b>
-<li>Python demos added
-<li>Added new IRSensor classes
-<li>Objects now have a "display" shape and a "collision" shape, which can be set separately.
-<li>Stationary objects can now be positioned and rotated dynamically during a simulation.
-<li>Shapes can now be changed dynamically for stationary objects during a simulation.
-<li>Shadow drawing can be disabled on a per-object basis
-<li>Drawing quality of lines improved
-<li>Removed long-deprecated Data and Genome classes, updated demos
-<li>Added breveIDE intergrated documentation
-<li>Modified plugin API for list access
-<li>Removed separate "breve_cli" program, use "breve -x" to run a simulation with no graphics
-</ul>
-
-<h5>Changes to Accomodate New Python Frontend</h5>
-<p>The following changes were required in order to avoid conflicts between steve and Python.
-In rare cases they may require minor changes to existing simulations written in steve.</p>
-
-<ul>
-<li>Some method arguments have been reordered.
-<li>Many methods have been moved from Stationary or Mobile to their parent class Real
-<li>One of the "set-rotation" methods has been renamed to "set-rotation-matrix" 
-</ul>
+<h5>version 2.5.1 [12/22/2006]</h5>
 
 <h5>Bug Fixes</h5>
 
 <ul>
-<li>Fixed Windows breveIDE plugins 
-<li>Fixed Windows breveIDE window positions
-<li>Improved Windows/Linux breveIDE stability
-<li>Fixed missing collision callbacks for "fully embedded objects"
-<li>Fixed archiving/dearchiving problems for some classes.
-</ul>
-
-<hr>
-
-<h5>version 2.5.1 [01/22/2007]</h5>
-
-<h5>Bug Fixes</h5>
-
-<ul>
-<li>Enabled experimental Python bridge.
 <li>Multiple Push language fixes and enhancements
 <li>Added scientific notation number parsing.
 <li>Fixed crash in loading corrupted .sgi image files (was causing crash in SwarmEvolve-1.0 demo).

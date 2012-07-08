@@ -30,7 +30,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "slutil.h"
+#include "util.h"
 
 /*!
 	\brief Splits a string into several smaller strings based on a
@@ -55,47 +55,29 @@ char *slFileExtension( const char *inName ) {
 		return slStrdup( &inName[ n + 1 ] );
 }
 
-char *slDirname( const char *inName ) {
-	int index = strlen( inName ) - 1;
-	char *dir = slStrdup( inName );
-
-
-	while( index > -1 ) {
-		if( dir[ index ] == '\\' || dir[ index ] == '/' ) {
-			dir[ index + 1 ] = '\0';
-			return dir;
-		}
-			
-
-		index--;
-	}
-
-	return dir;
-}
-
-char *slSplit( const char *inSource, const char *substr, int n ) {
+char *slSplit( char *start, char *substr, int n ) {
 	int count = 0;
-	const char *oldstart = inSource;
-	char *result = NULL;
+	char *oldstart, *result;
 
-	while ( inSource && count <= n ) {
-		oldstart = inSource;
-		inSource = strstr( inSource, substr );
+	oldstart = start;
 
-		if ( inSource ) 
-			inSource += strlen( substr );
+	while ( start && count <= n ) {
+		oldstart = start;
+		start = strstr( start, substr );
+
+		if ( start ) start += strlen( substr );
 
 		count++;
 	}
 
 	if ( count != n + 1 ) return NULL;
 
-	if ( inSource ) {
-		inSource -= strlen( substr );
+	if ( start ) {
+		start -= strlen( substr );
 
-		result = ( char* )slMalloc(( inSource - oldstart ) + 1 );
-		strncpy( result, oldstart, inSource - oldstart );
-		result[ inSource - oldstart ] = 0;
+		result = ( char* )slMalloc(( start - oldstart ) + 1 );
+		strncpy( result, oldstart, start - oldstart );
+		result[start - oldstart] = 0;
 	} else result = slStrdup( oldstart );
 
 	return result;

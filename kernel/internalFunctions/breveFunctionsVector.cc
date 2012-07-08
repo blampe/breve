@@ -35,6 +35,7 @@
 #include "kernel.h"
 #include "breveFunctionsImage.h"
 #include "bigMatrix.hh"
+#include "gldraw.h"
 
 #ifdef HAVE_LIBGSL
 typedef slBigVectorGSL brVector;
@@ -133,25 +134,39 @@ int brIVectorCopyToImage( brEval args[], brEval *result, brInstance *i ) {
 	int offset = BRINT( &args[2] );
 	int r;
 	int x, y, xmax, ymax;
+	// int yStride = d->x * 4;
+	// int xStride = d->y * 4;
 
-	xmax = sourceVector -> dim();
-	ymax = d-> _height;
+	xmax = sourceVector->dim();
+	ymax = d->y;
 
-	if ( xmax > d -> _width )
-		xmax = d -> _width;
+	if ( xmax > d->x )
+		xmax = d->x;
 
-	pdata = d -> _data + offset;
+	if ( ymax > d->y )
+		ymax = d->y;
+
+//	pdata = d->data;
+	pdata = d->data + offset;
 
 	for ( y = 0; y < ymax; y++ )
 		for ( x = 0; x < xmax; x++ ) {
 			r = ( int )( sourceData[x] * scale );
 
-			*pdata = r > 255 ? 255 : r;
+			if ( r > 255 )
+//				pdata[(y * yStride) + (y << 2) + offset] = 255;
+				*pdata = 255;
+			else
+//				pdata[(y * yStride) + (y << 2) + offset] = r;
+				*pdata = r;
 
 			pdata += 4;
 		}
 
-	d -> updateTexture();
+	if ( d->textureNumber == -1 )
+		d->textureNumber = slTextureNew( i->engine->camera );
+
+	slUpdateTexture( i->engine->camera, d->textureNumber, d->data, d->x, d->y, GL_RGBA );
 
 	return EC_OK;
 }

@@ -1,4 +1,3 @@
-
 /*****************************************************************************
  *                                                                           *
  * The breve Simulation Environment                                          *
@@ -23,7 +22,7 @@
 
 #ifdef HAVE_LIBPYTHON
 
-#include <Python.h>
+#include "python.h"
 
 int brPythonLoadFile( brEval arguments[], brEval *result, brInstance *instance ) {
 	char *file = brFindFile( instance->engine, BRSTRING( &arguments[ 0 ] ), NULL );

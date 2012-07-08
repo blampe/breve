@@ -23,13 +23,13 @@
 @implementation slBreveSaver
 
 - (void)initGL {
-	char *simFile, *text;
-
-	const char *simName;
+	char *simFile, *simName, *text;
 	int result;
 		
 	glInited = YES;
 
+	if( viewEngine ) slInitGL( brEngineGetWorld( viewEngine ), brEngineGetCamera( viewEngine ) );
+	
 	simName = [self getSimName];
 
 	if(*simName != '/') {
@@ -71,6 +71,8 @@
 	point.y = frame.origin.x;
 
 	CGGetDisplaysWithPoint(point, 1, &displayID, &count);
+
+	NSLog(@"display: %d, %p\n", count, displayID);
 
 	defaultsName = [NSString stringWithFormat: @"org.spiderland.%s", [self getDefaultsName]];
 
@@ -139,34 +141,33 @@
 
 	path = [NSString stringWithFormat: @"%@/classes", inputDirectory];
 
-	viewEngine -> addSearchPath( slStrdup([path UTF8String]) ); 
+	brAddSearchPath( viewEngine, slStrdup((char*)[path cString]) ); 
 
 	/* set the output path to the resource dir, and add it to the search path */
 
-	viewEngine -> addSearchPath( slStrdup([inputDirectory UTF8String]) ); 
+	brAddSearchPath( viewEngine, slStrdup((char*)[inputDirectory cString]) ); 
 	
 	paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
 
 	if([paths count] > 0) { 
 		outputDirectory = [[[paths objectAtIndex: 0] stringByAppendingString: @"/Preferences/"] retain];
-		brEngineSetIOPath( viewEngine, [outputDirectory UTF8String] );
+		brEngineSetIOPath( viewEngine, (char*)[outputDirectory cString] );
 	}
 		
-	if( [defaults boolForKey: @"initialized"] != YES) 
-		[self saveDefaults];
+	if([defaults boolForKey: @"initialized"] != YES) [self saveDefaults];
 
 	myNib = [self getNibName];
 	if(myNib) [NSBundle loadNibNamed: myNib owner:self];
 
 	// no output.
 
-	slSetMessageCallbackFunction( NULL );
+	slSetMessageCallbackFunction(NULL);
 
 	return self;
 }
 
 - (int)initEngineWithFrame:(NSRect)frame {
-	viewEngine = new brEngine();
+	viewEngine = brEngineNew();
 	brInitFrontendLanguages( viewEngine );
 	
 	if( !viewEngine ) return -1;
@@ -282,7 +283,7 @@
 } 
 
 - (void)animateOneFrame {
-	viewEngine -> iterate();
+	 brEngineIterate( viewEngine );
 
 	[[theView openGLContext] makeCurrentContext];
 
@@ -297,7 +298,7 @@
 
 	}
 	
-	viewEngine -> draw();
+	brEngineRenderWorld( viewEngine, 0 );
 	
 	glFlush();
 }
@@ -311,13 +312,13 @@
 	
 	if( !viewEngine ) return;
 	
-	brInstance *controller = viewEngine -> getController();
+	brInstance *controller = brEngineGetController( viewEngine );
 
-	if(controller) brMethodCallByName(controller, [method UTF8String], &r);
+	if(controller) brMethodCallByName(controller, (char*)[method cString], &r);
 }
 
 - (void)dealloc {
-	delete viewEngine;
+	brEngineFree( viewEngine );
 
 	[outputDirectory release];
 	[inputDirectory release];
@@ -327,11 +328,11 @@
 
 /* this should be overriden by subclasses */
 
-- (const char*)getSimName {
+- (char*)getSimName {
 	return "Simulation.tz";
 }
 
-- (const char*)getDefaultsName {
+- (char*)getDefaultsName {
 	return "Simulation";
 }
 

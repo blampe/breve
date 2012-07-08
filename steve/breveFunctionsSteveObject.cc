@@ -66,12 +66,6 @@
 
 int stSSetFreedInstanceProtection( brEval args[], brEval *target, brInstance *i ) {
 	stInstance *si = ( stInstance* )i->userData;
-
-	if( i->object->type->_typeSignature != STEVE_TYPE_SIGNATURE ) {
-		slMessage( DEBUG_ALL, "warning: stSSetFreedInstanceProtection called for non-steve instance\n" );
-		return EC_OK;
-	}
-
 	si->type->steveData->retainFreedInstances = BRINT( &args[0] );
 	return EC_OK;
 }
@@ -108,17 +102,57 @@ int stOCallMethodNamed( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
+int stOIsa( brEval args[], brEval *target, brInstance *bi ) {
+	stObject *o;
+	stObject *io;
+	brObject *bo;
+	stInstance *i = ( stInstance* )bi->userData;
+
+	// go down to the base instance
+
+	bo = brObjectFind( i->type->engine, BRSTRING( &args[0] ) );
+
+	if ( bo ) o = ( stObject* )bo->userData;
+	else o = NULL;
+
+	io = i->type;
+
+	while ( io ) {
+		if ( o == io ) {
+
+			target->set( 1 );
+
+			return EC_OK;
+		}
+
+		io = io->super;
+	}
+
+	target->set( 0 );
+
+	return EC_OK;
+}
+
+/*!
+	\brief Determines whether a certain instance understand a certain method.
+*/
+
+int stORespondsTo( brEval args[], brEval *target, brInstance *i ) {
+	stInstance *instance = ( stInstance* )BRINSTANCE( &args[0] )->userData;
+	char *method = BRSTRING( &args[1] );
+
+	if ( stFindInstanceMethodWithMinArgs( instance->type, method, 0, NULL ) ) target->set( 1 );
+	else target->set( 0 );
+
+	return EC_OK;
+}
+
 /*!
 	\brief Turns garbage collection on or off for an object.
 */
 
 int stOSetGC( brEval args[], brEval *target, brInstance *bi ) {
 	stInstance *i = ( stInstance* )bi->userData;
-
-	if( bi->object->type->_typeSignature != STEVE_TYPE_SIGNATURE ) {
-		slMessage( DEBUG_ALL, "warning: stOSetGC called for non-steve instance\n" );
-		return EC_OK;
-	}
 
 	i->gc = BRINT( &args[0] );
 
@@ -145,6 +179,7 @@ int stCObjectAllocationReport( brEval args[], brEval *target, brInstance *bi ) {
 
 int stNewInstanceForClassString( brEval args[], brEval *target, brInstance *bi ) {
 	brObject *o = brObjectFind( bi->engine, BRSTRING( &args[0] ) );
+	stInstance *i = ( stInstance* )bi->userData;
 
 	if ( !o ) {
 		stEvalError( (stInstance*)bi->userData, EE_SIMULATION, "Unknown class '%s'.", BRSTRING( &args[0] ) );
@@ -152,7 +187,7 @@ int stNewInstanceForClassString( brEval args[], brEval *target, brInstance *bi )
 		return EC_ERROR;
 	}
 
-	target->set( brObjectInstantiate( bi->engine, o, NULL, 0, false ) );
+	target->set( stInstanceCreateAndRegister( i->type->steveData, bi->engine, o ) );
 
 	return EC_OK;
 }
@@ -204,7 +239,7 @@ int stWaitForServerReply( int sockfd, brEval *target, brInstance *i ) {
 				args[0] = &eval[0];
 				args[1] = &eval[1];
 
-				brMethodCallByNameWithArgs( i->engine-> getController(), "parse-xml-network-request", args, 1, target );
+				brMethodCallByNameWithArgs( i->engine->controller, "parse-xml-network-request", args, 1, target );
 				delete[] buffer;
 			} else {  // Empty request, Server did not send object...
 				// Do nothing, brEval is set to AT_NULL by default...
@@ -288,11 +323,11 @@ int stNSendXMLObject( brEval *args, brEval *target, brInstance *i ) {
 
 	char *buffer;
 
-	brXMLWriteObjectToStream( archive, file, 0 );
+	stXMLWriteObjectToStream(( stInstance* )archive->userData, file, 0 );
 
 	buffer = slCloseStringStream( xmlBuffer );
 
-	i -> engine -> unlock();
+	brEngineUnlock( i->engine );
 
 	if ( stSendXMLString( addr, port, buffer, target, i ) ) {
 		// Something went wrong, we are not happy, but returning EC_ERROR
@@ -300,7 +335,7 @@ int stNSendXMLObject( brEval *args, brEval *target, brInstance *i ) {
 		slMessage( DEBUG_ALL, "warning: network send of object %p failed\n", i );
 	}
 
-	i -> engine -> lock();
+	brEngineLock( i->engine );
 
 	slFree( buffer );
 
@@ -309,11 +344,6 @@ int stNSendXMLObject( brEval *args, brEval *target, brInstance *i ) {
 
 int stCStacktrace( brEval args[], brEval *target, brInstance *i ) {
 	stInstance *si = ( stInstance* )i->userData;
-
-	if( i->object->type->_typeSignature != STEVE_TYPE_SIGNATURE ) {
-		// slMessage( DEBUG_ALL, "warning: stCStacktrace called for non-steve instance\n" );
-		return EC_OK;
-	}
 
 	stStackTrace( si->type->steveData );
 	return EC_OK;
@@ -326,10 +356,9 @@ int stCStacktrace( brEval args[], brEval *target, brInstance *i ) {
 */
 
 int stIAddDependency( brEval args[], brEval *target, brInstance *i ) {
-	if ( !BRINSTANCE( &args[0] ) ) 
-		return EC_OK;
+	if ( !BRINSTANCE( &args[0] ) ) return EC_OK;
 
-	brInstanceAddDependency( i, BRINSTANCE( &args[0] ) );
+	stInstanceAddDependency(( stInstance* )i->userData, ( stInstance* )BRINSTANCE( &args[0] )->userData );
 
 	return EC_OK;
 }
@@ -341,10 +370,9 @@ int stIAddDependency( brEval args[], brEval *target, brInstance *i ) {
 */
 
 int stIRemoveDependency( brEval args[], brEval *target, brInstance *i ) {
-	if ( !BRINSTANCE( &args[0] ) ) 
-		return EC_OK;
+	if ( !BRINSTANCE( &args[0] ) ) return EC_OK;
 
-	brInstanceRemoveDependency( i, BRINSTANCE( &args[0] ) );
+	stInstanceRemoveDependency(( stInstance* )i->userData, ( stInstance* )BRINSTANCE( &args[0] )->userData );
 
 	return EC_OK;
 }
@@ -353,6 +381,8 @@ void breveInitSteveObjectFuncs( brNamespace *n ) {
 	brNewBreveCall( n, "setFreedInstanceProtection", stSSetFreedInstanceProtection, AT_NULL, AT_INT, 0 );
 
 	brNewBreveCall( n, "callMethodNamed", stOCallMethodNamed, AT_UNDEFINED, AT_INSTANCE, AT_STRING, AT_LIST, 0 );
+	brNewBreveCall( n, "isa", stOIsa, AT_INT, AT_STRING, 0 );
+	brNewBreveCall( n, "respondsTo", stORespondsTo, AT_INT, AT_INSTANCE, AT_STRING, 0 );
 	brNewBreveCall( n, "setGC", stOSetGC, AT_NULL, AT_INT, 0 );
 	brNewBreveCall( n, "getRetainCount", stOGetRetainCount, AT_INT, 0 );
 

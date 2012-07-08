@@ -1,5 +1,3 @@
-@use Object.
-
 Object : Line {
 	+ variables:
 		start, end (object).
@@ -29,13 +27,13 @@ Object : Line {
 		return 0.
 
 	+ to set-color to color (vector):
-		% If the line is connected, sets the color of the line.
+		% Sets the color of the line.
 
 		if linePointer:
 			objectLineSetColor( linePointer, color ).
 
 	+ to set-transparency to transparency (float):
-		% If the line is connected, sets the transparency of the line.
+		% Sets the transparency of the line.
 
 		if linePointer:
 			objectLineSetTransparency( linePointer, transparency ).

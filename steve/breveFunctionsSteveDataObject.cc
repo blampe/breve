@@ -217,19 +217,21 @@ int stUnpackObject( stInstance *i, char *buffer, int length ) {
 }
 
 int stDDataWriteObjectWithDialog( brEval *args, brEval *result, brInstance *bi ) {
-	const char *filename = NULL;
+	char *filename = NULL;
 	stInstance *i = ( stInstance* )bi->userData;
 
 	result->set( 1 );
 
-	filename = i -> type -> engine -> runSaveDialog();
+	filename = brEngineRunSaveDialog( i->type->engine );
 
 	if ( !filename ) {
 		slMessage( DEBUG_ALL, "Could not retreive filename from user dialog: write cancelled.\n" );
 		return EC_OK;
 	}
 
-	result->set( brXMLWriteObjectToFile( bi, filename, 1 ) );
+	result->set( stXMLWriteObjectToFile( i, filename, 1 ) );
+
+	slFree( filename );
 
 	return EC_OK;
 }
@@ -251,7 +253,7 @@ int stDWriteXMLObject( brEval args[], brEval *target, brInstance *bi ) {
 
 	path = brOutputPath( i->type->engine, filename );
 
-	target->set( brXMLWriteObjectToFile( bi, path, 1 ) );
+	target->set( stXMLWriteObjectToFile( i, path, 1 ) );
 
 	slFree( path );
 
@@ -276,12 +278,12 @@ int stDDataReadObject( brEval *args, brEval *result, brInstance *bi ) {
 }
 
 int stDDataReadObjectWithDialog( brEval *args, brEval *result, brInstance *bi ) {
-	const char *filename = NULL;
+	char *filename = NULL;
 	stInstance *i = ( stInstance* )bi->userData;
 
 	result->set( 1 );
 
-	filename = i->type->engine -> runLoadDialog();
+	filename = brEngineRunLoadDialog( i->type->engine );
 
 	if ( !filename ) {
 		slMessage( DEBUG_ALL, "Could not retrieve filename from load dialog: load cancelled.\n" );
@@ -293,6 +295,8 @@ int stDDataReadObjectWithDialog( brEval *args, brEval *result, brInstance *bi ) 
 	if ( BRINT( result ) < 0 ) {
 		slMessage( DEBUG_ALL, "load failed for file \"%s\"\n", filename );
 	}
+
+	slFree( filename );
 
 	return EC_OK;
 }

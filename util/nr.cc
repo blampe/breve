@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "slutil.h"
+#include "util.h"
 
 /*!
 	\brief Returns the closest power of two which is greater than or equal to

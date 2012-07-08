@@ -9,7 +9,7 @@ Object : GeneticAlgorithm {
 	% <P>
 	% To run a genetic algorithm, you will need to a create custom subclass
 	% of this object, GeneticAlgorithm, and of its companion object 
-	% OBJECT(GeneticAlgorithmIndividual).
+	% OBJECT(GeneticProgrammingIndividual).
 	% <P>
 	% Your subclass of GeneticAlgorithm must implement two important methods:	
 	% METHOD(start-fitness-test) and METHOD(end-fitness-test).  These methods
@@ -24,7 +24,6 @@ Object : GeneticAlgorithm {
 		individualClass (string).
 		currentPopulation (int).
 		currentIndividual (int).
-		elitismPercent (int).
 		crossoverPercent (int).
 		mutationPercent (int).
 		randomizePercent (int).
@@ -36,7 +35,7 @@ Object : GeneticAlgorithm {
 		transferOut (object).
 		generation (int).
 		generationLimit (int).
-		seed (object).
+        seed (object).
 		bestFitness (float).
 		spatialRadius (int).
 
@@ -44,17 +43,14 @@ Object : GeneticAlgorithm {
 		# we'll need to retest the current individual.
 		currentIndividual--.
 
-		# reschedule a switch, but don't do it now -- we will need to be fully dearchived.
-
-		self schedule method-call "switch-individual" at-time (controller get-time) + 0.1.
+		self switch-individual.
 
 		return 1.
-		
+        
 	+ to init:
 		testDuration = 20.
 		populationSize = 30.
 		currentIndividual = 0.
-		elitismPercent = 0.
 		mutationPercent = 75.
 		migrationPercent = 0.
 		crossoverPercent = 0.
@@ -82,10 +78,10 @@ Object : GeneticAlgorithm {
 		% is 20.
 		return testDuration.
 		
-	+ to set-seed-individual to theSeed (object):
-		% The seed individual is used to start the genetic algorithm
-		% at a specfic location in the search space by using the seed
-		% individual's paramters as a starting point.
+    + to set-seed-individual to theSeed (object):
+        % The seed individual is used to start the genetic algorithm
+        % at a specfic location in the search space by using the seed
+        % individual's paramters as a starting point.
 
 		seed = theSeed.
 
@@ -95,7 +91,7 @@ Object : GeneticAlgorithm {
 
 	- to get-spatial-radius:
 		return spatialRadius.
-	
+    
 	+ to set-population-size to size (int):
 		% Sets the number of individuals in the population to size.
 		populationSize = size.
@@ -104,16 +100,6 @@ Object : GeneticAlgorithm {
 		% Returns the size of the population.  The default value is 30, and
 		% can be set with METHOD(set-population-size).
 		return populationSize.
-
-	+ to set-elitism-percent to percent (int):
-	     	% Sets the number of highest scoring individuals that are retained.
-		% The default value is 0%
-		elitismPercent = percent.
-
-	+ to get-elitism-percent:
-		% Returns the percent of highest scoring indivuals that are retained
-		% The default value is 0%
-		return elitismPercent.	 
 
 	+ to set-mutation-percent to percent (int): 
 		% Sets the probability of mutation to percent%.  This specifies the 
@@ -146,42 +132,34 @@ Object : GeneticAlgorithm {
 	+ to get-crossover-percent:
 		% Returns the probability of crossover during reproduction.
 		return crossoverPercent.
-	
-	+ to set-migration-port to port (int):
-		% Sets the port on which migration should occur.  The default value of 
-		% 59142 typically does not need to be changed.
+    
+    + to set-migration-port to port (int):
+        migrationPort = port.
 
-		migrationPort = port.
-
-	+ to set-migration-percent to percent (int):
+    + to set-migration-percent to percent (int):
 		% Sets the probability of migration to percent%.  This specifies the 
 		% approximate percentage that individuals will migrate to another host
-		% during reproduction, if migration is enabled and migration hosts are
-		% specified using METHOD(set-migration-hosts).
-	
-		if percent == 0:
-			free migrationServer.
-		else:
-			if !migrationServer:
-			{
-				migrationServer = new NetworkServer.
-				migrationServer listen on-port migrationPort.
-				migrationServer set-upload-recipient to self.
-			}
-			transferOut = new GAIndividualTransporter.
-			
-			migrationPercent = percent.
-			
-	+ to get-migration-percent:
-		return migrationPercent.
-		
-	+ to set-migration-hosts to hosts (list):
-		% Sets a list of migration hosts for this object.  This should be a list of lists 
-		% where sub-lists are (string, integer) for hostname, hostport for other machines
-		% running a genetic algorithm with the same simulation.
-
-		migrationHosts = copylist hosts.
-			
+		% during reproduction, if migration is enabled.
+    
+        if percent == 0:
+            free migrationServer.
+        else:
+            if !migrationServer:
+            {
+                migrationServer = new NetworkServer.
+                migrationServer listen on-port migrationPort.
+                migrationServer set-upload-recipient to self.
+            }
+            transferOut = new GAIndividualTransporter.
+            
+            migrationPercent = percent.
+            
+    + to get-migration-percent:
+        return migrationPercent.
+        
+    + to set-migration-hosts to hosts (list):
+        migrationHosts = copylist hosts.
+            
 	+ to set-tournament-size to tsize (int):
 		% Sets the tournament size to tsize.  The tournament size specifies
 		% how many individuals are considered in a single selection "tournament".
@@ -223,23 +201,6 @@ Object : GeneticAlgorithm {
 	+ to get-best-fitness:
 		% Returns the best fitness seen so far.
 		return bestFitness.
-
-	+ to get-best-individual:
-		% Returns the best active individual.  Note that at the end of each generation
-		% any individual, including the best, may be deleted and replaced with a new 
-		% one, so be careful when this method is called and how it is used.  
-
-		i (object).
-		best (object).
-
-		foreach i in populations{ currentPopulation }: {
-			if !best || ( best get-fitness ) < ( i get-fitness ):
-				best = i.
-		}
-
-		print best.
-
-		return best.
 
 	+ to get-current-individual-index:
 		% Returns the index of the individual currently being tested.  Returns -1
@@ -283,8 +244,9 @@ Object : GeneticAlgorithm {
 			self add-dependency on newI.
 		}
 
-			if seed: populations{ 0 }{ 0 } copy from seed.
+        if seed: populations{ 0 }{ 0 } copy from seed.
 		
+        
 		currentIndividual = -1.
 		self switch-individual.
 
@@ -302,28 +264,18 @@ Object : GeneticAlgorithm {
 		currentIndividual++.
 
 		if currentIndividual >= | populations{ currentPopulation } |: {
-			self end-generation number generation.
 			self reproduce.
-			self prepare-for-generation number generation.
 		}
 
 		self start-fitness-test of populations{ currentPopulation }{ currentIndividual }.
 
-		# self unschedule method-call "switch-individual".
 		self schedule method-call "switch-individual" at-time (controller get-time) + testDuration.
 
-	+ to compare-individuals ind-a a (object) int-b b (object):
-	     	% Used to sort the population. We sort in descending order.
-		if (a get-fitness) > (b get-fitness): return -1.
-		else if (a get-fitness) < (b get-fitness): return 1.
-		else: return 0.
-
 	- to reproduce:
-		r, i, best, n, elite (int).
+		r, i, best, n (int).
 		totalFitness, fitness (double).
 		ind (object).
 		recipientHost (string).
-		recipientPort (int).
 
 		if | populations{ !currentPopulation } | != populationSize: {
 			free populations{ !currentPopulation }.
@@ -331,8 +283,6 @@ Object : GeneticAlgorithm {
 		}
 
 		best = 0.
-
-		if elitismPercent != 0: sort populations{ currentPopulation } with compare-individuals.
 
 		for i = 0, i < | populations{ currentPopulation } |, i++: {
 			fitness = (populations{ currentPopulation }{ i } get-fitness).
@@ -350,11 +300,7 @@ Object : GeneticAlgorithm {
 			with-best-individual populations{ currentPopulation }{ best }
 			with-average-fitness totalFitness.
 
-		elite = min(populationSize * (elitismPercent/100.0), populationSize).
-
-		# Crossover should use fitness proportional roulette.
-
-		for i = elite, i < populationSize, i++: {
+		for i = 0, i < populationSize, i++: {
 			r = random[100].
 
 			if r < mutationPercent: {
@@ -369,15 +315,14 @@ Object : GeneticAlgorithm {
 
 				# migration...
 				if transferIn: {
-				        print "Immigrants coming in.".
-					if (transferIn get-individual number i):
-						ind = (transferIn get-individual number i).
-					else:
-						ind = (self tournament-select for-index i).					
+				    if (transferIn get-individual number i):
+				        ind = (transferIn get-individual number i).
+				    else:
+				        ind = (self tournament-select for-index i).				    
 				}
 				else:
 				{
-					ind = (self tournament-select for-index i).
+				    ind = (self tournament-select for-index i).
 				}
 
 				populations{ !currentPopulation }{ i } copy from ind.				
@@ -388,30 +333,28 @@ Object : GeneticAlgorithm {
 				# print "Copying individual with fitness ", (ind get-fitness).
 			}
 		}
-		
+        
 
 		if | migrationHosts | != 0: {
-		        if !transferOut:
-		          transferOut = new GAIndividualTransporter. 
 			transferOut clear.
-
 
 			for n=0, n<populationSize * (migrationPercent / 100.0), n++:
 				transferOut add individual (self tournament-select for-index n).
 
-			print "Migrating individuals...".
-			recipientHost = migrationHosts{ random[ | migrationHosts | - 1 ] }{0}.
-			recipientPort = migrationHosts{ random[ | migrationHosts | - 1 ] }{1}.
-			transferOut send-over-network to recipientHost on recipientPort.
+			#print "Migrating individuals...".
+			recipientHost = migrationHosts{ random[ | migrationHosts | - 1 ] }.
+			transferOut send-over-network to recipientHost on GENETIC_ALGORITHM_SERVER_PORT.
 		}
-		
+        
 		currentPopulation = !currentPopulation.
 		currentIndividual = 0.
 
 		if generationLimit && generation >= generationLimit: controller end-simulation.
 
-	+ to tournament-select for-index i (int):
-		if spatialRadius == 0: return (self non-spatial-tournament-select).
+		self prepare-for-generation number generation.
+
+	- to tournament-select for-index i (int):
+		if spatialRadius == 0: return (self tournament-select).
 		else return (self spatial-tournament-select with-index i).
 
 	- to spatial-tournament-select with-index index (int): 
@@ -435,7 +378,7 @@ Object : GeneticAlgorithm {
 
 		return populations{ currentPopulation }{ best }.
 
-	- to non-spatial-tournament-select:
+	+ to tournament-select:
 		% This method performs a tournament selection for reproduction.  It 
 		% is used internally and typically not called by any other object.  
 
@@ -455,12 +398,12 @@ Object : GeneticAlgorithm {
 
 		return populations{ currentPopulation }{ best }.
 
-	+ section "Methods for Cluster Migration"
-	
-	+ to accept-upload of migrants (object) from other (string):
-		free transferIn.
-		transferIn = migrants.
-	
+    + section "Methods for Cluster Migration"
+    
+    + to accept-upload of migrants (object) from other (string):
+        free transferIn.
+        transferIn = migrants.
+    
 	+ section "Methods to Override in Custom Subclasses"
 
 	+ to report at-generation generation (int) with-best-individual bestIndividual (object) with-average-fitness fitness (double):
@@ -493,13 +436,6 @@ Object : GeneticAlgorithm {
 		% fitness test ends.  You should also make sure that the individual's
 		% fitness value is set using 
 		% OBJECTMETHOD(GeneticAlgorithmIndividual:set-fitness).
-
-	+ to end-generation number n (int):
-		% This method is called right when the generation is finished, 
-		% before any of the reproduction takes place.  This method provides
-		% an opportunity to examine the entire population of the generation
-		% after all fitness tests are run, and before the individuals are 
-		% possibly destroyed through reproduction.
 
 	+ to prepare-for-generation number n (int):
 		% This method is called when a generation is setup.  The default
@@ -570,16 +506,16 @@ Object : GeneticAlgorithmIndividual {
 
 Object : GAIndividualTransporter {
 
-	+ variables:
-		individuals (list).
-		
-	- to add individual i (object):
-		push i onto individuals.
-		
-	- to clear:
-		individuals = {}.
-		
-	- to get-individual number n (int):
-		if n < | individuals | : return individuals{n}.
+    + variables:
+        individuals (list).
+        
+    - to add individual i (object):
+        push i onto individuals.
+        
+    - to clear:
+        individuals = {}.
+        
+    - to get-individual number n (int):
+        if n < | individuals | : return individuals{n}.
 
 }

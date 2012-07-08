@@ -2,10 +2,10 @@
 #include "xml.h"
 #include "evaluation.h"
 #include "errorText.h"
+#include "java.h"
 
-#include "pythonFrontend.h"
-#include "perlInit.h"
-#include "lisp.h"
+#include "python.h"
+// #include "lisp.h"
 
 #include "breveFunctionsSteveDataObject.h"
 #include "breveFunctionsSteveObject.h"
@@ -18,27 +18,16 @@ extern int lineno;
 
 stSteveData *currentData;
 
-
-struct stFoundMethod {
-	stMethod 					*_method;
-	stObject					*_object;
-};
-
-
 void *brInitFrontendLanguages( brEngine *engine ) {
 #ifdef HAVE_LIBPYTHON
         brPythonInit( engine );
 #endif
-#ifdef HAVE_LIBPERL
-	brPerlInit( engine );
-#endif
+
 #ifdef HAVE_LIBECL
         brLispInit( engine );
 #endif
 
-	stSteveData *data = stSteveInit( engine );
-
-        return data;
+        return stSteveInit( engine );
 }
 
 void stCrashCatcher( int s ) {
@@ -53,11 +42,11 @@ void stCrashCatcher( int s ) {
 }
 
 /**
- * 	\brief The breve callback to determine if one object is a subclass of another.
- */
+	\brief The breve callback to determine if one object is a subclass of another.
+*/
 
-int stSubclassCallback( brObjectType *inType, void *c1, void *c2 ) {
-	return stIsSubclassOf( ( stObject* )c1, ( stObject* )c2 );
+int stSubclassCallback( void *c1, void *c2 ) {
+	return stIsSubclassOf(( stObject* )c1, ( stObject* )c2 );
 }
 
 /**
@@ -66,42 +55,33 @@ int stSubclassCallback( brObjectType *inType, void *c1, void *c2 ) {
 
 int stCallMethodBreveCallback( void *instanceData, void *methodData, const brEval **arguments, brEval *result ) {
 	int r, count = 0;
-	stFoundMethod *method = ( stFoundMethod* )methodData;
+	stMethod *method = ( stMethod* )methodData;
 	stRunInstance ri;
 
 	ri.instance = ( stInstance* )instanceData;
 
-	count = method -> _method -> keywords.size();
+	count = method->keywords.size();
 
-	ri.type = method -> _object;
+	ri.type = ri.instance->type;
 
-	r = stCallMethod( &ri, &ri, method -> _method, arguments, count, result );
+	r = stCallMethod( &ri, &ri, method, arguments, count, result );
 
 	return r;
 }
 
 /**
- * \brief The steve callback to create a new instance.
- */
+	\brief The steve callback to create a new instance.
+*/
 
-brInstance *stInstanceNewCallback( brEngine *engine, brObject *object, const brEval **constructorArgs, int argCount, bool inSkipInit ) {
-	stInstance *i = stInstanceNew( ( stObject* )object->userData );
-
-	i -> breveInstance = brEngineAddInstance( engine, object, i );
-
-	if( !inSkipInit ) {
-		if( stInstanceInit( i ) != EC_OK ) 
-			return NULL;
-	}
-
-	return i -> breveInstance;
+brInstance *stInstanceNewCallback( brEngine *engine, brObject *object, const brEval **constructorArgs, int argCount ) {
+	return brEngineAddInstance( engine, object, stInstanceNew( ( stObject* )object->userData ) );
 }
 
 /**
 	\brief The breve callback to find a method.
 */
 
-void *stFindMethodBreveCallback( void *inObject, const char *name, unsigned char *argTypes, int args ) {
+void *stFindMethodBreveCallback( void *object, const char *name, unsigned char *argTypes, int args ) {
 	int min = args, max = args;
 
 	// In some cases, we may not have acurate argument count information
@@ -111,21 +91,11 @@ void *stFindMethodBreveCallback( void *inObject, const char *name, unsigned char
 		max = 100;
 	}
 
-	stObject *foundObject;
 	stMethod *method;
 
-	method = stFindInstanceMethodWithArgRange( ( stObject* )inObject, name, args, args, &foundObject );
+	method = stFindInstanceMethodWithArgRange(( stObject* )object, name, args, args, NULL );
 
-	if( method ) {
-		stFoundMethod *foundMethod = new stFoundMethod;
-
-		foundMethod -> _method = method;
-		foundMethod -> _object = foundObject;
-
-		return foundMethod;
-	}
-
-	return NULL;
+	return method;
 }
 
 /**
@@ -134,11 +104,6 @@ void *stFindMethodBreveCallback( void *inObject, const char *name, unsigned char
 
 void stInstanceFreeCallback( void *i ) {
 	stInstanceFree( (stInstance*)i );
-}
-
-void stMethodFreeCallback( void *inMethod ) {
-	stFoundMethod *m = (stFoundMethod*)inMethod;
-	delete m;
 }
 
 /**
@@ -176,14 +141,21 @@ int stCallbackLoad( brEngine *engine, void *inDataPtr, const char *file, const c
 			return EC_ERROR;
 		}
 
-		stInstance *controller = stInstanceNew( ( stObject* )controllerClass->userData );
+		/*
+		brInstance *controller = brObjectInstantiate( engine, controllerClass, NULL, NULL );
 
 		if( !controller )
 			return EC_ERROR;
 
+		brEngineSetController( engine, controller );
+		*/
+
+		stInstance *controller;
+		controller = stInstanceNew(( stObject* )controllerClass->userData );
+
 		controller->breveInstance = brEngineAddInstance( engine, controllerClass, controller );
 
-		engine -> setController( controller->breveInstance );
+		brEngineSetController( engine, controller->breveInstance );
 
 		r = stInstanceInit( controller );
 
@@ -200,7 +172,13 @@ int stCallbackLoad( brEngine *engine, void *inDataPtr, const char *file, const c
 int stCallbackLoadWithArchive( brEngine *engine, void *inDataPtr, const char *file, const char *code, const char *archive ) {
 	stSteveData *inData = (stSteveData*)inDataPtr;
 
-	return stLoadSavedSimulation( inData, engine, code, file, archive );
+	//
+
+	inData = 0;
+
+	// 
+
+	return EC_OK;
 }
 
 /**
@@ -231,21 +209,10 @@ void stSteveCleanup( void *inDataPtr ) {
 
 	if ( d->controllerName ) slFree( d->controllerName );
 
-	std::map< std::string, brEval* >::iterator di;
-
-	for ( di = d->defines.begin(); di != d->defines.end(); di++ ) {
-		delete di -> second;
-		di -> second = NULL;
-	}
-		
+	// brNamespaceFreeWithFunction(d->defines, (void(*)(void*))stFreeDefine );
 
 	delete d;
 }
-
-int stRunCommand( void *inObjectTypeUserData, brEngine *inEngine, const char *inCommand ) {
-	return stRunSingleStatement( (stSteveData*)inObjectTypeUserData, inEngine, inCommand );
-}
-
 /**
 	\brief Initializes the steve language and sets up the brObjectType structure.
 */
@@ -265,18 +232,16 @@ stSteveData *stSteveInit( brEngine *engine ) {
 	breveInitSteveObjectFuncs( internal );
 	breveInitXMLFuncs( internal );
 
-	breveSteveType->runCommand 			= stRunCommand;
-	breveSteveType->callMethod 			= stCallMethodBreveCallback;
-	breveSteveType->findMethod 			= stFindMethodBreveCallback;
-	breveSteveType->isSubclass 			= stSubclassCallback;
+	breveSteveType->callMethod 		= stCallMethodBreveCallback;
+	breveSteveType->findMethod 		= stFindMethodBreveCallback;
+	breveSteveType->isSubclass 		= stSubclassCallback;
 	breveSteveType->instantiate 		= stInstanceNewCallback;
 	breveSteveType->destroyInstance 	= stInstanceFreeCallback;
-	breveSteveType->destroyMethod		= stMethodFreeCallback;
 	breveSteveType->destroyObjectType	= stSteveCleanup;
-	breveSteveType->canLoad				= stCallbackCanLoad;
-	breveSteveType->load				= stCallbackLoad;
+	breveSteveType->canLoad			= stCallbackCanLoad;
+	breveSteveType->load			= stCallbackLoad;
 	breveSteveType->loadWithArchive		= stCallbackLoadWithArchive;
-	breveSteveType->userData			= ( void* )sd;
+	breveSteveType->userData		= ( void* )sd;
 	breveSteveType->_typeSignature 		= STEVE_TYPE_SIGNATURE;
 
 	currentData = sd;
@@ -309,20 +274,20 @@ int stLoadFiles( stSteveData *sdata, brEngine *engine, const char *code, const c
 	if ( n != 0 && path[0] == '/' ) {
 		/* absolute path */
 
-		engine -> addSearchPath( path );
+		brAddSearchPath( engine, path );
 	} else if ( n != 0 ) {
 		/* relative path */
 
 		char *fullpath = new char[strlen( enginePath ) + strlen( path ) + 2];
 		sprintf( fullpath, "%s/%s", enginePath, path );
 
-		engine -> addSearchPath( fullpath );
+		brAddSearchPath( engine, fullpath );
 
 		delete[] fullpath;
 	} else {
 		// no path--just a file in the current directory
 
-		engine -> addSearchPath( enginePath );
+		brAddSearchPath( engine, enginePath );
 	}
 
 	slFree( path );
@@ -373,7 +338,7 @@ int stLoadSavedSimulation( stSteveData *sdata, brEngine *engine, const char *cod
 		return EC_ERROR;
 	}
 
-	if ( brXMLInitSimulationFromFile( engine, xmlpath ) ) {
+	if ( stXMLInitSimulationFromFile( engine, xmlpath ) ) {
 		slFree( xmlpath );
 		return EC_ERROR;
 	}
@@ -384,12 +349,53 @@ int stLoadSavedSimulation( stSteveData *sdata, brEngine *engine, const char *cod
 }
 
 /**
- * \brief Parses the text of a steve file.
- * 
- *  stParseBuffer will first pick out included files and recursively parse
- * them.  the engine keeps track of what files it's seen, however, so there
- * should be no real danger of including the same file twice.
- */
+	\brief Parses a single steve file.
+
+	Given a filename, this function loads and parses the file.  Used by
+	stParseBuffer, not typically called manually.
+*/
+
+int stParseFile( stSteveData *sdata, brEngine *engine, const char *filename ) {
+
+	struct stat fs;
+	char *path = NULL;
+	int result;
+
+	char *fileString;
+
+	/* try to open the file in the current directory. */
+
+	path = brFindFile( engine, filename, &fs );
+
+	if ( !path ) {
+		slMessage( DEBUG_ALL, "could not locate file %s\n", filename );
+		return EC_ERROR;
+	}
+
+	fileString = slUtilReadFile( path );
+
+	if ( !fileString ) {
+		slMessage( DEBUG_ALL, "error reading file %s\n", path );
+		return EC_ERROR;
+	}
+
+	result = stParseBuffer( sdata, engine, fileString, filename );
+
+	slFree( fileString );
+	slFree( path );
+
+	return result;
+}
+
+/**
+	\brief Parses the text of a steve file.
+
+	stParseBuffer will first pick out included files and recursively parse
+	them.  the engine keeps track of what files it's seen, however, so there
+	should be no real danger of including the same file twice.
+
+	Typically called by stParseFile, which reads in the file first.
+*/
 
 int stParseBuffer( stSteveData *s, brEngine *engine, const char *buffer, const char *filename ) {
 	const char *thisFile;
@@ -406,15 +412,14 @@ int stParseBuffer( stSteveData *s, brEngine *engine, const char *buffer, const c
 		s->filesSeen.push_back( filename );
 	} else thisFile = "<untitled>";
 
-	// set the global variables for the parser 
-	// preprocess the buffer--look for other included files 
+	/* set the global variables for the parser */
+	/* preprocess the buffer--look for other included files */
 
 	yyfile = thisFile;
 
 	lineno = 1;
 
-	if ( stPreprocess( s, engine, filename, buffer ) ) 
-		return BPE_LIB_ERROR;
+	if ( stPreprocess( s, engine, buffer ) ) return BPE_LIB_ERROR;
 
 	// preprocess changes the yyfile and lineno globals -- reset them
 
@@ -424,16 +429,16 @@ int stParseBuffer( stSteveData *s, brEngine *engine, const char *buffer, const c
 
 	stSetParseData( s, buffer, strlen( buffer ) );
 
-	// the REAL parse--set the parse engine so the parser knows 
-	// what to do with the info it parses 
+	/* the REAL parse--set the parse engine so the parser knows */
+	/* what to do with the info it parses */
 
 	stParseSetEngine( engine );
+
 	stParseSetSteveData( s );
 
 	brClearError( engine );
 
-	if ( yyparse() ) 
-		return BPE_SIM_ERROR;
+	if ( yyparse() ) return BPE_SIM_ERROR;
 
 	// free( yyfile );
 
@@ -450,7 +455,7 @@ int stParseBuffer( stSteveData *s, brEngine *engine, const char *buffer, const c
  *aren't so many.
  */
 
-int stPreprocess( stSteveData *s, brEngine *engine, const char *srcFile, const char *line ) {
+int stPreprocess( stSteveData *s, brEngine *engine, const char *line ) {
 	const char *start, *end;
 	char *filename;
 	int n;
@@ -458,14 +463,12 @@ int stPreprocess( stSteveData *s, brEngine *engine, const char *srcFile, const c
 	char useWord[1024];
 	const char *oldYyfile = yyfile;
 	int oldLineno = lineno;
-	std::string current = srcFile;
 
-	// i don't wanna comment this 
+	/* i don't wanna comment this */
 
-	if ( !line ) 
-		return -1;
+	if ( !line ) return -1;
 
-	// damn this is ugly 
+	/* damn this is ugly */
 
 	do {
 		while ( *line == '\n' ) {
@@ -486,8 +489,6 @@ int stPreprocess( stSteveData *s, brEngine *engine, const char *srcFile, const c
 		if ( include || path || use ) {
 			start = end = NULL;
 			n = 0;
-
-			// If it's a @use or @include, generate the filename to look for
 
 			if ( use ) {
 				n = 4;
@@ -515,36 +516,21 @@ int stPreprocess( stSteveData *s, brEngine *engine, const char *srcFile, const c
 			}
 
 			if ( include || use ) {
-				s->_includes[ current ].push_back( filename );
+				char *filetext = slUtilReadFile( brFindFile( engine, filename, NULL ) );
 
-				char *found = brFindFile( engine, filename, NULL );
-
-				if( !found ) {
-					stParseError( engine, EE_FILE_NOT_FOUND, "Could not locate include file \"%s\"", filename );
+				if( brLoadFile( engine, filetext, filename ) != EC_OK ) {
+					yyfile = oldYyfile;
+					lineno = oldLineno;
+					stParseError( engine, EE_FILE_NOT_FOUND, "Error including file \"%s\"", filename );
 					delete[] filename;
 					return -1;
 				}
-
-				char *filetext = slUtilReadFile( found );
-
-				int load = brLoadFile( engine, filetext, filename );
 
 				yyfile = oldYyfile;
+
 				lineno = oldLineno;
-
-				slFree( filetext );
-				slFree( found );
-
-				if( load != EC_OK ) {
-					stParseError( engine, EE_SIMULATION, "Error loading file \"%s\"", filename );
-					delete[] filename;
-					return -1;
-				}
-
 			} else {
-				s->_paths[ current ].push_back( filename );
-
-				engine -> addSearchPath( filename );
+				brAddSearchPath( engine, filename );
 			}
 
 			delete[] filename;
@@ -555,8 +541,8 @@ int stPreprocess( stSteveData *s, brEngine *engine, const char *srcFile, const c
 }
 
 /**
- * \brief Makes a version requirement.
- */
+	\brief Makes a version requirement.
+*/
 
 stVersionRequirement *stMakeVersionRequirement( float version, int operation ) {
 	stVersionRequirement *b;
@@ -611,10 +597,10 @@ int stCheckVersionRequirement( float version, stVersionRequirement *r ) {
 }
 
 /**
- * \brief Reports on current usage of all steve objects.
- *
- * Requires any stObject.
- */
+	\brief Reports on current usage of all steve objects.
+
+	Requires any stObject.
+*/
 
 void stObjectAllocationReport( stObject *o ) {
 	std::vector< stObject* >::iterator oi;
@@ -630,7 +616,7 @@ void stObjectAllocationReport( stObject *o ) {
 	Prints out error messages and stops the simulation.
 */
 
-void stParseError( brEngine *e, int type, const char *proto, ... ) {
+void stParseError( brEngine *e, int type, char *proto, ... ) {
 	va_list vp;
 	brErrorInfo *error = brEngineGetErrorInfo( e );
 
@@ -648,13 +634,13 @@ void stParseError( brEngine *e, int type, const char *proto, ... ) {
 		slMessage( DEBUG_ALL, "%s: %s", gErrorNames[type], error->message );
 		slMessage( DEBUG_ALL, " at line %d of file \"%s\"", lineno, yyfile );
 	} else {
-		char localMessage[ BR_ERROR_TEXT_SIZE ];
+		// char localMessage[BR_ERROR_TEXT_SIZE];
 		//// Ignore subsequent parse errors... [?]
-		va_start( vp, proto );
-		vsnprintf( localMessage, BR_ERROR_TEXT_SIZE, proto, vp );
-		va_end( vp );
-		slMessage( DEBUG_ALL, localMessage );
-		slMessage( DEBUG_ALL, " at line %d of file \"%s\"", lineno, yyfile );
+		// va_start( vp, proto );
+		// vsnprintf( localMessage, BR_ERROR_TEXT_SIZE, proto, vp );
+		// va_end( vp );
+		// slMessage( DEBUG_ALL, localMessage );
+		// slMessage( DEBUG_ALL, " at line %d of file \"%s\"", lineno, yyfile );
 	}
 
 	slMessage( DEBUG_ALL, "\n" );

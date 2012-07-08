@@ -14,6 +14,7 @@
 
 @use PhysicalControl.
 @use Shape.
+@use Genome.
 @use Link.
 @use Stationary.
 @use MultiBody.
@@ -36,9 +37,9 @@ PhysicalControl : Walker {
 		locked (int).
 
 		lockMenu (object).
-		floor (object).
 
 	+ to init:
+		floor (object).
 		number (int).
 		item (object).
 
@@ -275,23 +276,20 @@ Object : Monkeys {
 		return distanceTraveled.
 }
 
-Object : MonkeyGenome {
+Genome : MonkeyGenome {
 	+ variables:
 		waveCompression (float).
-		phaseShifts (list).
-		ampShifts (list).
-		limbLengths (list).
-
-	+ to init: 
-		self randomize.
+		phaseShifts (8 floats).
+		ampShifts (8 floats).
+		limbLengths (8 floats).
 
 	+ to randomize:
 		n (int).
 		
 		for n=0, n<8, n++: {
-			phaseShifts{ n } = random[6.3] - 3.15.
-			ampShifts{ n }   = random[1.0] - .5.
-			limbLengths{ n } = random[2.0] + .5.
+			phaseShifts[n] = random[6.3] - 3.15.
+			ampShifts[n] = random[1.0] - .5.
+			limbLengths[n] = random[2.0] + .5.
 
 		}
 
@@ -300,19 +298,10 @@ Object : MonkeyGenome {
 	+ to calculate-torque number jointNum (int) at time (float):
 		# calculates the torque for a certain joint number.
 
-		return .5 * sin(waveCompression * (time + phaseShifts{ jointNum }) ) - ( ampShifts{ jointNum } ).
-
-	+ to get-limb-lengths:
-		return limbLengths.
-
-	+ to get-amp-shifts:
-		return ampShifts.
-
-	+ to get-phase-shifts:
-		return phaseShifts.
+		return .5 * sin(waveCompression * (time + phaseShifts[jointNum]) ) - (ampShifts[jointNum]).
 		
 	+ to get-limb-length number n (int):
-		return limbLengths{ n }.
+		return limbLengths[n].
 
 	+ to mutate:
 		n (int).
@@ -321,37 +310,12 @@ Object : MonkeyGenome {
 
 		n = random[25].
 
-		if n < 8: ampShifts{ n } = random[2.0] - 1.0.
-		else if n < 16: phaseShifts{ n - 8 } = random[6.3] - 3.15.
-		else if n < 24: limbLengths{ n - 16 } = random[2.0] + .5.
+		if n < 8: ampShifts[n] = random[2.0] - 1.0.
+		else if n < 16: phaseShifts[n - 8] = random[6.3] - 3.15.
+		else if n < 24: limbLengths[n - 16] = random[2.0] + .5.
 		else waveCompression = random[5.0] - 2.5.
 
 		print "mutated item $n of $self".
-
-	+ to crossover from-parent-1 p1 (object) from-parent-2 p2 (object):
-		self crossover-data genome-list phaseShifts from-parent-1 ( p1 get-phase-shifts ) from-parent-2 ( p2 get-phase-shifts ).
-		self crossover-data genome-list ampShifts   from-parent-1 ( p1 get-amp-shifts )   from-parent-2 ( p2 get-amp-shifts ).
-		self crossover-data genome-list limbLengths from-parent-1 ( p1 get-limb-lengths ) from-parent-2 ( p2 get-limb-lengths ).
-
-	+ to crossover-data genome-list l (list) from-parent-1 p1 (list) from-parent-2 p2 (list):
-		n, crossoverPoint (int).
-		tmp (list).
-	
-		if random[ 1 ]: {
-			tmp = p2.
-			p2 = p1.
-			p1 = tmp.
-		}
-		
-		crossoverPoint = random[ | l | - 1 ].
-
-		for n = 0, n < | l |, n++: {
-			if n < crossoverPoint:
-				l{ n } = p1{ n }.
-			else
-				l{ n } = p2{ n }.
-		}
-
 }
 
 MultiBody : Creature {
@@ -413,53 +377,41 @@ MultiBody : Creature {
 
 		self set-root to bodyLink.
 
-		joints{0} link with-normal (0, 0, 1) 
-				with-parent-point (2.0, -1.5, 0)
-				with-child-point upperLimbLinkPoint
-				to-child links{0}
-				parent bodyLink.
+		joints{0} link parent bodyLink to-child links{0}
+								 with-normal (0, 0, 1) 
+								 with-parent-point (2.0, -1.5, 0)
+								 with-child-point upperLimbLinkPoint. 
+		joints{1} link parent links{0} to-child links{1}
+								 with-normal (1, 0, 0) 
+								 with-parent-point -upperLimbLinkPoint
+								 with-child-point lowerLimbLinkPoint.
 
-		joints{1} link with-normal (1, 0, 0) 
-				with-parent-point -upperLimbLinkPoint
-				with-child-point lowerLimbLinkPoint
-				to-child links{1}
-				parent links{0}.
+		joints{4} link parent bodyLink to-child links{4}
+								 with-normal (0, 0, 1) 
+								 with-parent-point (-2.0, -1.5, 0)
+								 with-child-point upperLimbLinkPoint. 
+		joints{5} link parent links{4} to-child links{5}
+								 with-normal (1, 0, 0) 
+								 with-parent-point -upperLimbLinkPoint
+								 with-child-point lowerLimbLinkPoint.
 
-		joints{4} link with-normal (0, 0, 1) 
-				with-parent-point (-2.0, -1.5, 0)
-				with-child-point upperLimbLinkPoint
-				to-child links{4}
-				parent bodyLink.
+		joints{2} link parent bodyLink to-child links{2}
+								 with-normal (0, 0, 1) 
+								 with-parent-point (2.0, 1.5, 0)
+								 with-child-point -upperLimbLinkPoint.
+		joints{3} link parent links{2} to-child links{3}
+								 with-normal (1, 0, 0) 
+								 with-parent-point upperLimbLinkPoint
+								 with-child-point -lowerLimbLinkPoint.
 
-		joints{5} link with-normal (1, 0, 0) 
-				with-parent-point -upperLimbLinkPoint
-				with-child-point lowerLimbLinkPoint
-				to-child links{5}
-				parent links{4}.
-
-		joints{2} link with-normal (0, 0, 1) 
-				with-parent-point (2.0, 1.5, 0)
-				with-child-point -upperLimbLinkPoint
-				to-child links{2}
-				parent bodyLink .
-
-		joints{3} link with-normal (1, 0, 0) 
-				with-parent-point upperLimbLinkPoint
-				with-child-point -lowerLimbLinkPoint
-				to-child links{3}
-				parent links{2}.
-
-		joints{6} link with-normal (0, 0, 1) 
-				with-parent-point (-2.0, 1.5, 0)
-				with-child-point -upperLimbLinkPoint
-				to-child links{6}
-				parent bodyLink.
-
-		joints{7} link with-normal (1, 0, 0) 
-				with-parent-point upperLimbLinkPoint
-				with-child-point -lowerLimbLinkPoint
-				to-child links{7}
-				parent links{6}. 
+		joints{6} link parent bodyLink to-child links{6}
+								 with-normal (0, 0, 1) 
+								 with-parent-point (-2.0, 1.5, 0)
+								 with-child-point -upperLimbLinkPoint.
+		joints{7} link parent links{6} to-child links{7}
+								 with-normal (1, 0, 0) 
+								 with-parent-point upperLimbLinkPoint
+								 with-child-point -lowerLimbLinkPoint.
 
 		# rotate the creature and move it to above the origin.
 		
@@ -467,9 +419,6 @@ MultiBody : Creature {
 
 		joints set-double-spring with-strength 200 with-max .6 with-min -.6.
 		joints set-strength-limit to 250.
-
-		joints set-cfm to 0.01.
-		controller set-cfm to 0.01.
 
 		self enable-self-collisions.
 

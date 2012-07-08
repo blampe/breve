@@ -1,19 +1,13 @@
-#if HAVE_LIBAVCODEC && HAVE_LIBAVFORMAT && HAVE_LIBAVUTIL && HAVE_LIBSWSCALE
-
-#define HAVE_MOVIE_EXPORT
+#if HAVE_LIBAVCODEC
 
 #include "glIncludes.h"
 #include "camera.h"
 
-extern "C" {
-	#include <libavformat/avformat.h>
-	#include <libavcodec/avcodec.h>  
-	#include <libswscale/swscale.h>  
-}
+#include <ffmpeg/avformat.h>
 
-/**
- * \brief A class used to export breve movie.
- */
+/*!
+	\brief A class used to export breve movie.
+*/
 
 class slMovie {
 	public:

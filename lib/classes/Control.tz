@@ -25,7 +25,6 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 	+ variables:
 		simTime (float).
-		_startTime (float).
 		simStep (float).
 		xRot (float).
 		yRot (float).
@@ -44,16 +43,17 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		backgroundColor (vector).
 		fogColor (vector).
-		lightAmbientColor, lightDiffuseColor, lightSpecularColor (vector).
+		lightAmbientColor, lightDiffuseColor (vector).
 
-		archivedSkyboxImageList (list).
-		archivedBackgroundTextureImage (object).
+		backgroundTexture (int).
 
 		fogIntensity (float).
 
+		loadedImages (list).
+
 		# we need to know when shadows and reflections are legal...
 
-		shadowCatcherDefined (int).
+		floorDefined (int).
 
 		shadowMenu (object).
 		shadowFlag (int).
@@ -82,7 +82,6 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		genericShape (object).	
 		genericLinkShape (object).
-		stationaryTexture (object).
 
 		movie (object).
 		movieMenu (object).
@@ -97,18 +96,17 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		cameraPointer = getMainCameraPointer().
 
-		stationaryTexture = new Image.
-		stationaryTexture load from "images/checkerpink.png".
-
 		camera = new Camera.
 		self add-dependency on camera.
 		camera set-camera-pointer to cameraPointer.
 
-		shadowCatcherDefined = 0.
+		floorDefined = 0.
 
-		self set-integration-step to .02.
-		self set-iteration-step to .06.
+		self set-integration-step to .005.
+		self set-iteration-step to .05.
 		self enable-draw-every-frame.
+
+		backgroundTexture = -1.
 
 		self set-background-color to (.5, .7, 1.0).
 		self set-fog-color to (.8, .8, .8).
@@ -119,14 +117,8 @@ Abstract : Control (aka Controls) [version 2.3] {
 		self move-light to (0, 0, 0).		
 		self point-camera at (0, 0, 0) from (0, 0, 30).
 
-		self set-light-ambient-color to ( .1, .1, .1 ).
-		self set-light-diffuse-color to ( .9, .9, .9 ).
-
 		self set-background-scroll-rate x 0.001 y 0.0001.
 
-		(self add-menu named "End Simulation" for-method "end-simulation").
-
-		self add-menu-separator.
 		lightMenu = (self add-menu named "Use Lighting" for-method "toggle-lighting").
 		drawMenu = (self add-menu named "Use Smooth Shading" for-method "toggle-smooth").
 		shadowMenu = (self add-menu named "Draw Shadows" for-method "toggle-shadows").
@@ -150,8 +142,6 @@ Abstract : Control (aka Controls) [version 2.3] {
 		genericShape = (new Sphere init-with radius 1.0).
 		genericLinkShape = (new Cube init-with size (.1, 1, .1)).
 
-		_startTime = getRealTime().
-
 	- to toggle-recording-to-movie:
 		if movie: {
 			movieMenu uncheck.
@@ -169,9 +159,6 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 	- to parse-xml-network-request from-string s (string):
 		return dearchiveXMLObjectFromString(s).
-
-	- to get-stationary-texture:
-		return stationaryTexture.
 
 	- to get-generic-shape:
 		% Returns a "generic" shape for agents, a sphere of radius 1.0.
@@ -197,16 +184,9 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 	+ to save-snapshot to filename (string):
 		% Takes a PNG snapshot of the current simulation display and saves 
-		% it to a file named filename, which should end with ".png".
+		% it to a file named filename.  filename should end with ".png".
 
 		snapshot(filename).
-
-	+ to save-depth-snapshot to filename (string) linearize lin (int) max-dist dist (float):
-		% Takes a PNG snapshot of the simulation's depth buffer and saves 
-		% it to a file named filename, which should end with ".png".
-
-		snapshotDepth( filename, lin, dist ).
- 
 
   + section "Updating neighbors"
 
@@ -227,13 +207,6 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% precision.
 
 		return getRealTime().
-
-	+ to get-real-running-time:
-		% Returns the number of seconds the start of the simulation.  The value returned by 
-		% this method is typically adjusted for pausing and unpausing of the simulation
-		% if supported by the simulation frontnend.
-
-		return getRunningTime().
 
 	+ to get-time:
 		% Returns the simulation time of the world.
@@ -341,7 +314,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% multiple runs, and this will make you unhappy.  Using this method
 		% will restore happiness and harmony to your life.
 
-		return randomSeedFromDevRandom().
+		randomSeedFromDevRandom().
 
   + section "Creating a New Instance From a Classname String"
 
@@ -377,7 +350,7 @@ Abstract : Control (aka Controls) [version 2.3] {
   + section "Selecting Objects"
 
 	- to get-drag-object:
-		if (selectedObject && ((selectedObject is-a class "Mobile") || (selectedObject is-a class "MultiBody"))): return selectedObject.
+		if (selectedObject && ((selectedObject is a "Mobile") || (selectedObject is a "MultiBody"))): return selectedObject.
 		return 0.
 
 	+ to click on theObject (object):
@@ -407,7 +380,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		selectedObject = theObject.
 
-		if selectedObject && (selectedObject is-a class "Link") && (selectedObject get-multibody):
+		if selectedObject && (selectedObject is a "Link") && (selectedObject get-multibody):
 			selectedObject = (selectedObject get-multibody).
 
 		if !selectedObject || 
@@ -429,32 +402,12 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% Returns the "selected" object--the object which 
 		% has been clicked on in the simulation.
 
-		if selectedObject && (selectedObject is-a class "Link") && (selectedObject get-multibody):
+		if selectedObject && (selectedObject is a "Link") && (selectedObject get-multibody):
 			return (selectedObject get-multibody).
 
 		return selectedObject.
 
   + section "Background Appearance Options"
-
-	+ to set-skybox-images to imageList (list):
-		% Sets a skybox background from a list of images.
-		% imageList must contains 6 strings specifying image files corresponding to 
-		% the front, back, left, right, top and bottom skybox images respectively.
-		% The skybox will not be drawn unless all images load successfully.
-
-		archivedSkyboxImageList = imageList.
-
-		setSkyboxImages( imageList ).
-
-	+ to set-mountain-skybox:
-		% A simple shortcut to setup one of the default skyboxes included with
-		% breve, used to quickly add a skybox background to a scene.  See
-		% METHOD(set-skybox-images) for information on setting custom skyboxes.
-
-		self set-skybox-images to {
-			"images/MountainBoxFront.jpg", "images/MountainBoxBack.jpg",
-			"images/MountainBoxLeft.jpg", "images/MountainBoxRight.jpg",
-			"images/MountainBoxTop.jpg", "images/MountainBoxBottom.jpg" }.
 
 	+ to set-background-scroll-rate x xValue (float) y yValue (float):
 		% Sets the rate of the background image scrolling.  Purely cosmetic.
@@ -470,22 +423,15 @@ Abstract : Control (aka Controls) [version 2.3] {
 	+ to set-background-texture-image to newTextureImage (object):
 		% Sets the background color of the rendered world to newTexture.
 		% newTexture must be a texture returned by the method 
-		% METHOD(load-image).  Setting the texture to -1 will turn off 
-		% background texturing.
+		% METHOD(load-image) or 0 for the default texture.  Setting
+		% the texture to -1 will turn off background texturing.
 
-		if archivedBackgroundTextureImage:
-			self remove-dependency on archivedBackgroundTextureImage.
-
-		archivedBackgroundTextureImage = newTextureImage.
-
-		self add-dependency on archivedBackgroundTextureImage.
-
-		setBackgroundTexture( ( newTextureImage get-image-data) ).
+		backgroundTexture = (newTextureImage get-texture-number).
+		setBackgroundTexture(backgroundTexture).
 
 	- to set-background-texture to newTexture (int):
-		print "set-background-texture is deprecated, use set-background-texture-image instead".
-
-		setBackgroundTexture( newTexture ).
+		backgroundTexture = newTexture + 1.
+		setBackgroundTexture(newTexture + 1).
 
   + section "Camera & Lighting Options"
 
@@ -586,7 +532,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 			self set-camera-offset to offset.
 		} 
 
-	+ to pivot-camera x dx = 0.0 (float) y dy = 0.0 (float):
+	+ to pivot-camera x dx (float) y dy (float):
 		% Rotates the camera (from it's current position) on the x-axis by dx and on the y-axis by dy.
 
 		rot (vector).
@@ -610,12 +556,12 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		cameraSetZoom(theDistance).
 
-	+ to move-light to theLocation (vector) for-light n = 0 (int):
+	+ to move-light to theLocation (vector):
 		% Moves the source light to theLocation.  The default position is 
 		% (0, 0, 0) which is the origin of the world.  
 
 		lightPosition = theLocation.
-		brISetLightPosition( theLocation, n ).
+		setLightPosition(theLocation).
 
 	+ to iterate:
 		result (float).
@@ -642,12 +588,13 @@ Abstract : Control (aka Controls) [version 2.3] {
 
   + section "Rendering Options"
 
-	- to set-shadow-catcher:
+	- to set-floor-defined:
 		if lightFlag: {
+			shadowMenu enable.
 			reflectMenu enable.
 		}
 
-		shadowCatcherDefined = 1.
+		floorDefined = 1.
 
 	+ to enable-draw-every-frame:
 		% If the method METHOD(disable-draw-every-frame) has been called previously,	
@@ -715,9 +662,8 @@ Abstract : Control (aka Controls) [version 2.3] {
 		setDrawLights(lightFlag).
 		lightMenu check.
 
-		shadowMenu enable.
-
-		if shadowCatcherDefined: {
+		if floorDefined: {
+			shadowMenu enable.
 			reflectMenu enable.
 		}
 		 
@@ -731,26 +677,45 @@ Abstract : Control (aka Controls) [version 2.3] {
 		shadowMenu disable.
 		reflectMenu disable.
 
-	- to toggle-smooth:
-		% Deprecated.
-		return.
+	+ to toggle-smooth:
+		% Toggle smooth drawing for the main camera.  See METHOD(enable-smooth-drawing) and 
+		% METHOD(disable-smooth-drawing) for more information.
 
-	- to enable-smooth-drawing:
-		% Deprecated.
-		return.
+		if smoothFlag == 1: self disable-smooth-drawing.
+		else self enable-smooth-drawing.
+
+	+ to enable-smooth-drawing:
+		% Enable smooth drawing for the main camera.  Smooth drawing enables 
+		% a smoother blending of colors, textures and lighting.  This feature
+		% is especially noticeable when dealing with spheres or large objects.
+		% <p>
+		% It is strongly recommended that smooth drawing be enabled whenever 
+		% lighting is enabled (see METHOD(enable-lighting)).  Otherwise,
+		% major artifacts may be visible, especially on larger polygons.
+		% <p>
+		% The disadvantage of smooth drawing is a potential performance hit.
+		% The degree of this performance hit depends on the number of polygons
+		% in the scene.  If speed is an issue, it is often best to disable 
+		% both lighting and smooth drawing.
+
+		smoothFlag = 1.
+		cameraSetDrawSmooth(cameraPointer, smoothFlag).
+		drawMenu check.
 		 
-	- to disable-smooth-drawing:
-		% Deprecated.
-		return.
+	+ to disable-smooth-drawing:
+		% Disable smooth drawing for the main camera.  See METHOD(enable-smooth-drawing)
+		% for more information.
+
+		smoothFlag = 0.
+		cameraSetDrawSmooth(cameraPointer, smoothFlag).
+		drawMenu uncheck.
 
 	+ to toggle-shadows:
-		% Toggle shadows for the main camera.  See METHOD(enable-shadow-volumes) and 
-		% METHOD(disable-shadow-volumes) for more information on shadows.  
+		% Toggle shadows for the main camera.  See METHOD(enable-shadows) and 
+		% METHOD(disable-shadows) for more information on shadows.  
 
-		if shadowVolumeFlag == 1: 
-			self disable-shadow-volumes.
-		else 
-			self enable-shadow-volumes.
+		if shadowFlag == 1: self disable-shadows.
+		else self enable-shadows.
 
 	+ to enable-shadows:
 		% Enable shadows for the main camera.  Shadows use the current 
@@ -763,10 +728,11 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% <P>
 		% For an improved shadowing algorithm, see METHOD(enable-shadow-volumes).
 
-		if !shadowCatcherDefined: return.
+		if !floorDefined: return.
 
 		shadowFlag = 1.
 		setDrawShadow(shadowFlag).
+		shadowMenu check.
 
 	+ to disable-shadows:
 		% Disable "flat" shadows for the main camera.  See 
@@ -774,6 +740,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		shadowFlag = 0.
 		setDrawShadow(shadowFlag).
+		shadowMenu uncheck.
 
 	+ to enable-shadow-volumes:
 		% Enables shadows drawn using a "shadow volume" algorithm.  This
@@ -790,21 +757,19 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		shadowVolumeFlag = 1.
 		setDrawShadowVolumes(shadowVolumeFlag).
-		shadowMenu check.
 
 	+ to disable-shadow-volumes:
 		% Disable shadow volumes for the main camera.  See 
 		% METHOD(enable-shadow-volumes) for more information on shadows.
 
 		shadowVolumeFlag = 0.
-		setDrawShadowVolumes(shadowVolumeFlag).
-		shadowMenu uncheck.
+		setDrawShadowVolumes(shadowFlag).
 
 	+ to toggle-reflections:
 		% Toggle reflections for the main camera.  See METHOD(enable-reflections) for 
 		% more information on reflections.
 
-		if !shadowCatcherDefined: return.
+		if !floorDefined: return.
 
 		shadowFlag = 1.
 
@@ -819,7 +784,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% for more information.  The reflection-catching object must already be defined in
 		% order for this method to take effect.
 
-		if !shadowCatcherDefined: return.
+		if !floorDefined: return.
 
 		reflectFlag = 1.
 		setDrawReflection(reflectFlag).
@@ -861,8 +826,6 @@ Abstract : Control (aka Controls) [version 2.3] {
 		blurFlag = 1.
 		cameraSetBlur(cameraPointer, 1).
 		blurMenu check.
-
-		self clear-screen.
 
 	+ to disable-blur:
 		% Disables blurring.  See METHOD(enable-blur) for more 
@@ -943,7 +906,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 		if fogFlag == 1: self disable-fog.
 		else self enable-fog.
 
-	+ to set-display-text to theString (string) at-x xLoc = -.95 (float) at-y yLoc = -.95 (float) number messageNumber = 0 (int) with-color theColor = ( 0, 0, 0 ) (vector):
+	+ to set-display-text number messageNumber = 0 (int) to theString (string) at-x xLoc = -.95 (float) at-y yLoc = -.95 (float):
 		% Sets a text string in the simulation display.  xLoc and yLoc 
 		% represent the location of the text.  The coordinate system 
 		% used goes from (-1, -1) to (1, 1) with (-1, -1) at the lower 
@@ -953,7 +916,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% The optional argument messageNumber may be used to specify 
 		% up to 8 different messages.
 
-		cameraSetText( theString, messageNumber, xLoc, yLoc, theColor ).
+		cameraSetText(theString, messageNumber, xLoc, yLoc, (0, 0, 0)).
 
 	+ to set-display-text-scale to scale (double):
 		% Sets the scaling factor for text in the display window.  
@@ -962,10 +925,6 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% window.
 
 		cameraSetTextScale(scale).
-
-	- to set-display-text-color to textColor (vector):
-		% Sets the color to the display text to textColor.
-		cameraSetTextColor(cameraPointer, textColor).
 
 	- to set-display-message to theString (string) with-number messageNumber (int) at-x xLoc (float) at-y yLoc (float) with-color textColor = (0, 0, 0) (vector):
 		% Sets a text string in the simulation display.  xLoc and yLoc 
@@ -1035,6 +994,33 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		playSound().
 
+	- to load-image from file (string):
+		% Loads an image from a file, returning an OBJECT(Image) object.
+		% <P>
+		% This method is provided for backwards compatability only.
+		% The p
+		% <p>
+
+		image (object).
+
+		print "warning: the Control method \"load-image\" is now deprecated!".
+
+		image = new Image.
+
+		if (image load from file): {
+			loadedImages{ loadedImages } = file.
+		} else {
+			free image.
+			return -1.
+		}
+
+		return (image get-texture-number) - 1.
+
+	- to load-image-without-alpha from file (string):
+		% Deprecated.
+
+		return (self load-image from file).
+
 	+ to execute command systemCommand (string):
 		% Executes the shell command systemCommand using /bin/sh.  
 		% Returns the output of command.  Supported on UNIX-based
@@ -1043,7 +1029,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		return system(systemCommand).
 
-	+ to set-light-color to newColor (vector) for-light n = 0 (int):
+	+ to set-light-color to newColor (vector):
 		% Sets the color of the light to newColor.  Only has an effect on the
 		% rendering when lighting has been turned on using 
 		% METHOD(enable-lighting).
@@ -1054,25 +1040,16 @@ Abstract : Control (aka Controls) [version 2.3] {
 
 		self set-light-ambient-color to newColor.
 		self set-light-diffuse-color to newColor.
-		self set-light-specular-color to newColor.
 	
-	+ to set-light-ambient-color to newColor (vector) for-light n = 0 (int):
+	+ to set-light-ambient-color to newColor (vector):
 		% Sets the ambient, or background, color of the light to newColor.  
 		% Only has an effect on the rendering when lighting has been turned 
 		% on using METHOD(enable-lighting).
 		
 		lightAmbientColor = newColor.
-		brISetLightAmbientColor( newColor, n ).
+		setLightAmbientColor(newColor).
 
-	+ to set-light-specular-color to newColor (vector) for-light n = 0 (int):
-		% Sets the specular, or "shine", color of the light to newColor.  
-		% Only has an effect on the rendering when lighting has been turned 
-		% on using METHOD(enable-lighting).
-		
-		lightSpecularColor = newColor.
-		brISetLightSpecularColor( newColor, n ).
-
-	+ to set-light-diffuse-color to newColor (vector) for-light n = 0 (int):
+	+ to set-light-diffuse-color to newColor (vector):
 		% Sets the diffuse, or foreground, color of the light to newColor.  
 		% Only has an effect on the rendering when lighting has been turned 
 		% on using METHOD(enable-lighting).
@@ -1081,7 +1058,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 		% as opposed to the "ambient" light that is also generated.
 
 		lightDiffuseColor = newColor.
-		brISetLightDiffuseColor( newColor, n ).
+		setLightDiffuseColor(newColor).
 
 	+ to set-interface-item with-id tag (int) to-string newValue (string):
 		% This method will set the interface item tag to newValue.  This
@@ -1125,21 +1102,20 @@ Abstract : Control (aka Controls) [version 2.3] {
 	+ to archive:
 		camTarget = cameraGetTarget().
 		camOffset = cameraGetOffset().
-
 		return (super archive).
 
 	+ to dearchive:
+		image (string).
+		images (list).
+
 		cameraPointer = getMainCameraPointer().
 		camera set-camera-pointer to cameraPointer.
 
-		if | archivedSkyboxImageList | == 6:
-			self set-skybox-images to archivedSkyboxImageList.
-
-		if archivedBackgroundTextureImage:
-			self set-background-texture-image to archivedBackgroundTextureImage.
+		foreach image in loadedImages: images{ images } = image.
+		foreach image in images: (self load-image from image).
 
 		self move-light to lightPosition.
-
+		self set-background-texture to backgroundTexture.
 		self set-background-color to backgroundColor.
 		self set-fog-color to fogColor.
 		self point-camera at camTarget from camOffset.
@@ -1156,7 +1132,7 @@ Abstract : Control (aka Controls) [version 2.3] {
 		if drawEveryFrame: (self enable-draw-every-frame).
 		else (self disable-draw-every-frame).
 
-		return ( super dearchive ).
+		return 1.
 
  	+ to save-as-xml file filename (string):
 		% Writes the entire state of the world to an XML file, filename.  

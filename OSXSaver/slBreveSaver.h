@@ -23,8 +23,7 @@
 #import <OpenGL/gl.h>
 
 #import "kernel.h"
-#import "engine.h"
-#import "camera.h"
+#import "gldraw.h"
 
 @interface slBreveSaver : ScreenSaverView {
 	NSOpenGLView *theView;
@@ -63,8 +62,8 @@
 
 - (void)startBreveSimulation;
 
-- (const char*)getSimName;
-- (const char*)getDefaultsName;
+- (char*)getSimName;
+- (char*)getDefaultsName;
 
 - (NSString*)getNibName;
 

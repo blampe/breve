@@ -9,7 +9,7 @@ MACPACKAGEINFO=
 OUTPUTPATH=.
 OBJECTPATH=objects
 PROGRAM=breveIDE@EXE_SUFFIX@
-LIBS=-L../lib -lbreve @LIBS@ `@WXCONFIG@ --inplace --libs stc,gl,core` 
+LIBS=`@WXCONFIG@ --inplace --libs stc,gl,core` -L../lib -lbreve @LIBS@
 LINKERFLAGS=
 WARNINGFLAGS=
 OPTFLAGS=
@@ -61,8 +61,6 @@ $(OUTPUTPATH)/$(PROGRAM):	$(OBJECTS)
 	-mkdir lib
 	$(CXX) @PLUGINIMP@ -o $@ $(OBJECTS) $(LDFLAGS)
 	$(MACRESOURCECMD)
-
-	-cp lib/brevePlugin.lib ../lib/breveIDEPlugin.lib
 
 # Windows only
 $(OBJECTPATH)/$(RCFILE)_rc.o:	$(RCFILE).rc

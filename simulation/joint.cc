@@ -1,52 +1,15 @@
 #include "simulation.h"
 #include "joint.h"
 
-void slJoint::setERP( double inValue ) {
-	switch ( _type ) {
-		case JT_PRISMATIC:
-			if( _odeJointID ) dJointSetSliderParam( _odeJointID, dParamStopERP, inValue );
-			break;
+/*!
+	\brief Applies a force on a joint's DOFs
 
-		case JT_REVOLUTE:
-			if( _odeJointID ) dJointSetHingeParam( _odeJointID, dParamStopERP, inValue );
-			break;
+	This can be either force or torque, depending on the type of joint.
 
-		case JT_UNIVERSAL:
-		case JT_BALL:
-			if( _odeMotorID ) {
-				dJointSetAMotorParam( _odeMotorID, dParamStopERP, inValue );
-				dJointSetAMotorParam( _odeMotorID, dParamStopERP2, inValue );
-				dJointSetAMotorParam( _odeMotorID, dParamStopERP3, inValue );
-			}
-			break;
-	}
-}
-
-void slJoint::setCFM( double inValue ) {
-	switch ( _type ) {
-		case JT_PRISMATIC:
-			if( _odeJointID ) dJointSetSliderParam( _odeJointID, dParamCFM, inValue );
-			break;
-
-		case JT_REVOLUTE:
-			if( _odeJointID ) dJointSetHingeParam( _odeJointID, dParamCFM, inValue );
-			break;
-
-		case JT_UNIVERSAL:
-			if( _odeJointID ) dJointSetUniversalParam( _odeJointID, dParamCFM, inValue );
-		case JT_BALL:
-			if( _odeMotorID ) dJointSetAMotorParam( _odeMotorID, dParamCFM, inValue );
-			break;
-	}
-}
-
-/**
- * \brief Applies a force on a joint's DOFs
- * This can be either force or torque, depending on the type of joint.
- * We do this not by setting the torque and force directly, because it will
- * be cleared after the next physics engine step.  Instead, we compute the
- * values and store them in the externalForce vectors for each body.
- */
+	We do this not by setting the torque and force directly, because it will
+	be cleared after the next physics engine step.  Instead, we compute the
+	values and store them in the externalForce vectors for each body.
+*/
 
 void slJoint::applyJointForce( slVector *force ) {
 	const dReal *t;
@@ -64,8 +27,7 @@ void slJoint::applyJointForce( slVector *force ) {
 			break;
 
 		default:
-			if ( _odeMotorID ) 
-				dJointAddAMotorTorques( _odeMotorID, force->x, force->y, force->z );
+			if ( _odeMotorID ) dJointAddAMotorTorques( _odeMotorID, force->x, force->y, force->z );
 
 			break;
 	}
@@ -97,15 +59,14 @@ void slJoint::setNormal( slVector *normal ) {
 
 	// transform the normal to the parent's frame
 
-	if ( _parent ) 
-		slVectorXform( _parent->_position.rotation, normal, &tn );
-	else 
-		slVectorCopy( normal, &tn );
+	if ( _parent ) slVectorXform( _parent->_position.rotation, normal, &tn );
+	else slVectorCopy( normal, &tn );
 
-	if ( _type == JT_REVOLUTE )
+	if ( _type == JT_REVOLUTE ) {
 		dJointSetHingeAxis( _odeJointID, tn.x, tn.y, tn.z );
-	else if ( _type == JT_PRISMATIC )
+	} else if ( _type == JT_PRISMATIC ) {
 		dJointSetSliderAxis( _odeJointID, tn.x, tn.y, tn.z );
+	}
 }
 
 slJoint::~slJoint() {
@@ -123,8 +84,7 @@ void slJoint::breakJoint() {
 	slMultibody *parentBody = NULL, *childBody, *newMb;
 	std::vector<slJoint*>::iterator ji;
 
-	if ( !parent && !child ) 
-		return;
+	if ( !parent && !child ) return;
 
 	childBody = _child->_multibody;
 
@@ -133,14 +93,12 @@ void slJoint::breakJoint() {
 	if ( parent ) {
 		ji = std::find( parent->_outJoints.begin(), parent->_outJoints.end(), this );
 
-		if ( ji != parent->_outJoints.end() ) 
-			parent->_outJoints.erase( ji );
+		if ( ji != parent->_outJoints.end() ) parent->_outJoints.erase( ji );
 	}
 
 	ji = std::find( child->_inJoints.begin(), child->_inJoints.end(), this );
 
-	if ( ji != child->_inJoints.end() ) 
-		child->_inJoints.erase( ji );
+	if ( ji != child->_inJoints.end() ) child->_inJoints.erase( ji );
 
 	dJointAttach( _odeJointID, NULL, NULL );
 	dJointDestroy( _odeJointID );
@@ -156,6 +114,7 @@ void slJoint::breakJoint() {
 	memset( &_feedback, 0, sizeof( dJointFeedback ) );
 
 	_child = NULL;
+
 	_parent = NULL;
 
 	if ( parentBody ) parentBody->update();
@@ -227,22 +186,11 @@ void slJoint::getVelocity( slVector *velocity ) {
 			break;
 
 		case JT_BALL:
-			// dJointGetAMotorAngleRate not yet implemented !?
-
-			// velocity->x = dJointGetAMotorAngleRate( _odeMotorID, 0 );
-			// velocity->y = dJointGetAMotorAngleRate( _odeMotorID, 1 );
-			// velocity->z = dJointGetAMotorAngleRate( _odeMotorID, 2 );
-
-			break;
-
 		case JT_UNIVERSAL:
-			// velocity->x = dJointGetAMotorAngleRate( _odeMotorID, 0 );
-			// velocity->y = dJointGetAMotorAngleRate( _odeMotorID, 2 );
-			velocity->z = 0;
+			velocity->z = 0.0;
+			velocity->x = 0.0;
+			velocity->y = 0.0;
 
-			break;
-
-		default:
 			break;
 	}
 }

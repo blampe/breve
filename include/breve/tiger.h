@@ -13,7 +13,6 @@
 #include <set>
 
 #include "glIncludes.h"
-#include "terrain.h"
 
 class slGISPoint {
 	public:

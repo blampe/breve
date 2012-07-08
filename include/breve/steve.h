@@ -1,6 +1,6 @@
 #define STINSTANCE(x)	((stInstance *)(BRPOINTER(x)))
 
-#include "slutil.h"
+#include "util.h"
 #include "kernel.h"
 
 #include "steveTypedefs.h"

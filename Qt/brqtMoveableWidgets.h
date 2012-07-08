@@ -2,7 +2,6 @@
 #define _BRQTMOVEABLEWIDGETS_H
 
 #include <QPushButton>
-#include <QGroupBox>
 #include <QMoveEvent>
 #include <QWidget>
 #include <QSlider>

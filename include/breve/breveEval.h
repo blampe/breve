@@ -21,17 +21,9 @@
 #ifndef _BREVEEVAL_H
 #define _BREVEEVAL_H
 
+#include "util.h"
 #include <string>
 #include <set>
-
-#include "slutil.h"
-
-class brEvalHash;
-class brEvalList;
-class brEvalListHead;
-class brInstance;
-class brData;
-class brObject;
 
 enum evaluationCodes {
 	EC_ERROR_HANDLED = -2,
@@ -42,24 +34,23 @@ enum evaluationCodes {
 
 enum atomicTypes {
 	AT_INVALID = 0,
-	AT_UNDEFINED,
 	AT_NULL,
 	AT_INT,
-	AT_POINTER,
-	AT_TYPE,
 	AT_DOUBLE,
-	AT_VECTOR,
-	AT_MATRIX,
-	AT_ARRAY,
-
 	AT_STRING,
 	AT_INSTANCE,
+	AT_POINTER,
+	AT_VECTOR,
+	AT_MATRIX,
 	AT_LIST,
+	AT_ARRAY,
 	AT_DATA,
-	AT_HASH
+	AT_HASH,
+	AT_TYPE,
+	AT_UNDEFINED
 };
 
-extern const char *brAtomicTypeStrings[];
+extern char *brAtomicTypeStrings[];
 
 extern "C" {
 
@@ -74,16 +65,16 @@ DLLEXPORT void stGCRetainPointer(void *pointer, int type);
 
 class DLLEXPORT brEvalObject {
 	public:
-		brEvalObject();
+		brEvalObject() { _retainCount = 0; } ;
 
-		virtual ~brEvalObject() = 0;
+		virtual ~brEvalObject() { };
 
 		int _retainCount;
 
-		void retain();
-		void unretain();
+		void retain() { _retainCount++; }
+		void unretain() { _retainCount--; }
 
-		void collect();
+		void collect() { if( _retainCount < 1 ) delete this; }
 };
 
 /**
@@ -97,53 +88,50 @@ class DLLEXPORT brEvalObject {
 
 class DLLEXPORT brEval {
 	public:
-		brEval() { _type = AT_NULL; _values.pointerValue = NULL; _needsCollect = false; }
+		brEval() { _type = AT_NULL; _values.pointerValue = NULL; }
 
 		brEval( const brEval& inOther );
 
-		~brEval();
+		~brEval() { collect(); }
 
 		brEval &operator=( const brEval &inOther );
 
 		bool checkNaNInf();
 
 		inline void collect() {
-			if( _needsCollect ) {
-				stGCUnretainAndCollectPointer( _values.pointerValue, _type );
-				_needsCollect = false;
-			}
+			if ( _type == AT_NULL || _type == AT_INT || _type == AT_MATRIX || _type == AT_VECTOR || _type == AT_DOUBLE ) return;
+			stGCUnretainAndCollectPointer( _values.pointerValue, _type );
 		}
 
 		inline void retain() {
+			if ( _type == AT_NULL || _type == AT_INT || _type == AT_MATRIX || _type == AT_VECTOR || _type == AT_DOUBLE ) return;
 			stGCRetainPointer( _values.pointerValue, _type );
-
-			_needsCollect = true;
 		}
 
 
-		void clear() { collect(); _type = AT_NULL; _values.pointerValue = 0; }
+		void clear() { collect(); _type = AT_NULL; }
 
 		inline unsigned char type() const { return _type; } 
 
-		inline void set( const double d )    { collect(); _values.doubleValue = d;                _type = AT_DOUBLE; _needsCollect = false;  }
-		inline void set( const int i )       { collect(); _values.intValue = i;                   _type = AT_INT; _needsCollect = false;      }
-		inline void set( const long i )      { collect(); _values.intValue = i;                   _type = AT_INT; _needsCollect = false;      }
-		inline void set( const slVector &v ) { collect(); slVectorCopy(&v, &_values.vectorValue); _type = AT_VECTOR; _needsCollect = false;   }
-		inline void set( const slMatrix &m ) { collect(); slMatrixCopy(m, _values.matrixValue);   _type = AT_MATRIX; _needsCollect = false;   }
-		inline void set( const char *s )     { collect(); _values.stringValue = slStrdup( s );      _type = AT_STRING; _needsCollect = true; }
-		inline void set( const std::string &s )     { collect(); _values.stringValue = slStrdup( s.c_str() );      _type = AT_STRING; _needsCollect = true; }
+		inline void set( const double d )    { collect(); _values.doubleValue = d;                _type = AT_DOUBLE;   }
+		inline void set( const int i )       { collect(); _values.intValue = i;                   _type = AT_INT;      }
+		inline void set( const long i )      { collect(); _values.intValue = i;                   _type = AT_INT;      }
+		inline void set( const slVector &v ) { collect(); slVectorCopy(&v, &_values.vectorValue); _type = AT_VECTOR;   }
+		inline void set( const slMatrix &m ) { collect(); slMatrixCopy(m, _values.matrixValue);   _type = AT_MATRIX;   }
+		inline void set( const char *s )     { collect(); _values.stringValue = slStrdup( s );      _type = AT_STRING;   }
+		inline void set( const std::string &s )     { collect(); _values.stringValue = slStrdup( s.c_str() );      _type = AT_STRING;   }
 		inline void set( void *p )           { collect(); _values.pointerValue = p;               _type = AT_POINTER;  retain(); }
 		inline void set( brEvalHash *h )     { collect(); _values.hashValue = h;                  _type = AT_HASH;     retain(); }
 		inline void set( brData *d )         { collect(); _values.dataValue = d;                  _type = AT_DATA;     retain(); }
 		inline void set( brInstance *i )     { collect(); _values.instanceValue = i;              _type = AT_INSTANCE; retain(); }
 		inline void set( brEvalListHead *l ) { collect(); _values.listValue = l;                  _type = AT_LIST;     retain(); }
 
-		inline int			getInt()      const { return _values.intValue;      }
+		inline int		getInt()      const { return _values.intValue;      }
 		inline double		getDouble()   const { return _values.doubleValue;   }
 		inline slVector		&getVector()  		{ return _values.vectorValue;  }
 		inline slMatrix		&getMatrix()    	{ return _values.matrixValue;  } 
-		inline void			*getPointer()  const { return _values.pointerValue;  }
-		inline char			*getString()   const { return _values.stringValue;   }
+		inline void		*getPointer()  const { return _values.pointerValue;  }
+		inline char		*getString()   const { return _values.stringValue;   }
 		inline brEvalHash	*getHash()     const { return _values.hashValue;     }
 		inline brData		*getData()     const { return _values.dataValue;     }
 		inline brInstance	*getInstance() const { return _values.instanceValue; }
@@ -164,7 +152,6 @@ class DLLEXPORT brEval {
 		} _values;
 
 		unsigned char _type;
-		bool _needsCollect;
 };
 
 #define BRINT(e)		( (e)->getInt()      )

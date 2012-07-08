@@ -21,9 +21,9 @@
 #ifndef _OBJECT_H
 #define _OBJECT_H
 
-/**
- * \brief A steve object type.
- */
+/*!
+	\brief A steve object type.
+*/
 
 #include <vector>
 #include <set>
@@ -51,17 +51,14 @@ struct stObject {
 	std::map< std::string, stVar* > variables;
 	std::map< std::string, std::vector< stMethod* > > methods;
 
-	std::set< stInstance*, stInstanceCompare > allInstances;
-
-	std::string 				_file;
-	std::string 				_comment;
+	std::set< stInstance*, stInstanceCompare> allInstances;
 };
 
-/**
- * A steve object instance.
- * 
- * An instance in the steve language.
- */
+/*!
+	\brief A steve object instance.
+
+	An instance in the steve language.
+*/
 
 struct stInstance {
 	stObject *type;
@@ -74,33 +71,34 @@ struct stInstance {
 
 	bool gc;
 	int retainCount;
+
+	std::set< stInstance*, stInstanceCompare > dependencies;
+	std::set< stInstance*, stInstanceCompare > dependents;
 };
 
-/**
- * \brief Holds a steve method.
- */
+/*!
+	\brief Holds a steve method.
+*/
 
 class stMethod {
 	public:
 		stMethod( const char *n, std::vector< stKeywordEntry* > *k, const char *file, int line );
 		~stMethod();
 
-		std::string 					name;
+		std::string name;
 
-		bool 							inlined;
+		bool inlined;
 
-		int 							lineno;
-		std::string 					filename;
+		int lineno;
+		std::string filename;
 	
-		std::vector< stKeywordEntry* > 	keywords;
-		std::vector< stExp* > 			code;
-		std::vector< stVar* > 			variables;
+		std::vector< stKeywordEntry* > keywords;
+		std::vector< stExp* > code;
+		std::vector< stVar* > variables;
 
 		// how much space does this method need on the stack for inputs and locals? 
 
-		int 							stackOffset;
-
-		std::string 					_comment;
+		int stackOffset;
 };
 
 /*!
@@ -148,24 +146,27 @@ class stVar {
 		bool used;
 };
 
-/**
- * \brief Stores a steve method-keyword.
- * A steve method-keyword is a stVar struct and an associated name.
- */
+/*!
+	\brief Stores a steve method-keyword.
+
+	A steve method-keyword is a stVar struct and an associated name.
+*/
 
 struct stKeywordEntry {
-	~stKeywordEntry();
-
 	std::string keyword;
 	stVar *var;
 	stKeyword *defaultKey;
 };
 
-stObject *stObjectNew( brEngine *e, stSteveData *data, char *name, char *alias, stObject *super, float version, const char *inFile );
+stObject *stObjectNew(brEngine *e, stSteveData *data, char *name, char *alias, stObject *super, float version);
 stObject *stObjectFind(brNamespace *n, char *name);
 
 stInstance *stFindInstanceIndex(stInstance *i, int index);
 int stEnumerateInstance(stInstance *i, int start);
+
+void stInstanceAddDependency(stInstance *i, stInstance *dependency);
+void stInstanceRemoveDependency(stInstance *i, stInstance *dependency);
+
 
 void stObjectFreeSpace(brNamespace *ns);
 void stObjectFree(stObject *o);
@@ -176,13 +177,15 @@ stInstance *stNewControllerInstance(stObject *o, brEngine *e);
 stInstance *stInstanceNew(stObject *o);
 int stInstanceInit(stInstance *i);
 
-int stMethodTrace(stRunInstance *i, const char *name);
+int stMethodTrace(stRunInstance *i, char *name);
 
 void stInstanceFree(stInstance *i);
 void stInstanceFreeNoInstanceLists(stInstance *i);
 void stInstanceFreeInternals(stInstance *i);
 
 void stFreeStVar(stVar *v);
+
+void stFreeKeywordEntry(stKeywordEntry *e);
 
 stVar *stInstanceNewVar(stVar *var, stObject *object);
 
@@ -206,7 +209,7 @@ stMethod *stFindInstanceMethod(stObject *, const char *, int, stObject **);
 stMethod *stFindInstanceMethodWithArgRange(stObject *, const char *, unsigned int, unsigned int, stObject **);
 stMethod *stFindInstanceMethodWithMinArgs(stObject *, const char *, unsigned int, stObject **);
 
-int stStoreInstanceMethod(stObject *, const char *, stMethod *);
+int stStoreInstanceMethod(stObject *, char *, stMethod *);
 
 void stInstanceRetain(stInstance *);
 void stInstanceUnretain(stInstance *);
@@ -216,6 +219,8 @@ int stIsSubclassOf(stObject *a, stObject *);
 
 void stAddToInstanceLists(stInstance *);
 void stRemoveFromInstanceLists(stInstance *);
+
+brInstance *stInstanceCreateAndRegister(stSteveData *d, brEngine *, brObject *);
 
 void stObjectFreeAllInstances(stObject *);
 

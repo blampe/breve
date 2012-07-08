@@ -1,5 +1,4 @@
-
-@use Abstract.
+@include "Object.tz"
 
 Abstract : Sound (aka Sounds) {
 	% The Sound class allows sound files to be loaded and played in 

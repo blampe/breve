@@ -1,7 +1,3 @@
-
-#ifndef _SHAPE_H
-#define _SHAPE_H
-
 /*****************************************************************************
  *                                                                           *
  * The breve Simulation Environment                                          *
@@ -22,59 +18,71 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#include <ode/ode.h>
-#include <vector>
+#ifndef _SHAPE_H
+#define _SHAPE_H
 
-#include "vector.h"
-#include "texture.h"
-
-class slRenderGL;
-class slVertexBufferGL;
+#include "mesh.h"
 
 enum shapeTypes {
-	ST_MESH,
-	ST_BOX,
+	ST_NORMAL,
 	ST_SPHERE
 };
 
-class slMeshShape;
-
-/**
- * \brief A struct containing rotation and location information.
- */
-
-class slPosition {
-	public:
-		double 				rotation[ 3 ][ 3 ];
-		slVector 			location;
-		
-		// double 				_transform[ 4 ][ 4 ];
+enum slFeatureTypes {
+	FT_POINT,
+	FT_EDGE,
+	FT_FACE
 };
 
-/**
- * \brief A plane, specified by a normal and a vertex.
- */
+enum shapeDraw {
+	SD_STENCIL = 0x01,
+	SD_REFLECT = 0x02
+};
+
+/*!
+	\brief A struct containing rotation and location information.
+*/
+
+struct slPosition {
+	double rotation[3][3];
+	slVector location;
+};
+
+/*!
+	\brief A plane, specified by a normal and a vertex.
+*/
+
+struct slPlane {
+	slVector normal;
+	slVector vertex;
+};
 
 #define slPlaneDistance(plane, point) ( \
 	(plane)->normal.x * ((point)->x - (plane)->vertex.x) + \
 	(plane)->normal.y * ((point)->y - (plane)->vertex.y) + \
 	(plane)->normal.z * ((point)->z - (plane)->vertex.z) )
 
-/**
- * \brief A header used when serializing shape data.
- */
+/*!
+	\brief A header used when serializing shape data.
+*/
 
 struct slSerializedShapeHeader {
-	double 						_density;
+	double inertia[3][3];
+	double density;
+	double mass;
 
-	slVector 					_max;
-	int 						_type; 
-	double 						_radius;
+	slVector max;
+
+	int type; 
+	double radius;
     
-	int 						_faceCount;
+	int faceCount;
 };  
 
 typedef struct slSerializedShapeHeader slSerializedShapeHeader;
+
+#ifdef __cplusplus
+#include <vector>
 
 class slCamera;
 
@@ -84,16 +92,12 @@ class slEdge;
 
 class slFeature {
 	public:
-		slFeature() {
-			voronoi = NULL;
-		}
-		virtual ~slFeature() {
-			if( voronoi )
-		    	delete[] voronoi;
-		}
-
 		int type;
 		slPlane *voronoi;	
+
+		virtual ~slFeature() {
+		    delete[] voronoi;
+		}
 };
 
 /*!
@@ -102,9 +106,32 @@ class slFeature {
 
 class slPoint : public slFeature {
 	public:
-		slPoint() : slFeature() {} 
+		slVector vertex;
 
-		slVector 						vertex;
+		int edgeCount;
+
+		/* temp data for terrain collisions :( */
+
+		int terrainX;
+		int terrainZ;
+		int terrainQuad;
+	
+		// all official neighbors are edges, but we need to know the faces 
+		// as well
+
+		slEdge **neighbors;
+		slFace **faces;
+
+		slPoint() {
+			voronoi = NULL;
+			faces = NULL;
+			neighbors = NULL;
+		}
+
+		~slPoint() {
+			delete[] neighbors;
+			delete[] faces;
+		}
 };
 
 /*!
@@ -133,15 +160,15 @@ class slEdge : public slFeature {
 
 class slFace : public slFeature {
 	public:
-		int						_pointCount;
+		int edgeCount;
 
-		slPlane 				plane;
+		slPlane plane;
 
-		slEdge**				neighbors;		// neighbor edges
-		slPoint**				points;			// connected points 
-		slFace**				faces;			// connected faces
+		slEdge **neighbors;		// neighbor edges
+		slPoint **points;		// connected points 
+		slFace **faces;			// connected faces
 
-		char 					drawFlags;
+		char drawFlags;
 
 		~slFace() {
 			delete[] neighbors;
@@ -151,131 +178,106 @@ class slFace : public slFeature {
 };
 
 
-/**
- * A shape in the simulated world.
- */
+/*!
+	\brief A shape in the simulated world.
+*/
 
 class slShape {
-	friend class 					slWorldObject;
-	friend class 					slVclipData;
-
 	public:
 		slShape() {
-			_type 							= ST_MESH;
-			_density 						= 1.0;
-			_referenceCount 				= 1;
-
-			_odeGeomID[ 0 ]					= 0;
-			_odeGeomID[ 1 ]					= 0;
-
-			slMatrixIdentity( _transform );
-			slVectorSet( &_scale, 1, 1, 1 );
+			_drawList = 0;
+			_type = ST_NORMAL;
+			_density = 1.0;
+			_referenceCount = 1;
 		}
 
-		int									findPointIndex( slVector *inVertex );
-
-		static void 						slMatrixToODEMatrix( const double inM[ 3 ][ 3 ], dReal *outM );
-
-		void 								retain();
-		void 								release();
-
-		virtual void 						updateLastPosition( slPosition *inPosition ) {}
+		void recompile() { _recompile = 1; }
 
 		virtual ~slShape();
 
-		virtual void 						bounds( const slPosition *position, slVector *min, slVector *max ) const;
-		virtual int 						pointOnShape(slVector *dir, slVector *point);
-		virtual int 						rayHitsShape(slVector *dir, slVector *target, slVector *point);
+		virtual void bounds( const slPosition *position, slVector *min, slVector *max ) const;
+		virtual int pointOnShape(slVector *dir, slVector *point);
+		virtual int rayHitsShape(slVector *dir, slVector *target, slVector *point);
+		//virtual int irReflect(slVector *pos, slVector *dir, double maxAngle);
+		virtual void scale(slVector *point);
+		virtual slSerializedShapeHeader *serialize(int *length);
 
-		void 								setScale( slVector *inSize );
-		const slVector* 					scale() const { return &_scale; };
+		virtual void drawShadowVolume(slCamera *camera, slPosition *position);
 
-		virtual slSerializedShapeHeader* 	serialize(int *length);
+		virtual void draw(slCamera *c, slPosition *pos, double textureScaleX, double textureScaleY, int mode, int flags);
 
-		static slShape* 					deserialize( slSerializedShapeHeader* inData );
+		virtual void setMass(double mass);
+		virtual void setDensity(double density);
 
-		virtual void 						drawShadowVolume(slCamera *camera, slPosition *position);
+		double getMass();
+		double getDensity();
 
-		virtual void 						draw( const slRenderGL& inRender );
+		int _referenceCount;
 
-		virtual void 						setMass(double mass);
-		virtual void 						setDensity(double density);
-		virtual void 						setInertiaMatrix( slMatrix inInertia );
-		virtual void						finishShape( double inDensity );
+		int _drawList;
 
-		double 								getMass();
-		double 								getDensity();
+		bool _recompile;
 
-
-		double 								_inertia[3][3];
-		double 								_mass;
-		double 								_density;
+		double _inertia[3][3];
+		double _mass;
+		double _density;
 
 		// the max reach on each axis 
 
-		int 								_type;
+		slVector _max;
 
-		std::vector< slFeature* > 			features;
+		// add support for this shape to be a sphere, in which case the 
+		// normal features below are ignored 
 
-		std::vector< slFace* > 				faces;
-		std::vector< slEdge* > 				edges;
-		std::vector< slPoint* > 			points;
+		int _type;
 
-		dGeomID								_odeGeomID[ 2 ];
+		std::vector< slFeature* > features;
 
-	protected:
-		slMatrix							_transform;
-		slVector							_scale;
-
-		virtual void 						fillVertexBuffer();
-
-		slVector 							_max, _min;
-		int 								_referenceCount;
-		slVertexBufferGL					_vertexBuffer;
-
-};
-
-class slBox : public slShape {
-	public:	
-											slBox( slVector *inSize, double inDensity );
-		slSerializedShapeHeader* 			serialize(int *length);
-
-		virtual void						finishShape( double inDensity );
-
-
-	protected:
-		slVector							_size;
+		std::vector< slFace* > faces;
+		std::vector< slEdge* > edges;
+		std::vector< slPoint* > points;
 };
 
 class slSphere : public slShape {
 	public:
-		/** \brief Creates a new sphere of a given radius and density. */
-							slSphere(double radius, double density);
+		/*! \brief Creates a new sphere of a given radius and density.  */
+		slSphere(double radius, double density);
 
-		void 					bounds( const slPosition *position, slVector *min, slVector *max ) const;
-		int 					pointOnShape(slVector *dir, slVector *point);
-		int 					rayHitsShape(slVector *dir, slVector *target, slVector *point);
-		void 					scale(slVector *point);
+		void xdraw(slCamera *c, slPosition *pos, double textureScale, int mode, int flags);
 
-		virtual 				void setDensity(double density);
+		void bounds( const slPosition *position, slVector *min, slVector *max ) const;
+		int pointOnShape(slVector *dir, slVector *point);
+		int rayHitsShape(slVector *dir, slVector *target, slVector *point);
+		void scale(slVector *point);
 
-		slSerializedShapeHeader*		serialize(int *length);
+		virtual void setDensity(double density);
 
-		void 					drawShadowVolume(slCamera *camera, slPosition *position);
+		slSerializedShapeHeader *serialize(int *length);
 
-		float					radius() const { return _radius; } 
+		void drawShadowVolume(slCamera *camera, slPosition *position);
 
-	protected:
-		virtual void 				fillVertexBuffer();
-
-		int 				addTriangles( GLfloat *inX, GLfloat *inY, GLfloat *inZ, int inDiv, float inR, int inIndex );
-		float				_radius;
+		double _radius;
 };
 
+class slMeshShape : public slSphere {
+	public:
+		slMeshShape(char *filename, char *name);
+
+		~slMeshShape();
+	
+		void draw(slCamera *c, slPosition *pos, double textureScale, int mode, int flags);
+
+#ifdef HAVE_LIB3DS
+		slMesh *_mesh;
+#endif
+};
+#endif
+
 /*!
- * A header used when serializing face data.  
- * It's only contains an integer at the moment.
- */
+	\brief A header used when serializing face data.  
+
+	It's only contains an integer at the moment.
+*/
 
 struct slSerializedFaceHeader {
 	int vertexCount;
@@ -283,28 +285,54 @@ struct slSerializedFaceHeader {
 
 typedef struct slSerializedFaceHeader slSerializedFaceHeader;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!
  * \brief Transforms a vector with the given position.
  */
 
 slVector *slPositionVertex( const slPosition *p, const slVector *v, slVector *o );
 
+slShape *slNewCube(slVector *size, double density);
 slShape *slNewNGonDisc(int count, double radius, double height, double density);
 slShape *slNewNGonCone(int count, double radius, double height, double density);
+slShape *slSphereNew(double radius, double density);
 
 slFace *slAddFace(slShape *v, slVector **points, int vCount);
 slEdge *slAddEdge(slShape *s, slFace *theFace, slVector *start, slVector *end);
 
 slPoint *slAddPoint(slShape *v, slVector *start);
 
-slShape *slSetCube(slShape *s, slVector *a, double density);
+void slShapeFree(slShape *s);
 
-slShape *slSetNGonDisc( slMeshShape *s, int sideCount, double radius, double height, double density);
-slShape *slSetNGonCone( slMeshShape *s, int sideCount, double radius, double height, double density);
+slShape *slSetCube(slShape *s, slVector *a, double density);
+slShape *slSetPyramid(slShape *s, double len, double density);
+slShape *slSetNGonDisc(slShape *s, int sideCount, double radius, double height, double density);
+slShape *slSetNGonCone(slShape *s, int sideCount, double radius, double height, double density);
 
 slPlane *slSetPlane(slPlane *p, slVector *normal, slVector *vertex);
+
+int slFeatureSort(const void *a, const void *b);
+
+slShape *slShapeInitNeighbors(slShape *s, double density);
+
+void slDumpEdgeVoronoi(slShape *s);
+
+int slCountPoints(slShape *s);
+
+void slCubeInertiaMatrix(slVector *c, double mass, double i[3][3]);
 void slSphereInertiaMatrix(double radius, double mass, double i[3][3]);
 
 int slRayHitsShape(slShape *s, slVector *dir, slVector *target, slVector *point);
 
-#endif // SHAPE_H
+slSerializedShapeHeader *slSerializeShape(slShape *s, int *length);
+slShape *slDeserializeShape(slSerializedShapeHeader *header, int length);
+void slShapeBounds(slShape *shape, slPosition *position, slVector *min, slVector *max);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _SHAPE_H */

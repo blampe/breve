@@ -31,11 +31,13 @@ PhysicalControl : Gravity {
 		new Step create at (1.0, -1.0, 0) size (.2, .02, 1).
 		new Step create at (2.0, -1.2, 0) size (2, .02, 1).
 
-		5 new Balls.
+		theBall = new Ball.
 
 		self point-camera at (1.0, -.8, -.6) from (3.5, 1.1, 5.0).
 
 		self enable-shadow-volumes.
+
+		self watch item theBall.
 
 		self add-menu named "Reset Ball" for-method "reset-ball".
 
@@ -46,13 +48,13 @@ PhysicalControl : Gravity {
 Stationary : Step {
 	+ to create at location (vector) size sizeVector (vector):
 		stepShape (object).
+
 		stepShape = (new Cube init-with size sizeVector).
 
-		self set-shape to stepShape.
-		self move to location.
+		self register with-shape stepShape at-location location.
 }
 
-Mobile : Ball (aka Balls) {
+Mobile : Ball {
 	+ to iterate:
 		# The iterate method is called each timestep...
 		# if the Y component (height) of our position is less than -20, 
@@ -62,8 +64,7 @@ Mobile : Ball (aka Balls) {
 		if (self get-location)::y < -2.0: self reset.
 
 	+ to init:
-		self set-shape to (new Sphere init-with radius .05 + random[ .15 ] ).
-		# self set-shape to (new Cube init-with size ( .1, .1, .1 ) ).
+		self set-shape to (new Sphere init-with radius .1).
 		self enable-physics.
 		self reset.
 
@@ -71,6 +72,6 @@ Mobile : Ball (aka Balls) {
 		# vary initial conditions slightly each time
 
 		self set-color to random[(1, 1, 1)].
-		self move to ( -.9, .5, -1 ) + random[ ( 1.5, .8, 2 ) ].
+		self move to (-.8 + random[.3], 1.0, 0).
 		self set-velocity to (1 + random[1.0], 1.0 + random[1.0], 0).
 }

@@ -18,15 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#include "config.h"
-
 #include "kernel.h"
 #include "world.h"
+#include "gldraw.h"
 #include "camera.h"
 #include "movie.h"
-#include "render.h"
-#include "url.h"
-#include "sound.h"
 
 #ifndef WINDOWS
 #include <dlfcn.h>
@@ -34,39 +30,41 @@
 
 char *interfaceID;
 
-
-brErrorInfo::~brErrorInfo() {
-	if( file )
-		slFree( file );
-}
-
-void brErrorInfo::clear() {
-	if( file ) 
-		slFree( file );
-
-	type = 0;
-	line = 0;
-	file = slStrdup( "<unknown>" ); 
-	sprintf( message, "An unknown error occurred (see the breve log for more information)\n" );
-}
-
-
 /** \defgroup breveEngineAPI The breve engine API: using a breve simulation from another program or application frontend */
 /*@{*/
 
-void brEngine::lock() {
-	pthread_mutex_lock( &_engineLock );
+void brEngineLock( brEngine *e ) {
+	( pthread_mutex_lock( &( e )->lock ) );
 }
 
-void brEngine::unlock() {
-	pthread_mutex_unlock( &_engineLock );
+void brEngineUnlock( brEngine *e ) {
+	( pthread_mutex_unlock( &( e )->lock ) );
 }
 
 brEvent::brEvent( char *n, double t, double interval, brInstance *i ) {
 	_instance = i;
-	_name = n;
+	_name = slStrdup( n );
 	_time = t;
 	_interval = interval;
+}
+
+brEvent::~brEvent() {
+	slFree( _name );
+}
+
+/**
+ * \brief Creates a brEngine structure with argc and argv values filled in.
+ *
+ * Creates and initializes the bloated brEngine structure.  This is the first step in starting a breve simulation.
+ */
+
+brEngine *brEngineNewWithArguments( int inArgc, char **inArgv ) {
+	brEngine *e = brEngineNew();
+
+	e->argc = inArgc;
+	e->argv = inArgv;
+
+	return e;
 }
 
 /**
@@ -75,66 +73,63 @@ brEvent::brEvent( char *n, double t, double interval, brInstance *i ) {
  * Creates and initializes the bloated brEngine structure.  This is the first step in starting a breve simulation.
  */
 
-brEngine::brEngine( int inArgc, const char **inArgv ) {
-	_argc = inArgc;
-	_argv = inArgv;
+brEngine *brEngineNew( void ) {
+	brEngine *e;
+	char *envpath, *dir;
+	int n = 0;
 
-	updateMenu = NULL;
-	getSavename = NULL;
-	getLoadname = NULL;
-	dialogCallback = NULL;
-	soundCallback = NULL;
-	interfaceTypeCallback = NULL;
-	interfaceSetStringCallback = NULL;
-	interfaceSetCallback = NULL;
-	pauseCallback = NULL;
-	newWindowCallback = NULL;
-	freeWindowCallback = NULL;
-	renderWindowCallback = NULL;
+	char wd[MAXPATHLEN];
 
-	_url = NULL;
-	_soundMixer = NULL;
-	_controller = NULL;
-
-	_renderer = new slRenderGL;
-
-	memset( keys, 0, sizeof( keys ) );
-
-	// wxWindows change change the locale -- I'm not cool with that
-	setlocale( LC_ALL, "C" );
-
-#ifdef HAVE_LIBCURL
-	_url = new brURLFetcher;
-#endif
-
-#if defined(HAVE_LIBPORTAUDIO) && defined(HAVE_LIBSNDFILE)
-	_soundMixer = new brSoundMixer;
+#if MINGW
+	pthread_win32_process_attach_np();
 #endif
 
 #if WINDOWS
-	pthread_win32_process_attach_np();
 	WSADATA wsaData;
 	WSAStartup( 0x0101, &wsaData );
 #endif
 
-	gettimeofday( &unpauseTime, NULL );
-	accumulatedTime.tv_sec = 0;
-	accumulatedTime.tv_usec = 0;
+	// glutInit( &zero, NULL );
 
-	brClearError( this );
+	e = new brEngine;
 
-#if HAVE_LIBAVCODEC && HAVE_LIBAVFORMAT && HAVE_LIBAVUTIL && HAVE_LIBSWSCALE
+#if HAVE_LIBAVFORMAT
 	av_register_all();
 #endif
 
+#ifdef HAVE_LIBGSL
 	gsl_set_error_handler_off();
-	RNG = gsl_rng_alloc( gsl_rng_mt19937 );
+#endif
 
-	_simulationWillStop = 0;
+	e->argc = 0;
+	e->argv = NULL;
 
-	camera = new slCamera( 400, 400 );
+	e->updateMenu = NULL;
+	e->getSavename = NULL;
+	e->getLoadname = NULL;
+	e->dialogCallback = NULL;
+	e->soundCallback = NULL;
+	e->interfaceTypeCallback = NULL;
+	e->interfaceSetStringCallback = NULL;
+	e->interfaceSetCallback = NULL;
+	e->pauseCallback = NULL;
+	e->newWindowCallback = NULL;
+	e->freeWindowCallback = NULL;
+	e->renderWindowCallback = NULL;
+	e->controller = NULL;
 
-	nThreads = 1;
+	e->RNG = gsl_rng_alloc( gsl_rng_mt19937 );
+
+	e->simulationWillStop = 0;
+
+	e->camera = new slCamera( 400, 400 );
+
+#if HAVE_LIBPORTAUDIO && HAVE_LIBSNDFILE
+	Pa_Initialize();
+	e->soundMixer = new brSoundMixer();
+#endif
+
+	e->nThreads = 1;
 
 	// under OSX we'll connect a file handle to the output queue to allow
 	// file handle output to the message logs (useful to plugins).  Under
@@ -142,84 +137,110 @@ brEngine::brEngine( int inArgc, const char **inArgv ) {
 	// can just use stderr.
 
 #if MACOSX
-	_logFile = funopen( this, NULL, brFileLogWrite, NULL, NULL );
+	e->logFile = funopen( e, NULL, brFileLogWrite, NULL, NULL );
 #else
-	_logFile = stderr;
+	e->logFile = stderr;
 #endif
 
-	drawEveryFrame = 1;
+	e->drawEveryFrame = 1;
 
 	char path[ MAXPATHLEN + 1 ];
 	getcwd( path, MAXPATHLEN );
-	_launchDirectory = path;
-	brEngineSetIOPath( this, path );
+	e->_launchDirectory = path;
 
-	world = new slWorld();
+	e->world = new slWorld();
 
-	world -> setCollisionCallbacks( brCheckCollisionCallback, brCollisionCallback );
+	e->world->setCollisionCallbacks( brCheckCollisionCallback, brCollisionCallback );
 
-	if ( pthread_mutex_init( &_engineLock , NULL ) ) {
+	gettimeofday( &e->startTime, NULL );
+
+	e->realTime.tv_sec = 0;
+	e->realTime.tv_usec = 0;
+
+	if ( pthread_mutex_init( &e->lock , NULL ) ) {
 		slMessage( 0, "warning: error creating lock for breve engine\n" );
 
-		if ( nThreads > 1 ) {
+		if ( e->nThreads > 1 ) {
 			slMessage( 0, "cannot start multi-threaded simulation without lock\n" );
-			return;
+			return NULL;
 		}
+	}
+
+	if ( pthread_mutex_init( &e->scheduleLock, NULL ) ) {
+		slMessage( 0, "warning: error creating lock for breve engine\n" );
+
+		if ( e->nThreads > 1 ) {
+			slMessage( 0, "cannot start multi-threaded simulation without lock\n" );
+			return NULL;
+		}
+	}
+
+	if ( pthread_mutex_init( &e->conditionLock, NULL ) ) {
+		slMessage( 0, "warning: error creating lock for breve engine\n" );
+
+		if ( e->nThreads > 1 ) {
+			slMessage( 0, "cannot start multi-threaded simulation without lock\n" );
+			return NULL;
+		}
+	}
+
+	if ( pthread_cond_init( &e->condition, NULL ) ) {
+		slMessage( 0, "warning: error creating pthread condition variable\n" );
 	}
 
 	// namespaces holding object names and method names
 
-	internalMethods = brNamespaceNew();
-	brLoadInternalFunctions( this );
+	e->internalMethods = brNamespaceNew();
+
+	// set up the initial search paths
+
+	brEngineSetIOPath( e, getcwd( wd, MAXPATHLEN ) );
+
+	// load all of the internal breve functions
+
+	brLoadInternalFunctions( e );
 
 	// add the default class path, and check the BREVE_CLASS_PATH
 	// environment variable to see if it adds any more
 
-	addSearchPath( "lib/classes" );
-	addSearchPath( "lib" );
-	addSearchPath( "." );
-
-#if WINDOWS
-	#define PATHSEP	";"
-#else
-	#define PATHSEP ":"
-#endif
-
-	char *envpath, *dir;
-	int n = 0;
+	brAddSearchPath( e, "lib/classes" );
+	brAddSearchPath( e, "lib/pyclasses" );
 
 	if ( ( envpath = getenv( "BREVE_CLASS_PATH" ) ) ) {
-		while ( ( dir = slSplit( envpath, PATHSEP, n++ ) ) ) {
-			addSearchPath( dir );
+		while (( dir = slSplit( envpath, ":", n++ ) ) ) {
+			brAddSearchPath( e, dir );
 			slMessage( DEBUG_INFO, "adding \"%s\" to class path\n", dir );
 			slFree( dir );
 		}
 	}
 
-	if ( ( envpath = getenv( "HOME" ) ) ) addSearchPath( envpath );
+	if (( envpath = getenv( "HOME" ) ) ) brAddSearchPath( e, envpath );
 
-	for ( int t = 1; t < nThreads; t++ ) {
+	memset( e->keys, 0, sizeof( e->keys ) );
+
+	for ( n = 1;n < e->nThreads;n++ ) {
 		stThreadData *data;
 
 		data = new stThreadData;
-		data -> engine = this;
-		data -> number = t;
+		data->engine = e;
+		data->number = n;
 		pthread_create( &data->thread, NULL, brIterationThread, data );
 	}
+
+	return e;
 }
 
-/**
- * \brief Looks up an internal breve function.
- *
- * Searches in the engine for a brInternalFunction corresponding with the
- * given name.
- */
+/*!
+	\brief Looks up an internal breve function.
+
+	Searches in the engine for a brInternalFunction corresponding with the
+	given name.
+*/
 
 brInternalFunction *brEngineInternalFunctionLookup( brEngine *e, char *name ) {
 	brNamespaceSymbol *s = brNamespaceLookup( e->internalMethods, name );
 
-	if ( s ) 
-		return ( brInternalFunction * )s->data;
+	if ( s ) return ( brInternalFunction * )s->data;
 
 	// The following could be a way for us to try to load functions without the
 	// prototypes.  Not sure it's a good idea.
@@ -245,20 +266,20 @@ void brEngineFree( brEngine *e ) {
 	delete e;
 }
 
+
 brEngine::~brEngine() {
 	std::vector<brInstance*>::iterator bi;
 	std::vector<void*>::iterator wi;
 
-	delete _renderer;
+#if HAVE_LIBPORTAUDIO && HAVE_LIBSNDFILE
 
-#ifdef HAVE_LIBCURL
-	if( _url )
-		delete _url;
+	if ( soundMixer ) delete soundMixer;
+
 #endif
 
-#if defined(HAVE_LIBPORTAUDIO) && defined(HAVE_LIBSNDFILE)
-	if( _soundMixer )
-		delete _soundMixer;
+#if HAVE_LIBPORTAUDIO && HAVE_LIBSNDFILE
+	Pa_Terminate();
+
 #endif
 
 	gsl_rng_free( RNG );
@@ -271,6 +292,12 @@ brEngine::~brEngine() {
 
 	brEngineRemoveDlPlugins( this );
 
+	if ( error.file ) {
+		slFree( error.file );
+		error.file = NULL;
+		error.type = 0;
+	}
+
 	if ( camera ) 
 		delete camera;
 
@@ -280,59 +307,70 @@ brEngine::~brEngine() {
 	for ( wi = windows.begin(); wi != windows.end(); wi++ )
 		freeWindowCallback( *wi );
 
-	for ( bi = _freedInstances.begin(); bi != _freedInstances.end(); bi++ )
+	for ( bi = freedInstances.begin(); bi != freedInstances.end(); bi++ )
 		delete *bi;
 
 	brNamespaceFreeWithFunction( internalMethods, ( void( * )( void* ) )brFreeBreveCall );
 
-	std::map< std::string, brObject* >::iterator oi;
+	std::map<std::string, brObject*>::iterator oi;
 
 	for ( oi = objects.begin(); oi != objects.end(); oi++ )
 		if ( oi->second ) brObjectFree( oi->second );
 
-	for( unsigned int i = 0; i < _objectTypes.size(); i++ ) {
-		brObjectType *t = _objectTypes[ i ];
+	for( unsigned int i = 0; i < objectTypes.size(); i++ ) {
+		brObjectType *t = objectTypes[ i ];
 
 		if( t )
 			delete t;
 	}
-
-	for( unsigned int e = 0; e < events.size(); e++ ) {
-		delete events[ e ];
-		events[ e ] = NULL;
-	}
 }
 
-/**
- * \brief Set the controller object for the simulation.
- *
- * This function should be called as soon as the controller instance
- * is created <b>before the controller's initialization methods are
- * even called</b>.
- */
-int brEngine::setController( brInstance *instance ) {
-	if ( _controller ) {
+/*!
+	\brief Set the controller object for the simulation.
+
+	This function should be called as soon as the controller instance
+	is created <b>before the controller's initialization methods are
+	even called</b>.
+*/
+
+int brEngineSetController( brEngine *e, brInstance *instance ) {
+	if ( e->controller ) {
 		slMessage( DEBUG_ALL, "Error: redefinition of \"Controller\" object\n" );
 		return -1;
 	}
 
-	_controller = instance;
+	e->controller = instance;
 
 	return 0;
 }
 
-/**
- * \brief Sets the output path, and adds the path to the search path.
- */
-
-void brEngineSetIOPath( brEngine *inEngine, const char *inPath ) {
-	inEngine -> _outputPath = inPath;
-	inEngine -> addSearchPath( inPath );
+brInstance *brEngineGetController( brEngine *e ) {
+	return e->controller;
 }
 
-/** 
- * Takes a filename, and returns a slMalloc'd string with the full output path for that file.
- */
+slStack *brEngineGetAllInstances( brEngine *e ) {
+	std::vector<brInstance*>::iterator ii;
+	slStack *s = slStackNew();
+
+	for ( ii = e->instances.begin(); ii != e->instances.end(); ii++ ) {
+		slStackPush( s, *ii );
+	}
+
+	return s;
+}
+
+/*!
+	\brief Sets the output path, and adds the path to the search path.
+*/
+
+void brEngineSetIOPath( brEngine *e, const char *path ) {
+	e->_outputPath = path;
+	brAddSearchPath( e, path );
+}
+
+/*!
+	\brief Takes a filename, and returns a slMalloc'd string with the full output path for that file.
+*/
 
 char *brOutputPath( brEngine *e, const char *filename ) {
 	char *f;
@@ -347,113 +385,86 @@ char *brOutputPath( brEngine *e, const char *filename ) {
 	return f;
 }
 
-/**
- * Pause the simulation timer.
- * Optional call to be made when the engine is paused,
- * so that information about simulation speed can be measured.
- * Used in conjunction with \ref brUnpauseTimer.
- */
+/*!
+	\brief Pause the simulation timer.
 
-void brEngine::pauseTimer() {
-	if ( unpauseTime.tv_sec == 0 && unpauseTime.tv_usec == 0 )
-		return;
+    Optional call to be made when the engine is paused,
+    so that information about simulation speed can be measured.
+
+	Used in conjunction with \ref brUnpauseTimer.
+*/
+
+void brPauseTimer( brEngine *e ) {
 
 	struct timeval tv;
-	gettimeofday( &tv, NULL );
 
-	accumulatedTime.tv_sec += ( tv.tv_sec - unpauseTime.tv_sec );
-	accumulatedTime.tv_usec += ( tv.tv_usec - unpauseTime.tv_usec );
-
-	unpauseTime.tv_sec = 0;
-	unpauseTime.tv_usec = 0;
-}
-
-/**
- * \brief Unpause the simulation timer.
- *
- * Optional call to be made when the engine is running at fullspeed,
- * so that information about simulation speed can be measured.
- *
- * Used in conjunction with \ref brPauseTimer.
- */
-
-void brEngine::unpauseTimer() {
-	gettimeofday( &unpauseTime, NULL );
-}
-
-/**
- * Gets the accumulated running time.
- */
-
-double brEngine::runningTime() {
-	struct timeval tv, current;
+	if ( e->startTime.tv_sec == 0 && e->startTime.tv_usec == 0 )
+		return;
 
 	gettimeofday( &tv, NULL );
-	current.tv_sec  = accumulatedTime.tv_sec  + ( tv.tv_sec  - unpauseTime.tv_sec );
-	current.tv_usec = accumulatedTime.tv_usec + ( tv.tv_usec - unpauseTime.tv_usec );
 
-	return (double)current.tv_sec + current.tv_usec / 1000000.0;
+	e->realTime.tv_sec += ( tv.tv_sec - e->startTime.tv_sec );
+
+	e->realTime.tv_usec += ( tv.tv_usec - e->startTime.tv_usec );
+
+	e->startTime.tv_sec = 0;
+
+	e->startTime.tv_usec = 0;
+}
+
+/*!
+    \brief Unpause the simulation timer.
+
+    Optional call to be made when the engine is running at fullspeed,
+    so that information about simulation speed can be measured.
+
+	Used in conjunction with \ref brPauseTimer.
+*/
+
+void brUnpauseTimer( brEngine *e ) {
+	gettimeofday( &e->startTime, NULL );
 }
 
 /*!
 	\brief Adds a call to a method for an instance at a given time.
 */
 
-bool brEventCompare( const brEvent *a, const brEvent *b ) {
-        return a -> _time > b -> _time;
-}
-
-
-brEvent *brEngineAddEvent( brEngine *e, brInstance *i, char *methodName, double inTime, double interval ) {
+brEvent *brEngineAddEvent( brEngine *e, brInstance *i, char *methodName, double time, double interval ) {
 	brEvent *event;
 	std::vector<brEvent*>::iterator ei;
 
-	event = new brEvent( methodName, inTime, interval, i );
-	e->events.push_back( event );
+	event = new brEvent( methodName, time, interval, i );
 
-	std::sort( e -> events.begin(), e -> events.end(), brEventCompare );
+	// insert the event where it belongs according to the time it will be called
+
+	ei = e->events.end() - 1;
+
+	if ( e->events.size() == 0 ) {
+		e->events.push_back( event );
+		return event;
+	}
+
+	while ( ei != e->events.begin() && ( *ei )->_time < time ) ei--;
+
+	// we want to insert AFTER the current event...
+
+	if ((( *ei )->_time ) > time ) ei++;
+
+	e->events.insert( ei, event );
 
 	return event;
 }
 
 /*!
-	\brief Removes a call to a method for an instance at a given time.
+	\brief Iterates the breve engine.
+
+	Iterates an engine by:
+		- checking for freed objects
+		- calling the iterate method for all objects in the engine
+		- checking to see if the time has come for an event to be called
 */
 
-int brEngineRemoveEvent( brEngine *e, brInstance *i, char *methodName, double time ) {
-        std::vector<brEvent*>::iterator ei, nei;
-
-	ei = e->events.begin();
-
-	if ( e->events.size() == 0 ) {
-		return EC_OK;
-	}
-
-	while ( ei != e->events.begin() && (time >= e->world->getAge( ) || time == 0) ) {
-	  if( ( *ei )->_instance == i && (( ( *ei )->_time >= e->world->getAge( ) && ( *ei )->_time == time && strcmp(( *ei )->_name.c_str(),methodName)==0) ||
-					  ( time == 0 && strcmp(( *ei )->_name.c_str(),methodName)==0 ) ||
-					  ( strcmp("",methodName)==0 ))) {
-	    
-	    nei = ei - 1;
-	    e->events.erase(ei);
-	    ei = nei;
-	  } else {
-	    ei++;
-	  }
-	}
-
-	return EC_OK;
-}
-
-/**
- * Iterates the breve engine.
- * Iterates an engine by:
- * - checking for freed objects
- * - calling the iterate method for all objects in the engine
- * - checking to see if the time has come for an event to be called
- */
-
-int brEngine::iterate() {
+int brEngineIterate( brEngine *e ) {
 	brEval result;
 	brEvent *event;
 	std::vector<brInstance*>::iterator bi;
@@ -461,87 +472,93 @@ int brEngine::iterate() {
 
 	brInstance *i;
 
-	lock();
+	pthread_mutex_lock( &e->lock );
 
-	lastScheduled = -1;
+	e->lastScheduled = -1;
 
-	for ( bi = instancesToAdd.begin(); bi != instancesToAdd.end(); bi++ ) {
+	for ( bi = e->instancesToAdd.begin(); bi != e->instancesToAdd.end(); bi++ ) {
 		i = *bi;
 
-		instances.push_back( i );
+		e->instances.push_back( i );
 
-		if ( i->iterate ) iterationInstances.push_back( i );
+		if ( i->iterate ) e->iterationInstances.push_back( i );
 
-		if ( i->postIterate ) postIterationInstances.push_back( i );
+		if ( i->postIterate ) e->postIterationInstances.push_back( i );
 	}
 
-	instancesToAdd.clear();
+	e->instancesToAdd.clear();
 
-	for ( bi = instancesToRemove.begin(); bi != instancesToRemove.end(); bi++ ) {
+	for ( bi = e->instancesToRemove.begin(); bi != e->instancesToRemove.end(); bi++ ) {
 		i = *bi;
 
-		brEngineRemoveInstance( this, i );
+		brEngineRemoveInstance( e, i );
 	}
 
-	instancesToRemove.clear();
+	e->instancesToRemove.clear();
 
-	for ( bi = iterationInstances.begin(); bi != iterationInstances.end(); bi++ ) {
+	for ( bi = e->iterationInstances.begin(); bi != e->iterationInstances.end(); bi++ ) {
 		i = *bi;
 
 		n++;
 
 		if ( i->status == AS_ACTIVE ) {
 			if ( brMethodCall( i, i->iterate, NULL, &result ) != EC_OK ) {
-				unlock();
+
+				pthread_mutex_unlock( &e->lock );
+
 				return EC_ERROR;
 			}
 		}
 	}
 
-	for ( bi = postIterationInstances.begin(); bi != postIterationInstances.end(); bi++ ) {
+	for ( bi = e->postIterationInstances.begin(); bi != e->postIterationInstances.end(); bi++ ) {
 		i = *bi;
 
 		if ( i->status == AS_ACTIVE ) {
 			if ( brMethodCall( i, i->postIterate, NULL, &result ) != EC_OK ) {
-				unlock();
+
+				pthread_mutex_unlock( &e->lock );
+
 				return EC_ERROR;
 			}
 		}
 	}
 
-	double oldAge = world->getAge();
+	double oldAge = e->world->getAge();
 
-	while ( !events.empty() && ( oldAge + _iterationStepSize ) >= events.back()->_time ) {
-		event = events.back();
+	while ( !e->events.empty() && ( oldAge + e->iterationStepSize ) >= e->events.back()->_time ) {
+		event = e->events.back();
 
 		if ( event->_instance->status == AS_ACTIVE ) {
-			world -> setAge( event->_time );
+			e->world->setAge( event->_time );
 
-			int rcode = brMethodCallByName( event->_instance, event->_name.c_str(), &result );
+			int rcode = brMethodCallByName( event->_instance, event->_name, &result );
 
-			world->setAge( oldAge );
+			e->world->setAge( oldAge );
 
 			if ( rcode != EC_OK ) {
-				unlock();
+
+				pthread_mutex_unlock( &e->lock );
+
 				return rcode;
 			}
 
 		}
 
-		if ( event->_interval != 0.0 )
-			brEngineAddEvent( this, event->_instance, event -> _name.c_str(), event->_time + event->_interval, event->_interval );
+		if ( event->_interval != 0.0 ) {
+			brEngineAddEvent( e, event->_instance, event->_name, event->_time + event->_interval, event->_interval );
+		}
 
 		delete event;
 
-		events.pop_back();
+		e->events.pop_back();
 	}
 
-	unlock();
+	pthread_mutex_unlock( &e->lock );
 
-	fflush( _logFile );
+	fflush( e->logFile );
 
-	if ( _simulationWillStop ) 
-		return EC_STOP;
+	if ( e->simulationWillStop ) return EC_STOP;
 
 	return EC_OK;
 }
@@ -553,13 +570,13 @@ int brEngine::iterate() {
 	simulation file or resource.
 */
 
-void brReplaceSubstring( std::string *inStr, const char *sub, const char *repl ) { 
-	int pos = 0;
+void replace_substring( std::string *inStr, char *sub, char *repl ) { 
+	unsigned int pos = 0;
 
 	while( 1 ) {
     		pos = inStr->find( sub, pos ); 
 
-		if ( pos == std::string::npos || pos >=inStr->size() ) 
+		if ( pos == std::string::npos ) 
 			return;
 
 		inStr->replace( pos, strlen( sub ), repl ); 
@@ -568,25 +585,37 @@ void brReplaceSubstring( std::string *inStr, const char *sub, const char *repl )
 	}
  } 
 
-void brEngine::addSearchPath( const char *inPath ) {
-	std::string newPath( inPath );
+void brAddSearchPath( brEngine *e, const char *path ) {
+	std::string newPath( path );
 
-	brReplaceSubstring( &newPath, "\\", "\\\\" );
-	slMessage( DEBUG_INFO, "adding search path %s\n", inPath );
-	_searchPaths.push_back( newPath );
+	replace_substring( &newPath, "\\", "\\\\" );
+	slMessage( DEBUG_INFO, "adding search path %s\n", path );
+	e->_searchPaths.push_back( newPath );
+}
+
+std::vector< std::string > brEngineGetAllObjectNames( brEngine *e ) {
+	std::vector< std::string > names;
+
+	std::map< std::string, brObject >::iterator oi;
+
+	// for( oi = e->objects.begin(); oi != e->objects.end(); oi++ ) {
+	// 
+	// }
+
+	return names;
 }
 
 const std::vector< std::string > &brEngineGetSearchPaths( brEngine *e ) {
 	return e->_searchPaths;
 }
 
-/**
- * \brief Finds a file in the engine's file paths.
- * 
- * Takes an engine and a relative filename, and looks for the file
- * in the engine's search path.  If the file is found, it is returned
- * as an slMalloc'd string which must be freed by the caller.
- */
+/*!
+	\brief Finds a file in the engine's file paths.
+
+	Takes an engine and a relative filename, and looks for the file
+	in the engine's search path.  If the file is found, it is returned
+	as an slMalloc'd string which must be freed by the caller.
+*/
 
 char *brFindFile( brEngine *e, const char *file, struct stat *st ) {
 	struct stat localStat;
@@ -612,20 +641,14 @@ char *brFindFile( brEngine *e, const char *file, struct stat *st ) {
 	return NULL;
 }
 
-/**
- * \brief Render the current simulation world to an active OpenGL context.
- * Requires that a valid OpenGL context is active.
- */
-void brEngine::draw() {
-	lock();
-	world -> draw( *_renderer, camera );
-	unlock();
-}
+/*!
+	\brief Render the current simulation world to an active OpenGL context.
 
-void brEngine::clear() {
-	lock();
-	_renderer -> Clear();
-	unlock();
+	Requires that a valid OpenGL context is active.
+*/
+
+void brEngineRenderWorld( brEngine *e, int crosshair ) {
+	e->camera->renderScene( e->world, crosshair );
 }
 
 /*@}*/
@@ -639,19 +662,19 @@ void brPrintVersion() {
 	exit( 1 );
 }
 
-/**
- * \brief Triggers a run-time simulation error. 
- * 
- * Takes an engine, a type (one of the \ref parseErrorMessageCodes), and
- * a set of printf-style arguments (format string and data).
- *
- * Exactly how the error is handled depends on the simulation frontend,
- * but this will typically cause a simulation to die.
- */
+/*!
+	\brief Triggers a run-time simulation error.
 
-void brEvalError( brEngine *e, int type, const char *proto, ... ) {
+	Takes an engine, a type (one of the \ref parseErrorMessageCodes), and
+	a set of printf-style arguments (format string and data).
+
+	Exactly how the error is handled depends on the simulation frontend,
+	but this will typically cause a simulation to die.
+*/
+
+void brEvalError( brEngine *e, int type, char *proto, ... ) {
 	va_list vp;
-	char localMessage[ BR_ERROR_TEXT_SIZE ];
+	char localMessage[BR_ERROR_TEXT_SIZE];
 
 	if ( e->error.type == 0 ) {
 		e->error.type = type;
@@ -672,30 +695,23 @@ void brEvalError( brEngine *e, int type, const char *proto, ... ) {
 	slMessage( DEBUG_ALL, "\n" );
 }
 
-/**
- * Clears the current error data.
- */
-
 void brClearError( brEngine *e ) {
-	e->error.clear();
+	e->error.type = 0;
 }
-
-/**
- * Returns the current error code.
- */
 
 int brGetError( brEngine *e ) {
 	return e->error.type;
 }
 
 
-/**
- * \brief A wrapper for slMessage.
- * This function is a callback used by funopen() to associate a
- * FILE* pointer with the slMessage logging system.  This allows
- * output written to a file pointer to be directed to the breve
- * log.  This function is not typically called manually.
- */
+/*!
+	\brief A wrapper for slMessage.
+
+	This function is a callback used by funopen() to associate a
+	FILE* pointer with the slMessage logging system.  This allows
+	output written to a file pointer to be directed to the breve
+	log.  This function is not typically called manually.
+*/
 
 int brFileLogWrite( void *m, const char *buffer, int length ) {
 	char *s = ( char* )alloca( length + 1 );
@@ -708,9 +724,9 @@ int brFileLogWrite( void *m, const char *buffer, int length ) {
 	return length;
 }
 
-/**
- * \brief Calls the interfaceSetCallback.
- */
+/*!
+	\brief Calls the interfaceSetCallback.
+*/
 
 int brEngineSetInterface( brEngine *e, char *name ) {
 	if ( !e->interfaceSetCallback )
@@ -753,9 +769,9 @@ slWorld *brEngineGetWorld( brEngine *e ) {
 	return e->world;
 }
 
-/**
- * \brief Returns the internal methods namespace.
- */
+/*!
+	\brief Returns the internal methods namespace.
+*/
 
 brNamespace *brEngineGetInternalMethods( brEngine *e ) {
 	return e->internalMethods;
@@ -769,11 +785,11 @@ void brEngineSetDialogCallback( brEngine *e, int( *callback )( char *, char *, c
 	e->dialogCallback = callback;
 }
 
-void brEngineSetGetSavenameCallback( brEngine *e, const char *( *callback )( void ) ) {
+void brEngineSetGetSavenameCallback( brEngine *e, char *( *callback )( void ) ) {
 	e->getSavename = callback;
 }
 
-void brEngineSetGetLoadnameCallback( brEngine *e, const char *( *callback )( void ) ) {
+void brEngineSetGetLoadnameCallback( brEngine *e, char *( *callback )( void ) ) {
 	e->getLoadname = callback;
 }
 
@@ -785,7 +801,7 @@ void brEngineSetUnpauseCallback( brEngine *e, int( callback )( void ) ) {
 	e->unpauseCallback = callback;
 }
 
-void brEngineSetInterfaceInterfaceTypeCallback( brEngine *e, const char *( *callback )( void ) ) {
+void brEngineSetInterfaceInterfaceTypeCallback( brEngine *e, char *( *callback )( void ) ) {
 	e->interfaceTypeCallback = callback;
 }
 

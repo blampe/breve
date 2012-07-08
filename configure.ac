@@ -1,42 +1,72 @@
-lC_PREREQ(2.57)
+AC_PREREQ(2.57)
 
-AC_INIT([the breve simulation environment], [2.7.5b2], [jk@spiderland.org])
+AC_INIT([the breve simulation environment], [2.5.1], [jk@spiderland.org])
 AC_CONFIG_HEADER([include/breve/config.h])
 
 VERSION=$PACKAGE_VERSION
 
 AC_CANONICAL_HOST
 
-python=yes
-
-AC_ARG_ENABLE([engineonly],	
-		[--enable-engineonly	Eliminate as many optional libraries from build as possible], engine_only="$enableval")
-AC_ARG_ENABLE([static], 	
-		[--enable-static		Link staticly for as many libraries as possible], static="$enableval")
-AC_ARG_ENABLE([lisp], 	
-		[--enable-lisp		Link against ECL Lisp library (for development only)], lisp="$enableval")
-AC_ARG_ENABLE([scheme],
-		[--enable-scheme	Link against Guile library (for development only)], scheme="$enableval")
-AC_ARG_ENABLE([python], 	
-		[--enable-python		Build without support for Python], python="$enableval")
-AC_ARG_ENABLE([osxcompat104], 
-		[--enable-osxcompat104	Build on Mac OS X 10.5 to produce 10.4 compatible build], osxcompat104="$enableval")
-
-PYTHONROOT="/usr"
-
-if test "$prefix" != "NONE"; then
-	PYTHONROOT="$prefix"
-fi
+AC_ARG_ENABLE([engineonly], [], engine_only=yes)
+AC_ARG_ENABLE([static], [], static=yes)
 
 if test "x$static" != "x"; then 
 	BEGIN_STATIC="-Xlinker -Bstatic"
 	BEGIN_DYNAMIC="-Xlinker -Bdynamic"
 fi
 
+
+AC_DEFUN([AC_PROG_JAVAC_WORKS],[
+AC_CACHE_CHECK([if $JAVAC works], ac_cv_prog_javac_works, [
+JAVA_TEST=Test.java
+CLASS_TEST=Test.class
+cat << \EOF > $JAVA_TEST
+/* [#]line __oline__ "configure" */
+public class Test {
+}
+EOF
+if AC_TRY_COMMAND($JAVAC $JAVACFLAGS $JAVA_TEST) >/dev/null 2>&1; then
+  ac_cv_prog_javac_works=yes
+else
+  AC_MSG_ERROR([The Java compiler $JAVAC failed (see config.log, check the CLASSPATH?)])
+  echo "configure: failed program was:" >&AC_FD_CC
+  cat $JAVA_TEST >&AC_FD_CC
+fi
+rm -f $JAVA_TEST $CLASS_TEST
+])
+AC_PROVIDE([$0])
+])
+
+AC_ARG_VAR(JAVAC, [Java bytecode compiler])
+
+AC_DEFUN([AC_PROG_JAVAC],[
+test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, javac "gcj -C" "egcj -C" guavac jikes, :)
+if test "x$JAVAC" = x; then
+	AC_MSG_WARN([no acceptable Java compiler found in \$PATH])
+	JAVAC=":"
+else
+	AC_PROG_JAVAC_WORKS
+fi
+AC_PROVIDE([$0])
+])
+
+AC_ARG_VAR(JAR, [Java archiver])
+
+AC_DEFUN([AC_PROG_JAR],[
+test "x$JAR" = x && AC_CHECK_PROGS(JAR, jar fastjar ejar, :)
+if test "x$JAR" = x; then
+	AC_MSG_WARN([no acceptable jar program found in \$PATH])
+	JAR=":"
+fi
+AC_PROVIDE([$0])
+])
+
 AC_CHECK_TOOL(AR, ar)
 
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_JAR
+AC_PROG_JAVAC
 AC_PROG_LEX
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
@@ -69,42 +99,23 @@ AC_LANG(C++)
 
 case ${host_os} in
 	darwin* )
-		AC_DEFINE([DARWIN], [1], [Darwin])
+		custom_cblas="-framework vecLib"
 
-		case ${host_cpu} in
-			arm* )
-				AC_DEFINE([IPHONE], [1], [iPhone])
-				AC_DEFINE([OPENGLES], [1], [OpenGL ES])
-				LIBS="-framework Foundation -framework UIKit -framework OpenGLES -framework AudioToolbox ${LIBS}"
-			;;
-
-			i386* )
-				AC_DEFINE([MACOSX], [1], [Mac OS X])
-				custom_cblas="-framework vecLib"
-				LIBS="-framework Foundation -framework vecLib -framework OpenGL -framework GLUT"
-				EXTRAOPTFLAGS="-falign-loops=16 -ftree-vectorize -funroll-loops"
-				PLATFORM="macosx"
-			;;
-		esac
-
+		LIBS="-framework OpenGL -framework GLUT -framework AppKit -framework vecLib -framework CoreAudio -framework AudioToolbox ${LIBS}"
 		PLUGINFLAGS="-bundle -undefined suppress -flat_namespace"
 		QUICKTIMEFLAGS="-framework QuickTime -framework Carbon"
 		ARCHIVER="tar czf"
 		ARCHIVE_SUFFIX="tar.gz"
-
-		if test "x$osxcompat104" = "xyes"; then 
-			CPPFLAGS="${CPPFLAGS} -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
-			LDFLAGS="${LDFLAGS} -isysroot /Developer/SDKs/MacOSX10.4u.sdk"
-			PYTHONROOT="/Developer/SDKs/MacOSX10.4u.sdk/usr"
-		fi
-
+		PLATFORM="macosx"
+		AC_DEFINE([MACOSX], [1], [Mac OS X])
+		EXTRAOPTFLAGS="-mdynamic-no-pic -falign-loops=16 -ftree-vectorize -funroll-loops"
 		;;
 
 	cygwin* | mingw* )
 		LIBS="-lglut32 -lglu32 -lopengl32 -lws2_32 -lwinmm `pwd`/bin/python23.dll ${LIBS}"
 		PLUGINFLAGS="-shared"
-		PLUGINIMP="-Wl,--out-implib -Wl,lib/brevePlugin.lib"
-		PLUGINLIB="\$(BREVEDIR)/lib/breveIDEPlugin.lib"
+		PLUGINIMP="-Wl,--out-implib -Wl,lib/brevePlugin.a"
+		PLUGINLIB="\$(BREVEDIR)/lib/brevePlugin.a"
 		ARCHIVER="zip -r"
 		ARCHIVE_SUFFIX="zip"
 		EXE_SUFFIX=".exe"
@@ -115,6 +126,9 @@ case ${host_os} in
 		;;
 
 	linux* | *bsd* )
+###		The old non-checking version of the X libs
+###		LIBS="${X_LIBS} -lXmu -lXi ${X_EXTRA_LIBS} -lX11 ${X_PRE_LIBS} ${LIBS}"
+
 		LIBS="${LIBS} ${X_LIBS}"
 		AC_CHECK_LIB([Xmu], [main],,AC_MSG_FAILURE([Missing Xmu Library]))
 		AC_CHECK_LIB([Xi], [main],,AC_MSG_FAILURE([Missing Xi Library]))
@@ -137,99 +151,42 @@ esac
 # Python wants to be dynamically linked as well
 #
 
-if test "x$python" = "xyes"; then 
-	PYTHONINCLUDE=""
+AC_CHECK_LIB([python], [Py_Initialize])
+AC_CHECK_LIB([python2.3], [Py_Initialize])
+AC_CHECK_LIB([python23], [Py_Initialize])
+AC_CHECK_LIB([python2.4], [Py_Initialize])
+AC_CHECK_LIB([python24], [Py_Initialize])
 
-	# Python can come in so many exciting flavors, with different library names!
-
-	AC_CHECK_LIB([python],    [Py_Initialize], [LIBS="$LIBS -lpython"    PYTHONINCLUDE="$PYTHONINCLUDE -I${PYTHONROOT}/include/python"])
-	AC_CHECK_LIB([python2.3], [Py_Initialize], [LIBS="$LIBS -lpython2.3" PYTHONINCLUDE="$PYTHONINCLUDE -I${PYTHONROOT}/include/python2.3"])
-	AC_CHECK_LIB([python23],  [Py_Initialize], [LIBS="$LIBS -lpython2.3" PYTHONINCLUDE="$PYTHONINCLUDE -I${PYTHONROOT}/include/python2.3"])
-	AC_CHECK_LIB([python2.4], [Py_Initialize], [LIBS="$LIBS -lpython2.4" PYTHONINCLUDE="$PYTHONINCLUDE -I${PYTHONROOT}/include/python2.4"])
-	AC_CHECK_LIB([python24],  [Py_Initialize], [LIBS="$LIBS -lpython2.4" PYTHONINCLUDE="$PYTHONINCLUDE -I${PYTHONROOT}/include/python2.4"])
-	AC_CHECK_LIB([python2.5], [Py_Initialize], [LIBS="$LIBS -lpython2.5" PYTHONINCLUDE="$PYTHONINCLUDE -I${PYTHONROOT}/include/python2.5"])
-	AC_CHECK_LIB([python25],  [Py_Initialize], [LIBS="$LIBS -lpython2.5" PYTHONINCLUDE="$PYTHONINCLUDE -I${PYTHONROOT}/include/python2.5"])
-
-	if test "x$PYTHONINCLUDE" != "x"; then
-		AC_DEFINE( [HAVE_LIBPYTHON], [], [Have the required Python libraries] )
-		CPPFLAGS="${CPPFLAGS} ${PYTHONINCLUDE}"
-	fi
+if test "$ac_cv_lib_python2_3_Py_Initialize" = yes; then
+	AC_DEFINE( [HAVE_LIBPYTHON], [], [Have the required Python libraries] )
 fi
 
-#
-# Dyanmically linking in Perl
-#
+if test "$ac_cv_lib_python23_Py_Initialize" = yes; then
+	AC_DEFINE( [HAVE_LIBPYTHON], [], [Have the required Python libraries] )
+fi
 
-HAVEPERL=0
+if test "$ac_cv_lib_python2_4_Py_Initialize" = yes; then
+	AC_DEFINE( [HAVE_LIBPYTHON], [], [Have the required Python libraries] )
+fi
 
-if test "x$perl" != "x"; then 
-	OLDCPP=$CPPFLAGS
-	OLDLIB=$LIBS
-
-	HAVEPERL=1
-
-	PERLCPP=`perl -MExtUtils::Embed -e ccopts`
-	PERLLIB=`perl -MExtUtils::Embed -e ldopts`
-
-	LIBS="$OLDLIB $PERLLIB"
-	CPPFLAGS="$OLDCPP $PERLCPP"
-
-	AC_CHECK_LIB([perl], [perl_construct])
-	AC_CHECK_PROGS(XSUBPP, [xsubpp], [], $PATH )
-
-	#
-	# Use Perl if we have the perl libraries, locate xsubpp and if we're not cross-compiling
-	#
-
-	if test "$ac_cv_lib_perl_perl_construct" = yes && test "x$ac_cv_prog_XSUBPP" != "x" && test "$build" = "$host"; then
-		# if we do have Perl, we want to clobber the latest addition to $LIBS, because the proper
-		# perl flags will appear in $PERLLIB
-		LIBS="$OLDLIB $PERLLIB"
-		CPPFLAGS="$OLDCPP $PERLCPP"
-	else
-		# perl linking failed -- restore the non-perl libraries 
-		LIBS=$OLDLIB
-		CPPFLAGS=$OLDCPP
-	fi
+if test "$ac_cv_lib_python24_Py_Initialize" = yes; then
+	AC_DEFINE( [HAVE_LIBPYTHON], [], [Have the required Python libraries] )
 fi
 
 
-#
-# ECL Support (currently for development only)
-#
 
-AC_CHECK_PROGS(ECL_CONFIG, [ecl-config], [], $PATH:/usr/local/bin:/usr/bin:/usr/local/ecl )
-
-if test "x$engine_only" = "x" && test "x$lisp" != "x"; then
+if test "x$engine_only" = "x"; then
 	if test "$ECL_CONFIG" != ""; then
 		LDECL=`$ECL_CONFIG --libs`
+		LDFLAGS="$LDFLAGS $LDECL"
 		CPPECL=`$ECL_CONFIG --cflags`        
-
-		LIBS="$LIBS $LDECL"
-		CPPFLAGS="$CPPFLAGS $CPPECL"
-
+		AC_CHECK_LIB([eclgc], [main])
+		AC_CHECK_LIB([sockets], [main])
+		AC_CHECK_LIB([cmp], [main])
+		AC_CHECK_LIB([eclgmp], [main])
 		AC_CHECK_LIB([ecl], [cl_boot])
 	fi    
 fi
-
-#
-# Guile Support (currently for development only)
-#
-
-AC_CHECK_PROGS(GUILE_CONFIG, [guile-config], [], $PATH:/usr/local/bin:/usr/bin )
-
-if test "x$engine_only" = "x" && test "x$scheme" != "x"; then
-	if test "$GUILE_CONFIG" != ""; then
-		LDGUILE=`$GUILE_CONFIG link`
-		CPPGUILE=`GUILE_CONFIG compile`        
-
-		LIBS="$LIBS $LDGUILE"
-		CPPFLAGS="$CPPFLAGS $CPPGUILE"
-
-		AC_CHECK_LIB([guile], [gh_eval_string])
-	fi    
-fi
-
 
 #
 # These required system libraries are assumed to require dynamic linking even 
@@ -264,13 +221,12 @@ AC_SUBST(CXX)
 AC_SUBST(EXE_SUFFIX)
 AC_SUBST(LDFLAGS)
 AC_SUBST(PLATFORM)
-AC_SUBST(HAVEPERL)
 AC_SUBST(PLUGINFLAGS)
 AC_SUBST(PLUGINIMP)
 AC_SUBST(PLUGINLIB)
 AC_SUBST(QUICKTIMEFLAGS)
 AC_SUBST(RANLIB)
-# AC_SUBST(REGEXLIB)
+AC_SUBST(REGEXLIB)
 AC_SUBST(VERSION)
 AC_SUBST(EXTRAOPTFLAGS)
 AC_SUBST(WXCONFIG)
@@ -283,7 +239,6 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 AC_CHECK_LIB([m], [isnan])
-AC_CHECK_LIB([bz2], [BZ2_bzDecompress])
 
 AC_CHECK_HEADERS(pthread.h)
 
@@ -332,42 +287,27 @@ if test $ac_cv_header_pthread_h = yes ; then
 fi
 
 AC_CHECK_LIB([z], [gzopen],,AC_MSG_FAILURE([Missing zlib library -- see http://www.zlib.org]))
+AC_CHECK_LIB([regex], [regcomp], [REGEXLIB=-lregex])
 AC_CHECK_LIB([expat], [XML_ParserCreate],,AC_MSG_FAILURE([Missing expat library -- see http://www.jclark.com/xml/expat.html]))
 
-#
-# engine_only flag means doing a minimal breve build, without support for many optional features
-#
+# the engine_only flag means to ignore all of the extra libraries.
 
 if test "x$engine_only" = "x"; then
 	AC_CHECK_LIB([enet], [enet_initialize])
+	AC_CHECK_LIB([jpeg], [jpeg_read_header])
 	AC_CHECK_LIB([tiff], [TIFFOpen])
-	AC_CHECK_LIB([OSMesa], [OSMesaCreateContext])
-	AC_CHECK_LIB([assimp], [aiImportFile])
-
-	AC_CHECK_LIB([FLAC], [FLAC__seekable_stream_encoder_init])
+	AC_CHECK_LIB([portaudio], [Pa_OpenStream])
++       AC_CHECK_LIB([FLAC], [FLAC__seekable_stream_encoder_init])
 	AC_CHECK_LIB([sndfile], [sf_open])
-
-	if test "$ac_cv_lib_sndfile_sf_open" = yes; then 
-		# only consider portaudio if we have libsndfile
-		AC_CHECK_LIB([portaudio], [Pa_OpenStream])
-	fi
-
 	AC_CHECK_LIB([termcap], [tputs])
+	AC_CHECK_LIB([ncurses], [tputs])
 	AC_CHECK_LIB([history], [add_history])
 	AC_CHECK_LIB([readline], [readline])
-	AC_CHECK_LIB([obj], [main])
-
-	AC_CHECK_LIB([freetype], [FT_Init_FreeType])
-
-	if test "$ac_cv_lib_freetype_FT_Init_FreeType" = yes; then 
-		# only consider ftgl if we have freetype
-		AC_CHECK_LIB([ftgl], [main])
-	fi
-
+	AC_CHECK_LIB([3ds], [lib3ds_io_new])
+	AC_CHECK_LIB([ftgl], [main])
 	AC_CHECK_LIB([avutil], [main])
 	AC_CHECK_LIB([avcodec], [avcodec_init])
 	AC_CHECK_LIB([avformat], [av_write_frame])
-	AC_CHECK_LIB([swscale], [sws_scale])
 
 	AC_CHECK_LIB([push], [pushEnvironmentNew])
 	AC_CHECK_HEADER([qgame++.h])
@@ -375,7 +315,9 @@ if test "x$engine_only" = "x"; then
 	# look for main in the C++ only libraries, since the function names are mangled.
 
 	AC_CHECK_LIB([qgame++], [main])
-	AC_CHECK_LIB([curl], [curl_easy_init])
+	AC_CHECK_LIB([ftgl], [main])
+
+	AC_CHECK_PROGS(ECL_CONFIG, [ecl-config], [], $PATH:/usr/local/bin:/usr/bin:/usr/local/ecl )
 fi
 
 if test "x$custom_cblas" = x; then
@@ -383,17 +325,25 @@ if test "x$custom_cblas" = x; then
 fi
 
 AC_CHECK_LIB([png], [png_create_write_struct])
-AC_CHECK_LIB([jpeg], [jpeg_read_header])
 AC_CHECK_LIB([gsl], [gsl_rng_alloc],,AC_MSG_FAILURE([Missing GSL library -- see http://www.gnu.org/software/gsl/]))
-AC_CHECK_LIB([GIMPACT], [main],,AC_MSG_FAILURE([Missing GIMPACT library -- see http://opende.sourceforge.net]))
+
+# AC_CHECK_LIB([OSMesa], [OSMesaCreateContext])
+
 AC_CHECK_LIB([ode], [dWorldStep],,AC_MSG_FAILURE([Missing ODE library -- see http://opende.sourceforge.net]))
-AC_CHECK_LIB([guile], [gh_eval_str])
 
 AC_CHECK_FUNCS([getopt_long gettimeofday iswspace mkstemp strdup vasprintf])
+
+AC_MSG_CHECKING([for JVM library])
 
 _old_cppflags=${CPPFLAGS}
 _old_ldflags=${LDFLAGS}
 _old_libs=${LIBS}
+
+#
+# For some reason CXXFLAGS is getting set to -O2 without my express
+# written consent.
+#
+
 
 #
 # If static linking is requested, add a flag for all non-system libraries.  The
@@ -406,6 +356,7 @@ AC_CONFIG_FILES([Makefile
 		 plugins/slDigitizerPlugin/Makefile
 		 plugins/slQTMusicPlugin/Makefile
 		 plugins/slRegexPlugin/Makefile
+		 plugins/slURLPlugin/Makefile
 		 plugins/samples/Makefile
 		 OSX/ConfigureLibraryList
 		 Qt/breve.pro
@@ -430,6 +381,10 @@ fi
 
 if test "$ac_cv_lib_avformat_av_write_frame" != yes; then
 	AC_MSG_WARN([libavformat not found. building without MPEG support.])
+fi
+
+if test "x$_have_jvm" = x ; then
+	AC_MSG_WARN([JVM library not found. building without Java support.])
 fi
 
 AC_OUTPUT

@@ -44,6 +44,7 @@ Control : Swarm {
     + variables:
         birds (list).
         item (object).
+        cloudTexture (object).
         selection (object).
 
         # the menu items corresponding to different flocking behaviors
@@ -63,7 +64,6 @@ Control : Swarm {
     + to init:
         # Set up menus to modify the type of movement allowed.
 
-
         self add-menu named "Smoosh The Birdies" for-method "squish".
         self add-menu-separator.
         obedientMenu = (self add-menu named "Flock Obediently" for-method "flock-obediently").
@@ -71,7 +71,9 @@ Control : Swarm {
         wackyMenu = (self add-menu named "Flock Wackily" for-method "flock-wackily").
 
         self enable-lighting.
-        self move-light to (0, 30, 0 ).
+        self move-light to (0, 20, 20).
+
+        cloudTexture = (new Image load from "images/clouds.png").
 
         # Add a terrain.
 
@@ -83,8 +85,7 @@ Control : Swarm {
 
         self flock-normally.
 
-        self set-background-texture-image to (new Image load from "images/clouds.png").
-
+        self set-background-texture-image to cloudTexture.
 
         self offset-camera by (5, 1.5, 6).
 
@@ -109,7 +110,8 @@ Control : Swarm {
         # in the context of a number, the list represents the number of items 
         # in the list.
 
-        location /= | birds |.
+        location /= birds.
+		# print "the highest location is $location".
 
         topDiff = 0.0.
 
@@ -174,7 +176,7 @@ Mobile : Birds {
     + to init:
         # register the object, set the initial location, velocity and color.
 
-		self set-shape to (new PolygonCone init-with sides 3 height .5 radius .06).
+		self set-shape to (new PolygonCone init-with radius .06 sides 3 height .5).
         self move to random[(10, 10, 10)] - (5, -5, 5).
         self set-velocity to random[(20, 20, 20)] - (10, 10, 10).
         self set-color to random[(1, 1, 1)].

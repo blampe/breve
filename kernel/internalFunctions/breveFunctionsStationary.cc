@@ -25,13 +25,10 @@
 /*@{*/
 
 int brIAddStationary( brEval args[], brEval *target, brInstance *i ) {
-	slShape *shape = ( slShape* )BRPOINTER( &args[0] );
+	slShape *sh = ( slShape* )BRPOINTER( &args[0] );
 
-	slStationary *s = new slStationary( shape, &BRVECTOR( &args[1] ), BRMATRIX( &args[2] ), i );
-
-	i->engine->world->addObject( s );
-	                 
-	target->set( s );
+	target->set( i->engine->world->addObject(
+	                 new slStationary( sh, &BRVECTOR( &args[1] ), BRMATRIX( &args[2] ), i ) ) );
 
 	return EC_OK;
 }

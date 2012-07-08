@@ -24,8 +24,6 @@
 #include "wx/wx.h"
 #endif
 
-#include <unistd.h>
-
 #include <wx/file.h>
 #include <wx/filename.h>
 #include <wx/tglbtn.h>
@@ -58,19 +56,17 @@ BEGIN_EVENT_TABLE( BreveRender, wxFrame )
 	EVT_TOGGLEBUTTON( ID_MOVE,		BreveRender::OnMoveClick )
 	EVT_TOGGLEBUTTON( ID_SELECT,	BreveRender::OnSelectClick )
 	EVT_MENU( BREVE_FILEMENU_NEW, BreveRender::OnMenuNew )
-	EVT_MENU( BREVE_FILEMENU_NEW_FROM_TEMPLATE, BreveRender::OnMenuNewFromTemplate )
 	EVT_MENU( BREVE_FILEMENU_OPEN, BreveRender::OnMenuOpen )
 	EVT_MENU( BREVE_FILEMENU_QUIT, BreveRender::OnMenuQuit )
 	EVT_IDLE(BreveRender::OnIdle)
 	EVT_MENU( BREVE_WINDOWMENU_LOG, BreveRender::OnMenuLogWindow )
 	EVT_MENU( BREVE_WINDOWMENU_INSPECTOR, BreveRender::OnMenuInspector )
-	EVT_MENU( BREVE_WINDOWMENU_FULLSCREEN, BreveRender::OnFullScreen )
+	EVT_MENU( BREVE_BREVEMENU_FULLSCREEN, BreveRender::OnFullScreen )
 	EVT_MENU( BREVE_FULLSPEED, BreveRender::OnMenuSpeed )
 	EVT_MENU( BREVE_MEDIUMSPEED, BreveRender::OnMenuSpeed )
 	EVT_MENU( BREVE_SLOWSPEED, BreveRender::OnMenuSpeed )
-	EVT_MENU_RANGE( BREVE_DEMOMENU + 1500, BREVE_DEMOMENU + 2000, BreveRender::OnMenuSim )
+	EVT_MENU_RANGE( BREVE_BREVEMENU_SIM + 1500, BREVE_BREVEMENU_SIM + 2000, BreveRender::OnMenuSim )
 	EVT_MENU_RANGE( BREVE_SIMMENU, BREVE_SIMMENU + 1000, BreveRender::OnSimMenu )
-	EVT_MENU_RANGE( BREVE_DOCMENU, BREVE_DOCMENU + 1000, BreveRender::OnDocMenu )
 	EVT_CLOSE (BreveRender::OnClose)
 	EVT_CHOICE(ID_SIM_SELECT, BreveRender::OnSimSelect)
 	EVT_MOVE(BreveRender::OnMove)
@@ -85,7 +81,7 @@ BreveRender::BreveRender( )
 }
 
 BreveRender::BreveRender( wxWindow* parent, wxWindowID id, const wxString& caption, const wxPoint& pos, const wxSize& size, long style ) {
-	int zero = 1;
+	int zero = 0;
 	char *argv[] = { "breveIDE" };
 	glutInit( &zero, argv );
 
@@ -120,16 +116,17 @@ bool BreveRender::Create( wxWindow* parent, wxWindowID id, const wxString& capti
 
 	if (config != NULL)
 	{
-		int x, y, w, h;
+	int x, y, w, h;
 
-		if (config->Read("BreveRenderX", &x) && config->Read("BreveRenderY", &y) &&
-			config->Read("BreveRenderWidth", &w) && config->Read("BreveRenderHeight", &h)) {
-			tpoint.x = x;
-			tpoint.y = y;
-			tsize.SetHeight(h);
-			tsize.SetWidth(w);
-			loadedvalues = TRUE;
-		}
+	if (config->Read("BreveRenderX", &x) && config->Read("BreveRenderY", &y) &&
+		config->Read("BreveRenderWidth", &w) && config->Read("BreveRenderHeight", &h))
+	{
+		tpoint.x = x;
+		tpoint.y = y;
+		tsize.SetHeight(h);
+		tsize.SetWidth(w);
+		loadedvalues = TRUE;
+	}
 	}
 
 	wxFrame::Create( parent, id, caption, tpoint, tsize, style );
@@ -255,7 +252,6 @@ void BreveRender::CreateControls()
 		wxMenu * filemenu = new wxMenu;
 	
 		filemenu->Append(BREVE_FILEMENU_NEW, "&New\tCTRL-N");
-		filemenu->Append(BREVE_FILEMENU_NEW_FROM_TEMPLATE, "New From &Template\tCTRL-T");
 		filemenu->Append(BREVE_FILEMENU_OPEN, "&Open\tCTRL-O");
 		filemenu->Append(BREVE_FILEMENU_QUIT, "E&xit\tCTRL-X");
 	
@@ -263,11 +259,11 @@ void BreveRender::CreateControls()
 	
 		windowmenu->Append(BREVE_WINDOWMENU_LOG, "Log Window");
 		windowmenu->Append(BREVE_WINDOWMENU_INSPECTOR, "Object Inspector");
-		windowmenu->Append(BREVE_WINDOWMENU_FULLSCREEN, "Fullscreen");
 	
 		wxMenu * demomenu = new wxMenu;
 	
-		if (!app->GetBreveDir().IsEmpty()) {
+		if (!app->GetBreveDir().IsEmpty())
+		{
 			wxString str;
 	
 			str = app->GetBreveDir();
@@ -276,65 +272,70 @@ void BreveRender::CreateControls()
 	
 			wxDir scan(str);
 	
-			if (scan.IsOpened()) {
-				wxString filename;
+			if (scan.IsOpened())
+			{
+			wxString filename;
+			bool cont;
+			int count = 1501;
+	
+			cont = scan.GetFirst(&filename, "*.tz", wxDIR_FILES);
+	
+			while (cont)
+			{
+				demomenu->Append(BREVE_BREVEMENU_SIM + count++, filename);
+				cont = scan.GetNext(&filename);
+			}
+	
+			cont = scan.GetFirst(&filename, "", wxDIR_DIRS);
+	
+			while (cont)
+			{
+				str = app->GetBreveDir();
+	
+				str << "demos" << FILE_SEP_PATH << filename;
+	
+				wxDir lscan(str);
+	
+				if (lscan.IsOpened())
+				{
+				wxString subfilename;
 				bool cont;
-				int count = 1501;
+				int reserved = 0;
 	
-				cont = scan.GetFirst(&filename, "*.tz", wxDIR_FILES);
+				wxMenu * submenu = NULL;
 	
-				while (cont) {
-					demomenu->Append( BREVE_DEMOMENU + count++, filename );
-					cont = scan.GetNext(&filename);
-				}
+				cont = lscan.GetFirst(&subfilename, "*.tz", wxDIR_FILES);
 	
-				cont = scan.GetFirst(&filename, "*.py", wxDIR_FILES);
-		
-				while (cont) {
-					demomenu->Append(BREVE_DEMOMENU + count++, filename);
-					cont = scan.GetNext(&filename);
-				}
-		
-				cont = scan.GetFirst(&filename, "", wxDIR_DIRS);
-		
-				while (cont) {
-					str = app->GetBreveDir();
-		
-					str << "demos" << FILE_SEP_PATH << filename;
-		
-					wxDir lscan(str);
-		
-					if (lscan.IsOpened()) {
-						wxString subfilename;
-						bool cont;
-						int reserved = 0;
-		
-						wxMenu * submenu = new wxMenu;
-						reserved = count++;
-		
-						cont = lscan.GetFirst(&subfilename, "", wxDIR_FILES);
-		
-						while (cont) {
-							wxFileName f = wxFileName( subfilename );
-
-							if( f.GetExt().Cmp( "py" ) || f.GetExt().Cmp( "tz" ) ) {
-								submenu->Append(BREVE_DEMOMENU + count++, subfilename);
-								cont = lscan.GetNext(&subfilename);
-							}
-						}
-		
-						demomenu->Append(BREVE_DEMOMENU + reserved, filename, submenu);
+				while (cont)
+				{
+					if (submenu == NULL)
+					{
+					submenu = new wxMenu;
+					reserved = count++;
 					}
 	
-				cont = scan.GetNext(&filename);
+					submenu->Append(BREVE_BREVEMENU_SIM + count++, subfilename);
+					cont = lscan.GetNext(&subfilename);
 				}
+	
+				if (submenu)
+					demomenu->Append(BREVE_BREVEMENU_SIM + reserved, filename, submenu);
+				}
+	
+				cont = scan.GetNext(&filename);
+			}
 			}
 		}
+	
+		wxMenu * brevemenu = new wxMenu;
+	
+		brevemenu->Append(BREVE_BREVEMENU_FULLSCREEN, "Fullscreen");
 	
 		defsimmenu = new wxMenu;
 	
 		menubar->Append(filemenu, "&File");
 		menubar->Append(windowmenu, "&Window");
+		menubar->Append(brevemenu, "&Breve");
 		menubar->Append(demomenu, "&Demos");
 
 		wxMenu * simspeed = new wxMenu;
@@ -343,15 +344,7 @@ void BreveRender::CreateControls()
 		simspeed->Append( BREVE_SLOWSPEED, "Slow" );
 		menubar->Append( simspeed, "Speed" );
 
-		// breve Documentation
-
-		wxMenu *help= MakeDocumentationMenu();
-		menubar->Append( help, "&Help" );
-
-		// Placeholder simulation menu
-
 		menubar->Append( defsimmenu, "&Simulation" );
-
 	}
 
 	SetMenuBar(menubar);
@@ -360,59 +353,6 @@ void BreveRender::CreateControls()
 
 	canvas->Connect(-1, wxEVT_KEY_DOWN, wxKeyEventHandler(BreveRender::KeyDown));
 	canvas->Connect(-1, wxEVT_KEY_UP, wxKeyEventHandler(BreveRender::KeyUp));
-}
-
-wxMenu *BreveRender::MakeDocumentationMenu() {
-	_docFiles.clear();
-
-	wxMenu *docs = new wxMenu;
-
-	wxString index = app->GetBreveDir() << "docs" << FILE_SEP_PATH << "index.html";
-
-	wxString stclasses = app->GetBreveDir() << "docs" << FILE_SEP_PATH << "steveclasses";
-	wxString pyclasses = app->GetBreveDir() << "docs" << FILE_SEP_PATH << "pythonclasses";
-
-	docs->Append( BREVE_DOCMENU + _docFiles.size(), "breve Documentation" );
-	_docFiles.push_back( index );
-
-	wxMenu *stClassMenu = new wxMenu;
-	wxMenu *pyClassMenu = new wxMenu;
-
-	wxDir stscan( stclasses );
-	if ( stscan.IsOpened() ) {
-		wxString filename;
-		bool cont = stscan.GetFirst( &filename, "*.html", wxDIR_FILES );
-                        
-		while ( cont ) {
-			wxString path = app->GetBreveDir() << "docs" << FILE_SEP_PATH << "steveclasses" << FILE_SEP_PATH << filename;
-
-			stClassMenu->Append( BREVE_DOCMENU + _docFiles.size(), filename );
-			_docFiles.push_back( path );
-
-			cont = stscan.GetNext( &filename );
-		}
-	}
-
-	wxDir pyscan( pyclasses );
-	if ( pyscan.IsOpened() ) {
-		wxString filename;
-		bool cont = pyscan.GetFirst( &filename, "*.html", wxDIR_FILES );
-                        
-		while ( cont ) {
-			wxString path = app->GetBreveDir() << "docs" << FILE_SEP_PATH << "pythonclasses" << FILE_SEP_PATH << filename;
-
-			pyClassMenu->Append( BREVE_DOCMENU + _docFiles.size(), filename );
-			_docFiles.push_back( path );
-
-			cont = pyscan.GetNext( &filename );
-		}
-	}
-
-
-	docs->Append( BREVE_DOCMENU, "Class Documentation (steve)", stClassMenu );
-	docs->Append( BREVE_DOCMENU, "Class Documentation (Python)", pyClassMenu );
-
-	return docs;
 }
 
 int BreveRender::GetSimInt(SimInstance * s) {
@@ -516,7 +456,8 @@ void BreveRender::KillSimulation(int num)
 	}
 }
 
-void BreveRender::ResetSim( int sim ) {
+void BreveRender::ResetSim( int sim )
+{
 	SimInstance * s = NULL;
 
 	if (sim != -2)
@@ -531,7 +472,19 @@ void BreveRender::ResetSim( int sim ) {
 			cursim = -1;
 	}
 
-	menubar->Append(defsimmenu, "Simulation");
+	if (cursim == -1) {
+		menubar->Append(defsimmenu, "Simulation");
+	} else {
+		int w, h;
+
+		menubar->Append(s->GetInterface()->GetMenu(), "Simulation");
+
+		canvas->GetClientSize(&w, &h);
+
+		s->GetInterface()->SetX(w);
+		s->GetInterface()->SetY(h);
+		s->GetInterface()->ResizeView(w, h);
+	}
 
 	simselect->SetSelection(cursim);
 
@@ -541,15 +494,21 @@ void BreveRender::ResetSim( int sim ) {
 	canvas->ResetSelection();
 }
 
-void BreveRender::SetMenu( int mode ) {
+void BreveRender::SetMenu(int mode)
+{
+	SimInstance * s = NULL;
+
 	menubar->Remove( menubar->FindMenu( "Simulation" ) );
 
-	SimInstance *s = GetSimulation();
+	s = GetSimulation();
 
-	if ( !s || mode == 0 )
-		menubar->Append(defsimmenu, "Simulation");
+	if (s == NULL)
+	mode = 0;
+
+	if (mode == 0)
+	menubar->Append(defsimmenu, "Simulation");
 	else
-		menubar->Append(s->GetInterface()->GetMenu(), "Simulation");
+	menubar->Append(s->GetInterface()->GetMenu(), "Simulation");
 }
 
 void BreveRender::NewSimulation()
@@ -758,28 +717,22 @@ void BreveRender::LoadSimFile(wxString ffile)
 
 void BreveRender::OnMenuOpen(wxCommandEvent& event)
 {
-	wxFileDialog d(this, "Please select a simulation", "", "", "steve files (*.tz)|*.tz|Python files (*.py)|*.py", wxOPEN);
+	wxFileDialog d(this, "Please select a simulation", "", "", "*.tz", wxOPEN);
 
-	if (d.ShowModal() == wxID_OK) {
-		wxString filename = d.GetFilename();
-		wxString fileloc = d.GetDirectory();
+	if (d.ShowModal() == wxID_OK)
+	{
+	wxString filename = d.GetFilename();
+	wxString fileloc = d.GetDirectory();
 
-		fileloc += FILE_SEP_PATH;
+	fileloc += FILE_SEP_PATH;
 
-		LoadSimFile(fileloc + filename);
+	LoadSimFile(fileloc + filename);
 	}
 }
 
-void BreveRender::OnMenuNew(wxCommandEvent& event) {
+void BreveRender::OnMenuNew(wxCommandEvent& event)
+{
 	NewSimulation();
-}
-
-void BreveRender::OnMenuNewFromTemplate(wxCommandEvent& event) {
-	wxString str;
-
-	str << app->GetBreveDir() << "lib" << FILE_SEP_PATH << "Template.tz";
-
-	LoadSimFile( str );
 }
 
 void BreveRender::OnMenuLogWindow(wxCommandEvent& event)
@@ -869,7 +822,7 @@ void BreveRender::OnMenuSim(wxCommandEvent &event)
 	wxMenuItem * mitem;
 	int i = 0;
 
-	for (i = event.m_id - 1; i >= BREVE_DEMOMENU + 1500; i--)
+	for (i = event.m_id - 1; i >= BREVE_BREVEMENU_SIM + 1500; i--)
 	{
 		mitem = menubar->FindItem(i);
 
@@ -924,31 +877,25 @@ void BreveRender::OnSimSelect(wxCommandEvent& event)
 	}
 }
 
-void BreveRender::OnRenderRunClick( wxCommandEvent& event ) {
-	SimInstance *sim = GetSimulation();
+void BreveRender::OnRenderRunClick( wxCommandEvent& event )
+{
+	SimInstance * sim;
 
-	if ( sim == NULL ) return;
+	sim = GetSimulation();
+
+	if (sim == NULL) return;
 
 	if( !sim->GetInterface()->Initialized() ) {
 		sim->UpdateSimCode();
-
-		if( !sim->GetInterface()->Initialize() ) 
-			return;
-
-		int w, h;
-
-		SetMenu( 1 );
-
-		canvas->GetClientSize(&w, &h);
-		sim->GetInterface()->ResizeView(w, h);
+		if( !sim->GetInterface()->Initialize() ) return;
 	}
 
 	sim->GetInterface()->Pause(3);
 
 	if (sim->GetInterface()->Paused())
-		runbutton->SetBitmapLabel( playbitmap );
+		runbutton->SetBitmapLabel(playbitmap);
 	else
-		runbutton->SetBitmapLabel( pausebitmap );
+		runbutton->SetBitmapLabel(pausebitmap);
 
 	runbutton->Refresh(TRUE, NULL);
 }
@@ -971,39 +918,14 @@ void BreveRender::OnRenderStopClick( wxCommandEvent& event )
 	canvas->Refresh(TRUE, NULL);
 }
 
-void BreveRender::OnDocMenu( wxCommandEvent &event ) {
-	int index = event.m_id - BREVE_DOCMENU;
-
-	wxString &docfile = _docFiles[ index ];
-	wxString url = wxString( "file://" ) << docfile;
-
-#ifdef WINDOWS
-	::ShellExecute( NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL );
-#else 
-	// wxLaunchDefaultBrowser( docfile );
-	// Oh WxWidgets.  You really do suck.
-	//
-
-	char *browser = getenv( "BROWSER" );
-
-	if( !browser || strlen( browser ) == 0 ) {
-		slMessage( DEBUG_ALL, "Warning: could not open documentation because $BROWSER variable not set\n" );
-	} else {
-		wxString command = wxString( "$BROWSER " ) << url; 
-		system( command.c_str() );
-	}
-
-#endif
-}
-
-void BreveRender::OnSimMenu(wxCommandEvent &event) {
-
-	if ( GetSimulation() == NULL || !GetSimulation()->GetInterface()->Initialized() ) 
-		return;
+void BreveRender::OnSimMenu(wxCommandEvent &event)
+{
+	if (GetSimulation() == NULL || !GetSimulation()->GetInterface()->Initialized()) // || GetSimulation()->GetInterface()->Paused())
+	return;
 
 	GetSimulation()->GetMutex()->Lock();
 
-	GetSimulation()->GetInterface()->RunMenu( event.m_id - BREVE_SIMMENU, GetSimulation()->GetInterface()->GetEngine()->controller );
+	GetSimulation()->GetInterface()->RunMenu(event.m_id - BREVE_SIMMENU, GetSimulation()->GetInterface()->GetEngine()->controller);
 
 	GetSimulation()->GetMutex()->Unlock();
 }
@@ -1164,9 +1086,8 @@ void BreveRender::OnMove(wxMoveEvent &event)
 		wxConfigBase * config = wxConfigBase::Get();
 
 		if (config != NULL) {
-			wxPoint position = GetPosition();
-			config->Write("BreveRenderX", position.x);
-			config->Write("BreveRenderY", position.y);
+			config->Write("BreveRenderX", event.GetPosition().x);
+			config->Write("BreveRenderY", event.GetPosition().y);
 		}
 	}
 

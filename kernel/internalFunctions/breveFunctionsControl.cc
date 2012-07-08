@@ -57,7 +57,7 @@ int brIGetAllPressedKeys( brEval args[], brEval *target, brInstance *i ) {
 
 int brIGetMouseX( brEval args[], brEval *target, brInstance *i ) {
 
-	target->set( i->engine->_mouseX );
+	target->set( i->engine->mouseX );
 
 	return EC_OK;
 }
@@ -68,7 +68,7 @@ int brIGetMouseX( brEval args[], brEval *target, brInstance *i ) {
 
 int brIGetMouseY( brEval args[], brEval *target, brInstance *i ) {
 
-	target->set( i->engine->_mouseY );
+	target->set( i->engine->mouseY );
 
 	return EC_OK;
 }
@@ -81,7 +81,7 @@ int brIGetMouseY( brEval args[], brEval *target, brInstance *i ) {
 */
 
 int brIEndSimulation( brEval args[], brEval *target, brInstance *i ) {
-	i->engine->_simulationWillStop = 1;
+	i->engine->simulationWillStop = 1;
 	return EC_OK;
 }
 
@@ -195,29 +195,6 @@ int brIAddEvent( brEval args[], brEval *target, brInstance *i ) {
 
 	return EC_OK;
 }
-
-/*!
-	\brief Remove an event to the breve engine to be executed at a certain time.
-
-	The method will be executed for the calling object.
-
-	void removeEvent(double time, string methodName).
-*/
-
-int brIRemoveEvent( brEval args[], brEval *target, brInstance *i ) {
-        if ( BRDOUBLE( &args[1] ) <= i->engine->world->getAge( ) && BRDOUBLE( &args[1] ) != 0) {
-		slMessage( DEBUG_ALL, "warning: attempt to remove event from the past\n" );
-		return EC_OK;
-	}
-
-	if ( !brEngineRemoveEvent( i->engine, i, BRSTRING( &args[0] ), BRDOUBLE( &args[1] ) ) ) {
-		slMessage( DEBUG_ALL, "unable to remove event from engine: brEngineRemoveEvent() failed\n" );
-		return EC_ERROR;
-	}
-
-	return EC_OK;
-}
-
 
 /*!
 	\brief Set the starting and ending distances for fog.
@@ -391,7 +368,7 @@ int brIPlaySound( brEval args[], brEval *target, brInstance *i ) {
 
 int brIGetArgc( brEval args[], brEval *target, brInstance *i ) {
 
-	target->set( i->engine->_argc );
+	target->set( i->engine->argc );
 
 	return EC_OK;
 }
@@ -403,12 +380,12 @@ int brIGetArgc( brEval args[], brEval *target, brInstance *i ) {
 */
 
 int brIGetArgv( brEval args[], brEval *target, brInstance *i ) {
-	if ( BRINT( &args[0] ) < 0 || BRINT( &args[0] ) >= i->engine->_argc ) {
-		slMessage( DEBUG_ALL, "Request for command-line input argument %d is out of range\n", i->engine->_argc );
+	if ( BRINT( &args[0] ) < 0 || BRINT( &args[0] ) >= i->engine->argc ) {
+		slMessage( DEBUG_ALL, "Request for command-line input argument %d is out of range\n", i->engine->argc );
 		return EC_ERROR;
 	}
 
-	target->set( i->engine->_argv[BRINT( &args[0] )] );
+	target->set( i->engine->argv[BRINT( &args[0] )] );
 
 	return EC_OK;
 }
@@ -496,20 +473,12 @@ int brIFindFile( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
- * \brief Returns the current running time with micro-second precision.
- */
-
-int brIGetRunningTime( brEval args[], brEval *target, brInstance *i ) {
-	target->set( i -> engine -> runningTime() );
-	return EC_OK;
-}
-
-/**
- * \brief Returns the current real with micro-second precision.
- */
+/*!
+	\brief Returns the current real-time time with micro-second precision.
+*/
 
 int brIGetRealTime( brEval args[], brEval *target, brInstance *i ) {
+
 	struct timeval now;
 	double seconds;
 
@@ -558,7 +527,6 @@ void breveInitControlFunctions( brNamespace *n ) {
 	brNewBreveCall( n, "unpauseSimulation", brIUnpause, AT_NULL, 0 );
 
 	brNewBreveCall( n, "addEvent", brIAddEvent, AT_NULL, AT_STRING, AT_DOUBLE, AT_DOUBLE, 0 );
-	brNewBreveCall( n, "removeEvent", brIRemoveEvent, AT_NULL, AT_STRING, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "setFogDistances", brISetFogDistances, AT_NULL, AT_DOUBLE, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "setDrawLights", brISetDrawLights, AT_NULL, AT_INT, 0 );
 	brNewBreveCall( n, "setDrawShadow", brISetDrawShadow, AT_NULL, AT_INT, 0 );
@@ -588,7 +556,6 @@ void breveInitControlFunctions( brNamespace *n ) {
 
 	brNewBreveCall( n, "findFile", brIFindFile, AT_STRING, AT_STRING, 0 );
 	brNewBreveCall( n, "getRealTime", brIGetRealTime, AT_DOUBLE, 0 );
-	brNewBreveCall( n, "getRunningTime", brIGetRunningTime, AT_DOUBLE, 0 );
 
 	brNewBreveCall( n, "setOutputFilter", brISetOutputFilter, AT_NULL, AT_INT, 0 );
 

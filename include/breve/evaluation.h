@@ -42,9 +42,10 @@ struct stRunInstance {
 */
 
 struct stStackRecord {
-	stInstance*		instance;
-	stMethod*		method;
-	stStackRecord*	previousStackRecord;
+	stInstance *instance;
+	stMethod *method;
+	stStackRecord *previousStackRecord;
+	slStack *gcStack;
 };
 
 #define USE_RTC 1
@@ -122,12 +123,9 @@ inline int stEvalIf(stIfExp *, stRunInstance *, brEval *);
 inline int stEvalListInsert(stListInsertExp *, stRunInstance *, brEval *);
 inline int stEvalListRemove(stListRemoveExp *, stRunInstance *, brEval *);
 inline int stEvalSort(stSortExp *, stRunInstance *, brEval *);
+inline int stEvalListIndex(stListIndexExp *, stRunInstance *, brEval *);
 inline int stEvalListIndexPointer(stListIndexExp *, stRunInstance *, void **, int *);
-
-inline int stEvalIndexAssign(stListIndexAssignExp *, stRunInstance *, brEval *);
-inline int stEvalIndexLookup(stListIndexExp *, stRunInstance *, brEval *);
-
-inline int stEvalEvalExp( stEvalExp *inEval, stRunInstance *inInstance, brEval *outResult );
+inline int stEvalListIndexAssign(stListIndexAssignExp *, stRunInstance *, brEval *);
 
 int stCallMethod(stRunInstance *, stRunInstance *, stMethod *, const brEval **, int, brEval *);
 int stCallMethodByName(stRunInstance *, char *, brEval *);
@@ -148,16 +146,16 @@ int stPrintEvaluation(brEval *, stRunInstance *);
 int stEvalBinaryEvalListExp(char, brEval *, brEval *, brEval *, stRunInstance *);
 //brEvalList* stEvalListIndexLookup(brEvalListHead *, int);
 
-// int stExpEval3(stExp *, stRunInstance *, brEval *);
+int stExpEval3(stExp *, stRunInstance *, brEval *);
 
 int stExpEval(stExp *, stRunInstance *, brEval *, stObject **);
 
 void stConvertBreveInstanceToSteveInstance(brEval *);
 
-int stEvalListIndexAssign(brEvalListHead *, int, brEval *, stRunInstance *);
+int stDoEvalListIndexAssign(brEvalListHead *, int, brEval *, stRunInstance *);
 
-void stEvalError( stInstance*, int, const char *, ... );
+void stEvalError( stInstance*, int, char *, ... );
 
 void stConvertSteveInstanceToBreveInstance(brEval *);
 
-void stEvalWarn(stExp *, const char *, ...);
+void stEvalWarn(stExp *, char *, ...);

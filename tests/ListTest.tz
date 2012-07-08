@@ -8,8 +8,6 @@ Control : ListTest {
 		newlist, newlist2 (list).
 		newhash (hash).
 
-		print ( new TestObject ){ "test" }.
-
 		newlist = (self make-list).
 
 		newhash{ "dog" } = 1.
@@ -71,10 +69,3 @@ Control : ListTest {
 		if a > b: return  1. 
 }
 
-Object : TestObject {
-	+ variables:
-		test (int).
-
-	+ to init:
-		test = 12345.
-}

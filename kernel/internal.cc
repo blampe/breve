@@ -66,7 +66,7 @@
 	There are many examples of this in the steveFunctions*.c files.
 */
 
-int brNewBreveCall( brNamespace *n, const char *name, int( *f )( brEval *a, brEval *r, brInstance *i ), int rtype, ... ) {
+int brNewBreveCall( brNamespace *n, char *name, int( *f )( brEval *a, brEval *r, brInstance *i ), int rtype, ... ) {
 	brInternalFunction *c;
 	va_list ap;
 	int value;
@@ -83,11 +83,6 @@ int brNewBreveCall( brNamespace *n, const char *name, int( *f )( brEval *a, brEv
 
 	while ( ( value = va_arg( ap, int ) ) != 0 ) c->_argTypes[ c->_argCount++ ] = value;
 
-	if( c -> _argCount > ST_CMAX_ARGS ) {
-		slMessage( DEBUG_ALL, "Internal error: internal function \"%s\" exceeds allowed argument count\n", name );
-		return -1;
-	}
-
 	va_end( ap );
 
 	if ( !brNamespaceStore( n, name, 0, c ) ) {
@@ -103,25 +98,25 @@ void brFreeBreveCall( void *d ) {
 	delete i;
 }
 
-/**
- * \brief Returns a FILE pointer associated with the output log.
- *
- * Returns a FILE pointer referring to the output log.  Under command-line
- * based breve implementations, this is typically stderr.  Under Mac OS X,
- * however, output to this file handle will be routed through slMessage.
- */
+/*!
+	\brief Returns a FILE pointer associated with the output log.
+
+	Returns a FILE pointer referring to the output log.  Under command-line
+	based breve implementations, this is typically stderr.  Under Mac OS X,
+	however, output to this file handle will be routed through slMessage.
+*/
 
 FILE *slGetLogFilePointer( brInstance *i ) {
-	return i->engine->_logFile;
+	return i->engine->logFile;
 }
 
-/**
- * \brief Loads internal functions into the breve engine.
- * Calls all of the loader functions for different groups of functions.
- */
+/*!
+	\brief Loads internal functions into the breve engine.
+
+	Calls all of the loader functions for different groups of functions.
+*/
 
 void brLoadInternalFunctions( brEngine *e ) {
-	breveInitURLFunctions( e->internalMethods );
 	breveInitWorldFunctions( e->internalMethods );
 	breveInitStationaryFunctions( e->internalMethods );
 	breveInitObjectFunctions( e->internalMethods );
@@ -133,7 +128,6 @@ void brLoadInternalFunctions( brEngine *e ) {
 	breveInitMultibodyFunctions( e->internalMethods );
 	breveInitShapeFunctions( e->internalMethods );
 	breveInitLinkFunctions( e->internalMethods );
-	breveInitRealFunctions( e->internalMethods );
 	breveInitNetworkFunctions( e->internalMethods );
 	breveInitPatchFunctions( e->internalMethods );
 	breveInitNeuralFunctions( e->internalMethods );
@@ -141,6 +135,7 @@ void brLoadInternalFunctions( brEngine *e ) {
 	breveInitCameraFunctions( e->internalMethods );
 	breveInitFileFunctions( e->internalMethods );
 	breveInitSoundFunctions( e->internalMethods );
+	breveInitGraphFunctions( e->internalMethods );
 	breveInitTerrainFunctions( e->internalMethods );
 	breveInitImageFunctions( e->internalMethods );
 	breveInitMovieFunctions( e->internalMethods );

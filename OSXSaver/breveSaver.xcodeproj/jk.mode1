@@ -218,8 +218,6 @@
 			<key>Layout</key>
 			<array>
 				<dict>
-					<key>BecomeActive</key>
-					<true/>
 					<key>ContentConfiguration</key>
 					<dict>
 						<key>PBXBottomSmartGroupGIDs</key>
@@ -266,8 +264,9 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>38</integer>
-									<integer>36</integer>
+									<integer>10</integer>
+									<integer>1</integer>
+									<integer>0</integer>
 								</array>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateVisibleRectKey</key>
@@ -290,7 +289,7 @@
 							<real>226</real>
 						</array>
 						<key>RubberWindowFrame</key>
-						<string>290 13 834 763 0 0 1440 878 </string>
+						<string>501 115 834 763 0 0 1440 878 </string>
 					</dict>
 					<key>Module</key>
 					<string>PBXSmartGroupTreeModule</string>
@@ -301,6 +300,8 @@
 					<key>Dock</key>
 					<array>
 						<dict>
+							<key>BecomeActive</key>
+							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
@@ -318,12 +319,12 @@
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>48839FE30B76BB960072D060</string>
+										<string>48B4964A0B2BABE300FCEABC</string>
 										<key>history</key>
 										<array>
 											<string>485B495B0B228B3700CE9856</string>
 											<string>48B496470B2BABE300FCEABC</string>
-											<string>48ED50D00B6B9B3100E99116</string>
+											<string>48B496480B2BABE300FCEABC</string>
 										</array>
 										<key>prevStack</key>
 										<array>
@@ -342,7 +343,7 @@
 								<key>Frame</key>
 								<string>{{0, 0}, {586, 346}}</string>
 								<key>RubberWindowFrame</key>
-								<string>290 13 834 763 0 0 1440 878 </string>
+								<string>501 115 834 763 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
@@ -362,7 +363,7 @@
 								<key>Frame</key>
 								<string>{{0, 351}, {586, 371}}</string>
 								<key>RubberWindowFrame</key>
-								<string>290 13 834 763 0 0 1440 878 </string>
+								<string>501 115 834 763 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
@@ -386,9 +387,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>48839FE40B76BB960072D060</string>
+				<string>48B4963A0B2B98D100FCEABC</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>48839FE50B76BB960072D060</string>
+				<string>48B4963B0B2B98D100FCEABC</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -522,10 +523,11 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
+		<string>48E634C408FAB1D8004B9C55</string>
 		<string>/Users/jk/Development/breve/OSXSaver/breveSaver.xcodeproj</string>
 	</array>
 	<key>WindowString</key>
-	<string>290 13 834 763 0 0 1440 878 </string>
+	<string>501 115 834 763 0 0 1440 878 </string>
 	<key>WindowTools</key>
 	<array>
 		<dict>

@@ -22,7 +22,6 @@
 #define _VCLIP_H
 
 typedef unsigned char slPairFlags;
-class slCollisionCandidate;
 
 #include "vclipData.h"
 #include "world.h"
@@ -57,7 +56,7 @@ enum slCollisionFlags {
 	BT_CHECK 	= 0x08, // 0001000 
 	BT_ALL   	= 0x0f, // 0001111 -- x, y, z overlap and checking desired
 	BT_CALLBACK	= 0x10,	// 0010000 -- these objects require a callback
-	BT_SIMULATE 	= 0x20,	// 0100000 -- these objects require simulation
+	BT_SIMULATE = 0x20,	// 0100000 -- these objects require simulation
 	BT_UNKNOWN	= 0x40	// 1000000 -- need to check callback & simulation
 };
 
@@ -87,22 +86,15 @@ struct slBoundSort {
  * is used to add a contact point for the collision.
  */
 
-#define MAX_ODE_CONTACTS	128
-
 class slCollision {
 	public:
-									slCollision() {
-										_contactPoints = 0;
-									}
-		// slVector normal;
-		// std::vector<slVector> points;
-		// std::vector<double> depths;
+		slVector normal;
+
+		std::vector<slVector> points;
+		std::vector<double> depths;
 
 		unsigned int n1; 
 		unsigned int n2;
-
-		dContactGeom 				_contactGeoms[ MAX_ODE_CONTACTS ];
-		int							_contactPoints;
 };
 
 /**
@@ -134,7 +126,7 @@ class slVclipData {
 		 * Tests a single pair stored in a \ref slCollisionCandidate.
 		 */
 
-		int testPair(slCollisionCandidate *e, slCollision *ce, slPairFlags inFlags );
+		int testPair(slCollisionCandidate *e, slCollision *ce);
 
 		slWorld *world;
 
@@ -146,7 +138,7 @@ class slVclipData {
 
 		slPairFlags **pairArray;
 
-		std::map< slPairFlags* , slCollisionCandidate > 			_candidates;
+		std::map< slPairFlags* , slCollisionCandidate > candidates;
 
 		unsigned int _count;
 		unsigned int _maxCount;
@@ -157,12 +149,7 @@ class slVclipData {
 
 class slCollisionCandidate {
 	public:
-		slCollisionCandidate() { 
-			_shape1 = NULL; 
-			_shape2 = NULL; 
-			_position1 = NULL; 
-			_position2 = NULL; 
-		};
+		slCollisionCandidate() {};
 
 		slCollisionCandidate(slVclipData *vc, int o1, int o2) {
 			slWorldObject *w1, *w2;
@@ -172,22 +159,23 @@ class slCollisionCandidate {
 			w1 = vc->world->_objects[ _x ];
 			w2 = vc->world->_objects[ _y ];
 
-			if( w1 ) {
-				_position1 = &w1->getPosition();	
-				_shape1 = w1 -> getShape();
-			} else {
-				_position1 = NULL;
-				_shape1 = NULL;
-			}
+			_position1 = &w1->getPosition();	
+			_position2 = &w2->getPosition();	
 
-			if( w2 ) {
-				_position2 = &w2->getPosition();	
-				_shape2 = w2 -> getShape();
-			} else {
-				_position2 = NULL;
-				_shape2 = NULL;
+			if( w1 && w2 ) {
+				_shape1 = w1->getShape();
+				_shape2 = w2->getShape();
+
+				if(_shape1 && _shape1->_type == ST_NORMAL) _feature1 = _shape1->features[0];
+				else _feature1 = NULL;
+
+				if(_shape2 && _shape2->_type == ST_NORMAL) _feature2 = _shape2->features[0];
+				else _feature2 = NULL;
 			}
 		}
+
+		slFeature *_feature1;
+		slFeature *_feature2;
 
 		const slShape *_shape1;
 		const slShape *_shape2;
@@ -213,6 +201,10 @@ void slRemoveCollisionCandidate(slVclipData *d, int x, int y);
 
 slPlane *slPositionPlane( const slPosition *p, const slPlane *p1, slPlane *pt );
 
+int slSphereSphereCheck(slVclipData *vc, int x, int y, slCollision *ce, const slPosition *p1, slSphere *s1, const slPosition *p2, slSphere *s2);
+
+int slSphereShapeCheck(slVclipData *vc, slFeature **f, int x, int y, slCollision *ce);
+
 int slVclip(slVclipData *d, double tolerance, int pruneOnly, int boundingBoxOnly);
 
 int slVclipTestPair(slVclipData *, slCollisionCandidate*, slCollision *);
@@ -224,16 +216,22 @@ int slClipEdge( slEdge *e, const slPosition *ep, slPlane *v, const slPosition *v
 int slClipEdgePoints( slVector *s, slVector *e, slPlane *v, const slPosition *vp, int vcount, int *sf, int *ef, double *sL, double *eL );
 int slClipFace( slFace *f, const slPosition *fp, slPlane *v, const slPosition *vp, int count, int *update );
 
-/*
 int slPointPointClip(slFeature **nf1, const slPosition *p1p, const slShape *s1, slFeature **nf2, const slPosition *p2p, const slShape *s2, slCollision *ce);
 int slPointFaceClip(slFeature **nf1, const slPosition *pp, const slShape *s1, slFeature **nf2, const slPosition *fp, const slShape *fs, slVclipData *vc, int x, int y, slCollision *ce);
 int slEdgePointClip(slFeature **nf1, const slPosition *ep, const slShape *s1, slFeature **nf2, const slPosition *pp, const slShape *s2, slCollision *ce);
 int slEdgeEdgeClip(slFeature **nf1, const slPosition *p1, const slShape *s1, slFeature **nf2, const slPosition *p2, const slShape *s2, slCollision *ce);
 int slEdgeFaceClip(slFeature **nf1, slFeature **nf2, slVclipData *v, int x, int y, slCollision *ce);
 int slFaceFaceClip(slFeature **nf1, const slPosition *f1p, const slShape *s1, slFeature **nf2, const slPosition *f2p, const slShape *s2, slVclipData *v, int x, int y);
-*/
+
+double signEdgePlaneDistanceDeriv(slPlane *p, slVector *edgeVector, slVector *lambda);
+
+int slCountFaceCollisionPoints(slCollision *c, slFeature *f1, slFeature *f2, const slPosition *p1, const slPosition *p2, const slShape *s1, const slShape *s2);
 
 double slMinPointDist(slFace *f, const slPosition *fp, slVector *p, const slPosition *pp);
+
+void slEdgeFaceCountCollisionPoints(slCollision *p, slEdge *e, const slPosition *ep, slFace *f, const slPosition *fp, const slShape *s1, const slShape *s2);
+
+int slEdgePointOnFace(slEdge *e, const slPosition *ep, slFace *f, const slPosition *fp, slVector *point);
 
 double slPointLineDist( const slVector *p1, const slVector *p2, const slVector *point, slVector *i);
 

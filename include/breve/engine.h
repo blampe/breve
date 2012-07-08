@@ -24,60 +24,43 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include <gsl/gsl_rng.h>
+
 #include <vector>
 #include <map>
 #include <string>
 #include <algorithm>
 
+#include "simulation.h"
 #include "timeval.h"
 
 class slCamera;
-class slWorld;
-class slRenderGL;
-class brInstance;
-class brDlPlugin;
-class brObject;
-class brEvent;
-class brURLFetcher;
-class brSoundMixer;
-class brNamespace;
-class brInternalFunction;
-class brInstance;
 
 // the maximum error size 
 
 #define BR_ERROR_TEXT_SIZE 4096
 
-/**
- * \brief A structure to hold information about errors during parsing/execution.
- */
+/*!
+	\brief A structure to hold information about errors during parsing/execution.
+*/
 
 struct brErrorInfo {
-	brErrorInfo() { 
-		file = NULL;
-		clear();
-	}
-
-	~brErrorInfo();
-
-	void clear();
+	brErrorInfo() { file = NULL; }
 
 	char *file;
 	int line;
 	unsigned char type;
-	char message[ BR_ERROR_TEXT_SIZE ];
+	char message[BR_ERROR_TEXT_SIZE];
 };
 
-/**
- * \brief Parse error and evaluation codes used by \ref brEvalError.	
- */
+/*!
+	\brief Parse error and evaluation codes used by \ref brEvalError.	
+*/
 
 enum parseErrorMessageCodes {
 	// parse errors 
 
-	PE_UNKNOWN = 0,
+	PE_OK = 0,
 	PE_PARSE,
-	PE_PYTHON,
 	PE_SYNTAX,
 	PE_INTERNAL,
 	PE_UNKNOWN_SYMBOL,
@@ -119,12 +102,13 @@ enum parseErrorCodes {
 	BPE_LIB_ERROR
 };
 
-/**
- * \brief A single menu item.
- */
+/*!
+	\brief A single menu item.
+*/
 
 struct brMenuEntry {
 	brInstance *instance;
+	slStack *submenus;
 	char *method;
 	char *title;
 	bool enabled;
@@ -140,102 +124,84 @@ typedef struct brObjectType brObjectType;
 
 class brEngine {
 	public:
-		brEngine( int inArgc = 0, const char **inArgv = NULL );
+		brEngine() {};
+		brEngine( int inArgc, char **inArgv ) { argc = inArgc; argv = inArgv; }
+
 		~brEngine();
 
-		std::vector< brObjectType* > 		_objectTypes;
-		std::vector< brInstance* > 		_freedInstances;
+		slWorld *world;
+		slCamera *camera;
 
-		int 					iterate();
+		gsl_rng *RNG;
 
-		void					draw();
-		void					clear();
-		void					lock();
-		void					unlock();
+		std::vector< brObjectType* > objectTypes;
 
-		brInstance*				getController() const { return _controller; }
-		int						setController( brInstance *inController );
+		bool simulationWillStop;
 
-		slCamera*				getCamera() const { return camera; }
+		brSoundMixer *soundMixer;
 
-		const char 				*runSaveDialog();
-		const char 				*runLoadDialog();
-		void					setMouseLocation( int inX, int inY );
+		std::vector<brInstance*> freedInstances;
 
-		double 					runningTime();
+		int useMouse;
+		int mouseX;
+		int mouseY;
 
-		void 					pauseTimer();
-		void 					unpauseTimer();
+		double iterationStepSize;
 
-		void addSearchPath( const char *inPath );
+		FILE *logFile;
 
-		brURLFetcher*			_url;
-		brSoundMixer*			_soundMixer;
+		brInstance *controller;
 
-		slWorld* 				world;
-		slCamera*				camera;
+		std::map< std::string, brObject* > objectAliases;
+		std::map< std::string, brObject* > objects;
+		brNamespace *internalMethods;
 
-		slRenderGL*				_renderer;
-
-		gsl_rng*				RNG;
-
-		bool 					_simulationWillStop;
-
-		int 					_useMouse;
-		int 					_mouseX;
-		int 					_mouseY;
-
-		double 					_iterationStepSize;
-
-		FILE*					_logFile;
-
-		brInstance*				_controller;
-
-		std::map< std::string, brObject* > 	objectAliases;
-		std::map< std::string, brObject* > 	objects;
-		brNamespace*				internalMethods;
-
-		std::vector< brInstance* > 		postIterationInstances;
-		std::vector< brInstance* > 		iterationInstances;
-		std::vector< brInstance* > 		instances;
+		std::vector< brInstance* > postIterationInstances;
+		std::vector< brInstance* > iterationInstances;
+		std::vector< brInstance* > instances;
 	
-		std::vector< brInstance* > 		instancesToAdd;
-		std::vector< brInstance* > 		instancesToRemove;
+		std::vector< brInstance* > instancesToAdd;
+		std::vector< brInstance* > instancesToRemove;
 
-		std::vector< brEvent* > 		events;
+		std::vector<brEvent*> events;
 
-public:
 		// runtime error info 
 
-		brErrorInfo 				error;
+		brErrorInfo error;
 
-		std::string 				_outputPath;
-		std::string 				_launchDirectory;
+		std::string _outputPath;
+		std::string _launchDirectory;
 
-		std::vector< brDlPlugin* > 		dlPlugins;
+		// plugin, plugins, plugins!
+
+		std::vector<brDlPlugin*> dlPlugins;
 
 		// the drawEveryFrame flag is a hint to the display engine
 		// if set, the application attempts to draw a frame with every
 		// iteration of the breve engine. 
 
-		unsigned char 				drawEveryFrame;
+		unsigned char drawEveryFrame;
 
-		struct timeval 				unpauseTime;
-		struct timeval 				accumulatedTime;
+		struct timeval startTime;
+		struct timeval realTime;
 
-		int 					_argc;
-		const char**				_argv;
+		int argc;
+		char **argv;
 
-		int 					nThreads;
-		pthread_mutex_t 			_engineLock;
-		int 					lastScheduled;
+		int nThreads;
+		pthread_mutex_t lock;
+		pthread_mutex_t scheduleLock;
+		pthread_mutex_t conditionLock;
+		pthread_cond_t condition;
 
-		std::vector<void*> 			windows;
-		std::vector< std::string > 		_searchPaths;
+		int lastScheduled;
+
+		std::vector<void*> windows;
+		std::vector< std::string > _searchPaths;
 
 		// which keys are pressed?
 
-		unsigned char 				keys[ 256 ];
+		unsigned char keys[256];
 
 		//
 		// Callback functions to be set by the application frontend
@@ -247,8 +213,8 @@ public:
 
 		// callback to run save and load dialogs 
 
-		const char *(*getSavename)(void);
-		const char *(*getLoadname)(void);
+		char *(*getSavename)(void);
+		char *(*getLoadname)(void);
 
 		// callback to show a generic dialog
 
@@ -260,7 +226,7 @@ public:
 	
 		// returns the string identifying the implementation
 	
-		const char *(*interfaceTypeCallback)(void);
+		char *(*interfaceTypeCallback)(void);
 	
 		// callback to setup and use the OS X interface features
 	
@@ -282,12 +248,12 @@ public:
 class brEvent {
 	public:
 		brEvent(char *name, double time, double interval, brInstance *i);
-		~brEvent() {};
+		~brEvent();
 
-		std::string 	_name;
-		double 		_time;
-		double 		_interval;
-		brInstance*	_instance;
+		char *_name;
+		double _time;
+		double _interval;
+		brInstance *_instance;
 };
 #endif
 
@@ -300,9 +266,20 @@ enum versionRequiermentOperators {
 	VR_NE
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 brEvent *brEngineAddEvent(brEngine *, brInstance *, char *, double, double);
-int brEngineRemoveEvent(brEngine *, brInstance *, char *, double);
 void brEventFree(brEvent *);
+
+int brEngineSetController(brEngine *, brInstance *);
+
+brInstance *brEngineGetController(brEngine *);
+
+slStack *brEngineGetAllInstances(brEngine *);
+
+int brEngineIterate(brEngine *);
 
 void brEngineSetIOPath(brEngine *, const char *);
 char *brOutputPath(brEngine *, const char *);
@@ -311,15 +288,24 @@ const std::vector< std::string > &brEngineGetSearchPaths( brEngine * );
 
 std::vector< std::string > brEngineGetAllObjectNames( brEngine *e );
 
+brEngine *brEngineNew();
+brEngine *brEngineNewWithArguments( int inArgc, char **inArgv );
+
+void brEngineFree(brEngine *);
+
+void brPauseTimer(brEngine *);
+void brUnpauseTimer(brEngine *);
+
 void brAddToInstanceLists(brInstance *);
 void brRemoveFromInstanceLists(brInstance *);
 
 int brFileLogWrite(void *, const char *, int);
 
+void brAddSearchPath(brEngine *, const char *);
 char *brFindFile(brEngine *, const char *, struct stat *);
 void brFreeSearchPath(brEngine *);
 
-brMenuEntry *brAddMenuItem( brInstance *, const char *, const char * );
+brMenuEntry *brAddMenuItem(brInstance *, char *, char *);
 brMenuEntry *brAddContextualMenuItem(brObject *, char *, char *);
 
 void stSetParseEngine(brEngine *);
@@ -332,7 +318,7 @@ void brEngineRenderWorld(brEngine *, int inCrosshair = 0 );
 
 brInternalFunction *brEngineInternalFunctionLookup(brEngine *, char *);
 
-void brEvalError(brEngine *, int, const char *, ...);
+void brEvalError(brEngine *, int, char *, ...);
 
 void brClearError(brEngine *);
 int brGetError(brEngine *);
@@ -362,5 +348,9 @@ void brEngineSetUpdateMenuCallback(brEngine *, void (*)(brInstance *));
 
 slCamera *brEngineGetCamera(brEngine *);
 slWorld *brEngineGetWorld(brEngine *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

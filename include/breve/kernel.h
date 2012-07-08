@@ -49,7 +49,7 @@
 	further detail in \ref InternalFunctions.
 */
 
-#include "slutil.h"
+#include "util.h"
 
 #include <sys/stat.h>
 #include <sys/param.h>

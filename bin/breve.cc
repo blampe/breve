@@ -18,105 +18,96 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-/**
- * The GLUT-based breve application.
- * This is a wrapper around the breve gEngine for the GLUT-based
- * steve-frontend version of the breve simulation environment.
- */
+/*!
+	\brief The GLUT-based breve application.
 
-#include <signal.h>
-
-#include "config.h"
-
-#ifndef WINDOWS
-    #include <libgen.h>
-#endif
+	This is a wrapper around the breve engine for the GLUT-based
+	steve-frontend version of the breve simulation environment.
+*/
 
 #include "simulation.h"
 #include "steve.h"
 #include "breve.h"
 #include "world.h"
-#include "format.h"
-
-#include "pyconvert.h"
+#include "movie.h"
+#include "gldraw.h"
 
 static void brInterrupt( brEngine * );
 
-static void brCatchSignal( int signal );
+static void graphDisplay( void );
+
+static void *workerThread( void * );
+
+static void *newWindowCallback( char *, void * );
+
+static void freeWindowCallback( void * );
+
+static void renderWindowCallback( void * );
 
 #if MINGW
 extern char *optarg;
+
 extern int optind;
+
 #endif
 
-unsigned char *gOffscreenBuffer = NULL;
+static brEngine *engine;
 
-static brEngine *gEngine;
 static int contextMenu, mainMenu;
-static int gHeight = 400, gWidth = 400;
-static int gXpos = 0, gYpos = 0;
-static stSteveData *gSteveData;
-static char keyDown[256];
-static char specialDown[256];
-static int gPaused = 1;
-static int gWaiting = 0;
-static int gThreadShouldExit = 0;
 
-static float gSimulationTime = 0.0;
+static int height = 400, width = 400;
+
+static int xpos = 0, ypos = 0;
+
+static stSteveData *gSteveData;
+
+static char keyDown[256];
+
+static char specialDown[256];
+
+static int gPaused = 1;
+
+static int gWaiting = 0;
+
+static int gThreadShouldExit = 0;
 
 static pthread_mutex_t gEngineMutex;
 
+static pthread_mutex_t gThreadMutex;
+
+static pthread_cond_t gThreadPaused;
+
 static char *gOptionArchiveFile = NULL;
 
-static int gConvertToPython = 0;
 static int gOptionFormat = 0;
+
 static int gOptionFull = 0;
+
 static int gOptionStdin = 0;
+
 static int gMotionCrosshair = 0;
+
 static int gOptionNoGraphics = 0;
 
 static int gLastX, gLastY, gMods, gSpecial;
+
 static double gStartCamX;
 
 static brInstance *gSelected = NULL;
 
-static int gMaster = 0;
-static std::string gSlaveHost;
+static int gSlave = 0, gMaster = 0;
+
+static char *gSlaveHost;
 
 static std::map<int, void*> gWindowMap;
 
-int slLoadOSMesaPlugin( char *execPath );
+int main( int argc, char **argv ) {
+	pthread_t thread;
+	char *text, *simulationFile;
+	int index;
+	char wd[MAXPATHLEN];
 
-int brGLUTNoContextActivate() {
-	return -1;
-}
-
-int brGLUTSoundCallback() {
- 	putchar( 0x07 );
-	fflush( stdout );
-	return 0;
-}
-
-int brGLUTPause() {
-	gPaused = 1;
-	gEngine -> pauseTimer();
-	glutIdleFunc( NULL );
-	return 0;
-}
-
-int brGLUTUnpause() {
-	gPaused = 0;
-	gEngine -> unpauseTimer();
-	glutIdleFunc( brGlutLoop );
-	return 0;
-}
-
-
-int main( int argc, const char **argv ) {
-	char *text;
-	const char *simulationFile;
-
-	interfaceID = "glut/2.6";
+	interfaceID = "glut/2.5";
 
 	srandom( time( NULL ) );
 
@@ -125,10 +116,12 @@ int main( int argc, const char **argv ) {
 #endif
 
 	pthread_mutex_init( &gEngineMutex, NULL );
+	pthread_mutex_init( &gThreadMutex, NULL );
+	pthread_cond_init( &gThreadPaused, NULL );
 
 	/* parse the command line args. */
 
-	int index = brParseArgs( argc, argv );
+	index = brParseArgs( argc, argv );
 
 	char *execpath = argv[ 0 ];
 
@@ -138,8 +131,7 @@ int main( int argc, const char **argv ) {
 	argv += index;
 
 	if ( !gOptionStdin ) {
-		if ( argc < 1 ) 
-			brPrintUsage( execpath );
+		if ( argc < 1 ) brPrintUsage( execpath );
 
 		text = slUtilReadFile( argv[0] );
 
@@ -161,107 +153,58 @@ int main( int argc, const char **argv ) {
 		exit( 0 );
 	}
 
-	gEngine = new brEngine( argc, argv );
+	engine = brEngineNewWithArguments( argc, argv );
 
-	char currentDir[ MAXPATHLEN ];
-	brEngineSetIOPath( gEngine, getcwd( currentDir, sizeof( currentDir ) ) );
+	brEngineSetIOPath( engine, getcwd( wd, sizeof( wd ) ) );
 
-	gSteveData = (stSteveData*)brInitFrontendLanguages( gEngine );
+	gSteveData = (stSteveData*)brInitFrontendLanguages( engine );
 
-	gEngine->getLoadname 			= brGLUTGetLoadname;
-	gEngine->getSavename 			= brGLUTGetSavename;
-	gEngine->soundCallback			= brGLUTSoundCallback;
-	gEngine->dialogCallback 		= brGLUTDialogCallback;
-	gEngine->interfaceTypeCallback	= brGLUTInterfaceVersionCallback;
-	gEngine->pauseCallback			= brGLUTPause;
-	gEngine->unpauseCallback 		= brGLUTUnpause;
+	engine->getLoadname = getLoadname;
+	engine->getSavename = getSavename;
+	engine->soundCallback = soundCallback;
+	engine->dialogCallback = brCLIDialogCallback;
+	engine->interfaceTypeCallback = interfaceVersionCallback;
+	engine->pauseCallback = pauseCallback;
+	engine->newWindowCallback = newWindowCallback;
+	engine->freeWindowCallback = freeWindowCallback;
+	engine->renderWindowCallback = renderWindowCallback;
 
-	gEngine->camera->setBounds( gWidth, gHeight );
+	if ( !gOptionNoGraphics ) slInitGlut( argc, argv, simulationFile );
 
-	if ( !gOptionNoGraphics )
-		slInitGlut( argc, argv, simulationFile );
-	else {
-		if( slLoadOSMesaPlugin( execpath ) != 0 ) 
-			gEngine->camera->setActivateContextCallback( brGLUTNoContextActivate );
-	}
+	engine->camera->setBounds( width, height );
 
-
-	if( gConvertToPython ) {
-		brLoadSimulation( gEngine, text, simulationFile );
-		std::string pyf = simulationFile;
-		std::string plf = simulationFile;
-		std::string pyc = stPyConvertFile( gEngine, gSteveData, pyf );
-		std::string plc = stPerlConvertFile( gEngine, gSteveData, plf );
-
-		int position = plf.find( ".tz", plf.size() - 3 );
-
-		if( position > 0 ) {
-			pyf.replace( position, 3, ".py", 3 );
-			plf.replace( position, 3, ".pm", 3 );
-		} else {
-			pyf += ".py";
-			plf += ".pm";
-		}
-
-		FILE *fp = fopen( pyf.c_str(), "w" );
-
-		if( !fp ) {
-			fprintf( stderr, "Cannot open file \"%s\" for writing\n", pyf.c_str() );
-			exit( 1 );
-		}
-
-		fprintf( fp, "%s\n", pyc.c_str() );
-
-		fclose( fp );
-
-		fp = fopen( plf.c_str(), "w" );
-
-		if( !fp ) {
-			fprintf( stderr, "Cannot open file \"%s\" for writing\n", plf.c_str() );
-			exit( 1 );
-		}
-
-		fprintf( fp, "%s\n", plc.c_str() );
-
-		exit( 0 );
-	}
-
-
-	int loadresult = 0;
-
-	if ( gOptionArchiveFile ) 
-		loadresult = brLoadSavedSimulation( gEngine, text, simulationFile, gOptionArchiveFile );
-	else 
-		loadresult = brLoadSimulation( gEngine, text, simulationFile );
+	if ( gOptionArchiveFile ) {
+		if ( brLoadSavedSimulation( engine, text, simulationFile, gOptionArchiveFile ) != EC_OK )
+			brQuit( engine );
+	} else if ( brLoadSimulation( engine, text, simulationFile ) != EC_OK )
+		brQuit( engine );
 
 	slFree( text );
 
-	if( loadresult != EC_OK ) 
-		brQuit( gEngine );
+	brEngineSetUpdateMenuCallback( engine, brGlutMenuUpdate );
 
+	memset( keyDown, 0, sizeof( keyDown ) );
 
-	brEngineSetUpdateMenuCallback( gEngine, brGlutMenuUpdate );
-
-	memset( keyDown,     0, sizeof( keyDown ) );
 	memset( specialDown, 0, sizeof( specialDown ) );
 
-	if ( gMaster )
-		gEngine->world->startNetsimServer();
+	pthread_mutex_lock( &gThreadMutex );
 
-	if ( gSlaveHost.length() != 0 )
-		gEngine->world->startNetsimSlave( gSlaveHost.c_str() );
+	pthread_create( &thread, NULL, workerThread, NULL );
+
+	if ( gMaster )
+		engine->world->startNetsimServer();
+
+	if ( gSlave ) {
+		engine->world->startNetsimSlave( gSlaveHost );
+		slFree( gSlaveHost );
+	}
 
 	if ( gOptionFull ) glutFullScreen();
 
 	if ( gOptionNoGraphics ) {
-#ifndef WINDOWS
-       	signal( SIGINT, brCatchSignal );
-#endif
-
 		gPaused = 0;
 
-		while ( 1 ) 
-			brGlutLoop();
+		while ( 1 ) brGlutLoop();
 	}
 
 	glutMainLoop();
@@ -269,22 +212,46 @@ int main( int argc, const char **argv ) {
 	return 0;
 }
 
-void brGlutLoop() {
-	gWaiting = 0;
+void *workerThread( void *data ) {
 
-	if ( !gPaused && !gThreadShouldExit ) {
-		if ( gEngine -> iterate() != EC_OK )
-			brQuit( gEngine );
+	for ( ;; ) {
+		pthread_mutex_lock( &gThreadMutex );
 
-		if ( !gOptionNoGraphics )  {
-			if( gEngine->drawEveryFrame )
-				slDemoDisplay();
-			else
-				glutPostRedisplay();
+		if (( !gPaused && !engine->drawEveryFrame ) ||
+		        !pthread_cond_wait( &gThreadPaused, &gThreadMutex ) ) {
+			if ( gThreadShouldExit ) {
+				pthread_mutex_unlock( &gThreadMutex );
+				return NULL;
+			} else if ( brEngineIterate( engine ) != EC_OK ) {
+				pthread_mutex_unlock( &gThreadMutex );
+				brQuit( engine );
+			}
 		}
 
-		if( gSimulationTime > 0.0 && gEngine->world->getAge() >= gSimulationTime ) 
-			brQuit( gEngine );
+		pthread_mutex_unlock( &gThreadMutex );
+	}
+}
+
+void brGlutLoop() {
+	static int oldD = 1;
+
+	int newD = engine->drawEveryFrame;
+
+	gWaiting = 0;
+
+	if ( !gPaused ) {
+		if ( newD && brEngineIterate( engine ) != EC_OK )
+			brQuit( engine );
+
+		if ( !gOptionNoGraphics ) glutPostRedisplay();
+
+		if ( !newD && oldD ) {
+			pthread_mutex_unlock( &gThreadMutex );
+			pthread_cond_signal( &gThreadPaused );
+		} else if ( newD && !oldD )
+			pthread_mutex_lock( &gThreadMutex );
+
+		oldD = newD;
 	}
 }
 
@@ -293,7 +260,7 @@ void brGlutMenuUpdate( brInstance *i ) {
 	char *message;
 	unsigned int n, total;
 
-	if ( i != gEngine -> getController() )
+	if ( i != engine->controller )
 		return;
 
 	glutSetMenu( mainMenu );
@@ -325,15 +292,14 @@ void brGlutMenuUpdate( brInstance *i ) {
 void brQuit( brEngine *e ) {
 	double diff, age;
 
-	if ( !gPaused && !gEngine->drawEveryFrame ) {
+	if ( !gPaused && !engine->drawEveryFrame ) {
 		gThreadShouldExit = 1;
-		gEngine -> lock();
-		gEngine -> unlock();
+		pthread_mutex_lock( &gThreadMutex );
 	}
 
-	e -> pauseTimer();
+	brPauseTimer( e );
 
-	diff = e->accumulatedTime.tv_sec + ( e->accumulatedTime.tv_usec / 1000000.0 );
+	diff = e->realTime.tv_sec + ( e->realTime.tv_usec / 1000000.0 );
 
 	age = e->world->getAge();
 
@@ -343,62 +309,55 @@ void brQuit( brEngine *e ) {
 		printf( "%f simulated/real\n", age / diff );
 	}
 
-	delete gEngine;
-
-	if( gOffscreenBuffer )
-		slFree( gOffscreenBuffer );
+	brEngineFree( engine );
 
 	exit( 0 );
 }
 
 void brMainMenu( int n ) {
-	brMenuCallback( gEngine, gEngine -> getController(), n );
+	brMenuCallback( engine, engine->controller, n );
 	glutPostRedisplay();
 }
 
 void brContextMenu( int n ) {
 	if ( gSelected )
-		brMenuCallback( gEngine, gSelected, n );
+		brMenuCallback( engine, gSelected, n );
 
 	glutPostRedisplay();
 }
 
-void brClick( int inX, int inY ) {
+void brClick( int n ) {
 	unsigned int m, total;
 
-	gSelected = brClickAtLocation( gEngine, inX, inY );
+	gSelected = brClickCallback( engine, n );
+
+	glutSetMenu( contextMenu );
+
+	total = glutGet( GLUT_MENU_NUM_ITEMS );
+
+	for ( m = 0; m < total; ++m )
+		glutRemoveMenuItem( 1 );
 
 	if ( gSelected ) {
-		glutSetMenu( contextMenu );
-
-		total = glutGet( GLUT_MENU_NUM_ITEMS );
-
-		for ( m = 0; m < total; ++m )
-			glutRemoveMenuItem( 1 );
-
 		brMenuEntry *menu;
 
 		for ( m = 0; m < gSelected->_menus.size(); ++m ) {
 			menu = gSelected->_menus[ m ];
 			glutAddMenuEntry( menu->title, m );
 		}
-				
-	} else {
+	} else
 		glutSetMenu( mainMenu );
-	}
 
 	glutAttachMenu( GLUT_RIGHT_BUTTON );
-
-	glutSetMenu( mainMenu );
-	glutAttachMenu( GLUT_MIDDLE_BUTTON );
 }
 
-int brParseArgs( int argc, const char **argv ) {
+int brParseArgs( int argc, char **argv ) {
 	int level, r;
 	int error = 0;
 
 	const char *name = argv[0];
-	const char *optstring = "t:a:d:fhip:r:s:xuvFMS:Y";
+
+	const char *optstring = "a:d:fhip:r:s:xuvFMS:";
 
 #if HAVE_GETOPT_LONG
 	while (( r = getopt_long( argc, argv, optstring, gCLIOptions, NULL ) ) != -1 )
@@ -425,19 +384,17 @@ int brParseArgs( int argc, const char **argv ) {
 
 			case 'f':
 				gOptionFull = 1;
+
 				break;
 
 			case 'i':
 				gOptionStdin = 1;
+
 				break;
 
 			case 'p':
-				sscanf( optarg, "%d,%d", &gXpos, &gYpos );
-				break;
+				sscanf( optarg, "%d,%d", &xpos, &ypos );
 
-			case 't':
-				gSimulationTime = atof( optarg );
-				slMessage( DEBUG_ALL, "Running simulation for %f seconds\n", gSimulationTime );
 				break;
 
 			case 'r':
@@ -448,9 +405,10 @@ int brParseArgs( int argc, const char **argv ) {
 				break;
 
 			case 's':
-				sscanf( optarg, "%dx%d\n", &gWidth, &gHeight );
+				sscanf( optarg, "%dx%d\n", &width, &height );
 
-				if ( gWidth <= 0 || gWidth > 1000 || gHeight <= 0 || gHeight > 1000 ) {
+				if ( width <= 0 || width > 1000 ||
+				        height <= 0 || height > 1000 ) {
 					printf( "-s size flag must be in the form NxM, \
 					        where N and M are from 1 to 1000\n" );
 					error++;
@@ -460,6 +418,7 @@ int brParseArgs( int argc, const char **argv ) {
 
 			case 'u':
 				gPaused = 0;
+
 				break;
 
 			case 'v':
@@ -478,16 +437,15 @@ int brParseArgs( int argc, const char **argv ) {
 				break;
 
 			case 'S':
-				gSlaveHost = optarg;
+				gSlaveHost = slStrdup( optarg );
+
+				gSlave = 1;
 
 				break;
 
 			case 'x':
 				gOptionNoGraphics = 1;
-				break;
 
-			case 'Y':	
-				gConvertToPython = 1;
 				break;
 
 			default:
@@ -509,15 +467,14 @@ void brPrintUsage( const char *name ) {
 	fprintf( stderr, "usage: %s [options] simulation_file\n", name );
 	fprintf( stderr, "options:\n" );
 	fprintf( stderr, "  -x              Run the simulation without graphical display.\n" );
-	fprintf( stderr, "  -t [time]       Run the time for [time] seconds and quit.\n" );
-	fprintf( stderr, "  -r [seed]       Sets the random seed to [seed].\n" );
-	fprintf( stderr, "  -a [xml_file]   Dearchive simulation from [xml_file].  [xml_file] should be\n" );
+	fprintf( stderr, "  -r <seed>       Sets the random seed to <seed>.\n" );
+	fprintf( stderr, "  -a <xml_file>   Dearchive simulation from <xml_file>.  <xml_file> should be\n" );
 	fprintf( stderr, "                  an archive of the simulation contained in the input file.\n" );
 	fprintf( stderr, "  -f              Start breve in fullscreen mode.\n" );
 	fprintf( stderr, "  -u              Unpause: begin running simulation immediately.\n" );
 	fprintf( stderr, "  -F              Format the simulation file and quit.\n" );
-	fprintf( stderr, "  -p [X,Y]        Move the window to coordinates [ X, Y ].\n" );
-	fprintf( stderr, "  -s [NxM]        Create a window of size [ N, M ].\n" );
+	fprintf( stderr, "  -p X,Y          Move the window to coordinates (X, Y).\n" );
+	fprintf( stderr, "  -s NxM          Create a window of size (N, M).\n" );
 	fprintf( stderr, "  -v              Display the current version number.\n" );
 	fprintf( stderr, "  -h              Display this information.\n" );
 	fprintf( stderr, "\n" );
@@ -526,71 +483,80 @@ void brPrintUsage( const char *name ) {
 	exit( 1 );
 }
 
-void slInitGlut( int argc, char **argv, const char *title ) {
+void slInitGlut( int argc, char **argv, char *title ) {
+
+	glutInitWindowSize( width, height );
 	glutInit( &argc, argv );
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL );
 
-	glutInitWindowSize( gWidth, gHeight );
-	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL | GLUT_MULTISAMPLE );
+	if ( xpos || ypos ) glutInitWindowPosition( xpos, ypos );
 
-	if ( gXpos || gYpos ) 
-		glutInitWindowPosition( gXpos, gYpos );
+	glutCreateWindow( title );
 
-	int w = glutCreateWindow( title );
-	glutSetWindow( w );
 	glutMouseFunc( slDemoMouse );
+
 	glutMotionFunc( slDemoMotion );
+
 	glutPassiveMotionFunc( slDemoPassiveMotion );
+
 	glutDisplayFunc( slDemoDisplay );
+
 	glutSpecialFunc( slDemoSpecial );
+
 	glutSpecialUpFunc( slDemoSpecialUp );
+
 	glutReshapeFunc( slDemoReshape );
+
 	glutKeyboardUpFunc( slDemoKeyboardUp );
+
 	glutKeyboardFunc( slDemoKeyboard );
 
 	mainMenu = glutCreateMenu( brMainMenu );
 
-	glutSetMenu( mainMenu );
+	glutAttachMenu( GLUT_RIGHT_BUTTON );
 
 	contextMenu = glutCreateMenu( brContextMenu );
 
-	glutSetMenu( contextMenu );
+	glutAttachMenu( GLUT_MIDDLE_BUTTON );
 
-	gEngine -> camera -> initGL();
+	slInitGL( engine->world, engine->camera );
 
 	glutIgnoreKeyRepeat( 1 );
 
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	if ( !gPaused ) 
-		glutIdleFunc( brGlutLoop );
+	if ( !gPaused ) glutIdleFunc( brGlutLoop );
 }
 
 void slDemoReshape( int x, int y ) {
-	gEngine->camera->setBounds( x, y );
+	engine->camera->setBounds( x, y );
 
 	glViewport( 0, 0, x, y );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 }
 
 void slDemoDisplay() {
-	gEngine -> draw();
+	brEngineLock( engine );
+	brEngineRenderWorld( engine, gMotionCrosshair );
+	brEngineUnlock( engine );
+
 	glutSwapBuffers();
 }
 
-void slDemoMouse( int inButton, int state, int x, int y ) {
+void slDemoMouse( int button, int state, int x, int y ) {
 	gMods = glutGetModifiers();
 
 	if ( state == GLUT_DOWN ) {
 		gLastX = x;
 		gLastY = y;
-		gStartCamX = gEngine->camera->_rx;
+		gStartCamX = engine->camera->_rx;
 
-		brClick( x, y );
-		brGlutMenuUpdate( gEngine -> getController() );
+		brClick( engine->camera->select( engine->world, x, y ) );
+		brGlutMenuUpdate( engine->controller );
 
 		gMotionCrosshair = 1;
 
-		// if(gMods & GLUT_ACTIVE_SHIFT) brBeginDrag( gEngine, gSelected );
+		// if(gMods & GLUT_ACTIVE_SHIFT) brBeginDrag( engine, gSelected );
 
 	} else {
 		gLastX = 0;
@@ -598,35 +564,29 @@ void slDemoMouse( int inButton, int state, int x, int y ) {
 		gMotionCrosshair = 0;
 	}
 
-	if( state == GLUT_UP ) { 
-		// mouse wheel 
-		if ( inButton == 3 )
-			gEngine -> camera -> zoomWithMouseMovement( 0,  15 );
-		else if ( inButton == 4 )
-			gEngine -> camera -> zoomWithMouseMovement( 0, -15 );
-			
-	}
 
 	slDemoDisplay();
 }
 
 void slDemoPassiveMotion( int x, int y ) {
-	gEngine -> setMouseLocation( x, gEngine->camera->_height - y );
+	engine->mouseX = x;
+	engine->mouseY = engine->camera->_height - y;
 }
 
 void slDemoMotion( int x, int y ) {
 	if ( gLastX || gLastY ) {
 		if (( gMods & GLUT_ACTIVE_SHIFT ) || ( gSpecial == GLUT_KEY_F4 ) ) {
-			brDragCallback( gEngine, x, y );
+			brDragCallback( engine, x, y );
 		} else if (( gMods & GLUT_ACTIVE_ALT ) || ( gSpecial == GLUT_KEY_F2 ) ) {
-			gEngine -> camera -> zoomWithMouseMovement( x - gLastX, y - gLastY );
+			engine->camera->zoomWithMouseMovement( x - gLastX, y - gLastY );
 		} else if (( gMods & GLUT_ACTIVE_CTRL ) || ( gSpecial == GLUT_KEY_F3 ) ) {
-			gEngine -> camera -> moveWithMouseMovement( x - gLastX, y - gLastY );
+			engine->camera->moveWithMouseMovement( x - gLastX, y - gLastY );
 		} else {
-			gEngine-> camera -> rotateWithMouseMovement( x - gLastX, y - gLastY );
+			engine->camera->rotateWithMouseMovement( x - gLastX, y - gLastY );
 		}
 
 		gLastX = x;
+
 		gLastY = y;
 	}
 
@@ -643,25 +603,29 @@ void slDemoSpecial( int key, int x, int y ) {
 	switch ( key ) {
 
 		case GLUT_KEY_F1:
-			if ( gEngine -> iterate() != EC_OK )
-				brQuit( gEngine );
+			if ( brEngineIterate( engine ) != EC_OK )
+				brQuit( engine );
 
 			break;
 
 		case GLUT_KEY_UP:
-			brSpecialKeyCallback( gEngine, "up", 1 );
+			brSpecialKeyCallback( engine, "up", 1 );
+
 			break;
 
 		case GLUT_KEY_DOWN:
-			brSpecialKeyCallback( gEngine, "down", 1 );
+			brSpecialKeyCallback( engine, "down", 1 );
+
 			break;
 
 		case GLUT_KEY_LEFT:
-			brSpecialKeyCallback( gEngine, "left", 1 );
+			brSpecialKeyCallback( engine, "left", 1 );
+
 			break;
 
 		case GLUT_KEY_RIGHT:
-			brSpecialKeyCallback( gEngine, "right", 1 );
+			brSpecialKeyCallback( engine, "right", 1 );
+
 			break;
 	}
 
@@ -674,22 +638,22 @@ void slDemoSpecialUp( int key, int x, int y ) {
 	switch ( key ) {
 
 		case GLUT_KEY_UP:
-			brSpecialKeyCallback( gEngine, "up", 0 );
+			brSpecialKeyCallback( engine, "up", 0 );
 
 			break;
 
 		case GLUT_KEY_DOWN:
-			brSpecialKeyCallback( gEngine, "down", 0 );
+			brSpecialKeyCallback( engine, "down", 0 );
 
 			break;
 
 		case GLUT_KEY_LEFT:
-			brSpecialKeyCallback( gEngine, "left", 0 );
+			brSpecialKeyCallback( engine, "left", 0 );
 
 			break;
 
 		case GLUT_KEY_RIGHT:
-			brSpecialKeyCallback( gEngine, "right", 0 );
+			brSpecialKeyCallback( engine, "right", 0 );
 
 			break;
 	}
@@ -705,32 +669,33 @@ void slDemoKeyboard( unsigned char key, int x, int y ) {
 	switch ( key ) {
 
 		case ' ':
-			if ( !gPaused )
-				brGLUTPause();
-			else
-				brGLUTUnpause();
+			gPaused = !gPaused;
+
+			if ( gPaused ) {
+				brPauseTimer( engine );
+				glutIdleFunc( NULL );
+			} else {
+				brUnpauseTimer( engine );
+				pthread_cond_signal( &gThreadPaused );
+				glutIdleFunc( brGlutLoop );
+			}
 
 			break;
 
 		case 0x1b:
 			if ( !gWaiting )
-				brInterrupt( gEngine );
+				brInterrupt( engine );
 
 			break;
 
 		default:
-			brKeyCallback( gEngine, key, 1 );
+			brKeyCallback( engine, key, 1 );
 
 			break;
 	}
 }
 
-
-void brCatchSignal( int signal ) {
-	brInterrupt( gEngine );
-}
-
-void brInterrupt( brEngine *gEngine ) {
+void brInterrupt( brEngine *engine ) {
 	char *line;
 	char staticLine[MAXPATHLEN];
 
@@ -742,7 +707,7 @@ void brInterrupt( brEngine *gEngine ) {
 		return;
 	}
 
-	gEngine -> pauseTimer();
+	brPauseTimer( engine );
 
 	fflush( stdin );
 	printf( "\n\nSimulation interupted.  Type a steve command, 'x' to quit, or hit enter to continue\n" );
@@ -764,10 +729,10 @@ void brInterrupt( brEngine *gEngine ) {
 #endif
 
 	if ( !line || *line == 'x' )
-		brQuit( gEngine );
+		brQuit( engine );
 
 	if ( *line != '\0' && *line != '\n' )
-		brRunCommand( gEngine, line );
+		stRunSingleStatement( gSteveData, engine, line );
 
 	if ( line != staticLine )
 		free( line );
@@ -775,16 +740,16 @@ void brInterrupt( brEngine *gEngine ) {
 	if ( gOptionFull )
 		glutFullScreen();
 
-	gEngine -> unpauseTimer();
+	brUnpauseTimer( engine );
 }
 
-/**
- * \brief The GLUT key-up callback.  Calls \ref brKeyCallback.
- */
+/*!
+	\brief The GLUT key-up callback.  Calls \ref brKeyCallback.
+*/
 
 void slDemoKeyboardUp( unsigned char key, int x, int y ) {
-	brKeyCallback( gEngine, key, 0 );
-	keyDown[ key ] = 0;
+	brKeyCallback( engine, key, 0 );
+	keyDown[key] = 0;
 }
 
 /*!
@@ -794,7 +759,7 @@ void slDemoKeyboardUp( unsigned char key, int x, int y ) {
 	this is GLUT and we don't have one...
 */
 
-int brGLUTDialogCallback( char *title, char *message, char *b1, char *b2 ) {
+int brCLIDialogCallback( char *title, char *message, char *b1, char *b2 ) {
 	int result;
 
 	for ( ;; ) {
@@ -804,26 +769,30 @@ int brGLUTDialogCallback( char *title, char *message, char *b1, char *b2 ) {
 		( void )getchar();
 
 		switch ( result ) {
+
 			case EOF:
+
 			case 'n':
+
 			case 'N':
 				return 0;
 
 			case 'y':
+
 			case 'Y':
 				return 1;
 		}
 	}
 }
 
-const char *brGLUTInterfaceVersionCallback() {
+char *interfaceVersionCallback() {
 	return interfaceID;
 }
 
-char *brGLUTPrompt( const char *inString ) {
-	char name[ MAXPATHLEN ];
-	printf( "%s", inString );
+char *getSavename() {
+	char name[MAXPATHLEN];
 
+	printf( "filename to save: " );
 	fgets( name, sizeof( name ), stdin );
 
 	if ( *name )
@@ -832,65 +801,68 @@ char *brGLUTPrompt( const char *inString ) {
 	return slStrdup( name );
 }
 
-const char *brGLUTGetSavename() {
-	return brGLUTPrompt( "filename to save: " );
+char *getLoadname() {
+	char name[MAXPATHLEN];
+
+	printf( "filename to load: " );
+	fgets( name, sizeof( name ), stdin );
+
+	if ( *name )
+		name[strlen( name ) - 1] = '\0';
+
+	return slStrdup( name );
 }
 
-const char *brGLUTGetLoadname() {
-	return brGLUTPrompt( "filename to load: " );
-}
-
-void renderContext( slWorld *inWorld, slCamera *inCamera ) {
-	gEngine -> draw();
-}
-
-int slLoadOSMesaPlugin( char *execPath ) {
-#ifdef MINGW
-	// I'm not even going to try.
-	return -1;
-#else
-	void *handle;
-	void( *create )( unsigned char *, int, int );
-	int( *activate )();
-
-	std::string path = dirname( execPath );
-	
-
-	path += "/osmesaloader.o";
-
-	handle = dlopen( path.c_str(), RTLD_NOW );
-
-	if ( !handle ) {
-		slMessage( DEBUG_ALL, "Could not open OSMesa extension, offscreen rendering disabled (%s)\n", dlerror() );
-		return -1;
-	}
-
-	create = ( void( * )( unsigned char*, int, int ) )dlsym( handle, "slOSMesaCreate" );
-
-	if ( !create ) {
-		slMessage( DEBUG_ALL, "Could not load OSMesa extension, offscreen rendering disabled (%s)\n", dlerror() );
-		return -1;
-	}
-
-	gOffscreenBuffer = ( GLubyte * )slMalloc( gWidth * gHeight * 4 * sizeof( GLubyte ) );
-
-	create( gOffscreenBuffer, gWidth, gHeight );
-
-	activate = ( int( * )() )dlsym( handle, "slOSMesaMakeCurrentContext" );
-
-	if ( !activate ) {
-		slMessage( DEBUG_ALL, "Could not load OSMesa extension, offscreen rendering disabled (%s)\n", dlerror() );
-		return -1;
-	}
-
-	gEngine -> camera -> setActivateContextCallback( activate );
-	gEngine -> camera -> _renderContextCallback = renderContext;
-
-	activate();
-
-	gEngine -> camera -> initGL();
-
+int soundCallback() {
+	putchar( 0x07 );
+	fflush( stdout );
 	return 0;
+}
 
-#endif
+int pauseCallback() {
+	gPaused = 1;
+	brPauseTimer( engine );
+	glutIdleFunc( NULL );
+	return 0;
+}
+
+void *newWindowCallback( char *name, void *graph ) {
+	slGLUTWindow *w;
+
+	w = new slGLUTWindow;
+	w->id = glutCreateWindow( name );
+	w->graph = ( slGraph * )graph;
+
+	gWindowMap[w->id] = w;
+
+	glutDisplayFunc( graphDisplay );
+
+	return w;
+}
+
+void freeWindowCallback( void *w ) {
+	slGLUTWindow *window = ( slGLUTWindow * )w;
+
+	glutDestroyWindow( window->id );
+	delete window;
+}
+
+void renderWindowCallback( void *w ) {
+	slGLUTWindow *window = ( slGLUTWindow * )w;
+	slDrawGraph( window->graph );
+}
+
+void graphDisplay() {
+	int windowid = glutGetWindow();
+
+	if ( windowid > 1024 )
+		return;
+
+	//printf("displaying window #%d...\n", windowid);
+
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	renderWindowCallback( gWindowMap[windowid] );
+
+	glutSwapBuffers();
 }

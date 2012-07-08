@@ -1,37 +1,14 @@
-#include "simulation.h"
-#include "kernel.h"
-#include "texture.h"
+typedef struct brImageData brImageData;
 
 /*!
- * \brief Holds image data used by the breve image class.
- */
+	\brief Holds image data used by the breve image class.
+*/
 
-class brImageData {
-    public:
-        brImageData() {
-            _data = NULL;
-            _texture = NULL;
-            _width = 0;
-            _height = 0;
-        }
-
-        ~brImageData() {
-            if( _data )
-                delete _data;
-
-            if( _texture )
-                delete _texture;
-        }
-
-        void                    updateTexture();
-        slTexture2D*			getTexture();
-
-        unsigned char*          _data;
-        int                     _width;
-        int                     _height;
-
-	protected:
-        slTexture2D*            _texture;
+struct brImageData {
+	unsigned char *data;
+	int x;
+	int y;	
+	int textureNumber;
 };
 
-void breveInitImageFuncs( brNamespace *inNamespace );
+void breveInitImageFuncs(brNamespace *n);

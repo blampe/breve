@@ -24,12 +24,12 @@
 /*! \addtogroup InternalFunctions */
 /*@{*/
 
-#ifdef HAVE_MOVIE_EXPORT
+#if HAVE_LIBAVFORMAT
 #define BRMOVIEPOINTER(p)  ((slMovie*)BRPOINTER(p))
 #endif
 
 int breveMovieCreate( brEval args[], brEval *result, brInstance *i ) {
-#ifdef HAVE_MOVIE_EXPORT
+#if HAVE_LIBAVFORMAT
 	char *path;
 	slMovie *movie;
 	slCamera *camera = i->engine->camera;
@@ -45,7 +45,6 @@ int breveMovieCreate( brEval args[], brEval *result, brInstance *i ) {
 
 #else
 	slMessage( DEBUG_ALL, "This version of breve was built without support for movie export\n" );
-	result-> set( -1 );
 
 	return EC_ERROR;
 
@@ -53,7 +52,7 @@ int breveMovieCreate( brEval args[], brEval *result, brInstance *i ) {
 }
 
 int breveMovieAddWorldFrame( brEval args[], brEval *result, brInstance *i ) {
-#ifdef HAVE_MOVIE_EXPORT
+#if HAVE_LIBAVFORMAT
 	slMovie *movie = BRMOVIEPOINTER( &args[0] );
 
 	if ( !movie )
@@ -67,7 +66,7 @@ int breveMovieAddWorldFrame( brEval args[], brEval *result, brInstance *i ) {
 }
 
 int breveMovieClose( brEval args[], brEval *result, brInstance *i ) {
-#ifdef HAVE_MOVIE_EXPORT
+#if HAVE_LIBAVFORMAT
 	slMovie *movie = BRMOVIEPOINTER( &args[0] );
 
 	if ( !movie )

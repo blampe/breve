@@ -25,8 +25,6 @@ Control : myController {
 	+ to init:
 		brush (object).
 
-		self set-background-texture-image to (new Image load from "images/clouds.png").
-
 		self disable-text.
 
 		vel = 1.0 + random[9].
@@ -35,15 +33,17 @@ Control : myController {
 
 		if (self get-argument-count) == 2: {
 			file = (self get-argument at-index 1).
-		} else file = "images/jon.jpg".
+		} else file = "images/jon.png".
 
 		image = (new Image load from file).
 
+		blur = .992.
+		if blur > .992: blur = .992.
 		blur = 1.0.
 
-		self set-background-color to (0, 0, 0).
 		self enable-blur.
 		self set-blur-factor to blur.
+		self set-background-color to (0, 0, 0).
 
 		radius *= (image get-width) / 300.0.
 		vel *= (image get-width) / 300.0.
@@ -112,7 +112,7 @@ Mobile : Painter (aka Painters) {
 
 	+ to set-color:
 		x, y, z (int).
-		location, pixelcolor (vector).
+		location, color (vector).
 
 		location = (self get-location).
 		x = location::x.
@@ -129,8 +129,8 @@ Mobile : Painter (aka Painters) {
 		x += w/2.
 		y += h/2.
 
-		pixelcolor = (image get-rgb-pixel at-x x at-y y).
-		self set-color to pixelcolor.
+		color = (image get-rgb-pixel at-x x at-y y).
+		self set-color to color.
 
 	+ to iterate:
 		velocity (vector).

@@ -112,7 +112,11 @@ Control : Swarm {
 			location += (item get-location).
 		}
 
-		location /= | birds |.
+		# in the context of a number, the list represents the number of items 
+		# in the list.
+
+		location /= birds.
+		# print "the highest location is $location".
 
 		topDiff = 0.0.
 

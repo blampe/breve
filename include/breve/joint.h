@@ -18,8 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#include <algorithm>
-#include <ode/ode.h>
+#include "ode/ode.h"
 #include "link.h"
 #include "multibody.h"
 
@@ -30,6 +29,8 @@ enum jointTypes {
 	JT_UNIVERSAL,
 	JT_FIX
 };
+
+class slLink;
 
 /*!
 	\brief A joint connecting two links.
@@ -58,20 +59,8 @@ class slJoint {
 		}
 
 		~slJoint();
-
-		/**
- 		 * Sets the ODE constraint force mixing parameter for this joint.
-		 */
-
-		void setCFM( double inValue );
-
-		/**
- 		 * Sets the ODE error reduction parameter for this joint.
-		 */
-
-		void setERP( double inValue );
 	
-		/**
+		/*!
 		 * Updates the link points and relative rotation between two joined objects.
 		 */
 

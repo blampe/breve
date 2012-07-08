@@ -19,9 +19,8 @@
  *****************************************************************************/
 
 int gPhysicsError;
-const char *gPhysicsErrorMessage;
+char *gPhysicsErrorMessage;
 
-#include "render.h"
 #include "simulation.h"
 #include "world.h"
 #include "tiger.h"
@@ -32,21 +31,44 @@ const char *gPhysicsErrorMessage;
 #include "vclipData.h"
 #include "gldraw.h"
 
+/*
+void *operator new( size_t size ) {
+	void *p = malloc( size );
+
+	if ( p == NULL ) {
+		fprintf( stderr, "Error: memory allocation failed.  Catastrophic failure seems inevitable.\n" );
+		slMessage( DEBUG_ALL, "Error: memory allocation failed.  Catastrophic failure seems inevitable.\n" );
+		throw std::bad_alloc();
+	}
+
+	memset( p, 0x5f, size );
+
+	return p;
+}
+
+void operator delete( void *p ) {
+	free( p );
+}
+
+*/
+
 void slODEErrorHandler( int errnum, const char *msg, va_list ap ) {
-	static char error[ 2048 ];
+	static char error[2048];
 
 	vsnprintf( error, 2047, msg, ap );
 
-	gPhysicsErrorMessage = error;
+	gPhysicsErrorMessage = ( char* )error;
 
-	slMessage( DEBUG_WARN, "ODE physics engine message: %s\n", error );
+	slMessage( DEBUG_WARN, "ODE Engine message: %s\n", error );
 }
 
 /**
- * Creates a new empty world.
- */
+	\brief Creates a new empty world.
+*/
 
 slWorld::slWorld() {
+	slVector g;
+
 	gPhysicsError = 0;
 	gPhysicsErrorMessage = NULL;
 
@@ -60,9 +82,8 @@ slWorld::slWorld() {
 	dSetErrorHandler( slODEErrorHandler );
 	dSetMessageHandler( slODEErrorHandler );
 
-	dInitODE();
-
 	_odeCollisionGroupID = dJointGroupCreate( 0 );
+	_odeJointGroupID = dJointGroupCreate( 0 );
 
 	_resolveCollisions = 0;
 	_detectCollisions = 0;
@@ -75,6 +96,9 @@ slWorld::slWorld() {
 	_detectLightExposure = 0;
 	_drawLightExposure = 0;
 
+	_drawLightExposure = 0;
+	_detectLightExposure = 0;
+
 	_collisionCallback = NULL;
 	_collisionCheckCallback = NULL;
 
@@ -84,7 +108,7 @@ slWorld::slWorld() {
 
 	_odeStepMode = 0;
 
-	backgroundTexture = NULL;
+	backgroundTexture = 0;
 
 	slVectorSet( &backgroundTextureColor, 1, 1, 1 );
 
@@ -94,74 +118,76 @@ slWorld::slWorld() {
 	_clipGrid = NULL;
 	_clipData = new slVclipData();
 
-	slVector g;
+	gisData = NULL;
+
 	slVectorSet( &g, 0.0, -9.81, 0.0 );
 
 	setGravity( &g );
+}
 
-	_lights[ 0 ]._type = LightInfinite;
-	slVectorSet( &_lights[0]._location, 0, 0, 0 );
-	slVectorSet( &_lights[0]._ambient, .2, .2, .2 );
-	slVectorSet( &_lights[0]._diffuse, .6, .9, .9 );
-	slVectorSet( &_lights[0]._specular, 1, 1, 1 );
+slGISData *slWorldLoadTigerFile( slWorld *w, char *f, slTerrain *t ) {
+
+	w->gisData = new slGISData( f, t );
+
+	return w->gisData;
 }
 
 /**
- *	Startup a netsim server.
- */
+	\brief Startup a netsim server.
+*/
 
 int slWorld::startNetsimServer() {
 #if HAVE_LIBENET
 	enet_initialize();
 
-	_netsimData._isMaster = 1;
+	_netsimData.isMaster = 1;
 
-	_netsimData._server = new slNetsimServer( this );
+	_netsimData.server = slNetsimCreateServer( this );
+	slNetsimStartServer( _netsimData.server );
 
-	if ( !_netsimData._server )
+	if ( !_netsimData.server )
 		return -1;
-
-	_netsimData._server->start();
 
 	return 0;
 
 #else
 	slMessage( DEBUG_ALL, "error: cannot start netsim server -- not compiled with enet support\n" );
+
 	return -1;
 
 #endif
 }
 
 /**
- * \brief Startup as a netsim slave.
- */
+	\brief Startup as a netsim slave.
+*/
 
-int slWorld::startNetsimSlave( const char *host ) {
+int slWorld::startNetsimSlave( char *host ) {
 #if HAVE_LIBENET
 	enet_initialize();
 
-	_netsimData._isMaster = 0;
+	_netsimData.isMaster = 0;
 
-	_netsimData._server = new slNetsimServer( this );
+	_netsimData.server = new slNetsimServerData( this );
+	_netsimClient = slNetsimOpenConnection( _netsimData.server->host, host, NETSIM_MASTER_PORT );
+	slNetsimStartServer( _netsimData.server );
 
-	_netsimClient = _netsimData._server->openConnection( host, NETSIM_MASTER_PORT );
-
-	if ( !_netsimData._server )
+	if ( !_netsimData.server )
 		return -1;
-
-	_netsimData._server->start();
 
 	return 0;
 
 #else
 	slMessage( DEBUG_ALL, "error: cannot start netsim slave -- not compiled with enet support\n" );
+
 	return -1;
+
 #endif
 }
 
 /**
- * \brief frees an slWorld object, including all of its objects and its clipData.
- */
+	\brief frees an slWorld object, including all of its objects and its clipData.
+*/
 
 slWorld::~slWorld() {
 	std::vector<slWorldObject*>::iterator wi;
@@ -179,122 +205,27 @@ slWorld::~slWorld() {
 
 	dJointGroupDestroy( _odeCollisionGroupID );
 
+	dJointGroupDestroy( _odeJointGroupID );
+
 #if HAS_LIBENET
-	if ( _netsimData._server ) {
-		delete _netsimData._server;
-		enet_deinitialize();
-	}
+	if ( _netsimData.server ) enet_deinitialize();
+
 #endif
 
 	slFreeIntegrationVectors( this );
-
-	dCloseODE();
 }
-
-
-void slWorld::draw( slRenderGL& inRenderer, slCamera *inCamera ) {
-	float c[] = { backgroundColor.x, backgroundColor.y, backgroundColor.z, 1.0 };
-	inRenderer.Clear( c );
-	inRenderer.SetBlendMode( slBlendAlpha );
-
-
-	if( inCamera -> _drawBlur ) {
-		slVector center, a1, a2; 
-		center.set( 0, 0, 0 ); 
-		a1.set( 1, 0, 0 ); 
-		a2.set( 0, 1, 0 );
-		
-		glDisable( GL_CULL_FACE );
-		
-		float c[4] = { 1, 1, 1, 1 };
-		inRenderer.SetBlendColor( c );
-
-		inRenderer.SetDepthWriteEnabled( false );
-		inRenderer.SetIdentity( slMatrixProjection );
-		inRenderer.SetIdentity( slMatrixGeometry );
-		inRenderer.SetIdentity( slMatrixTexture );
-		inRenderer.DrawQuad( *inCamera -> readbackTexture(), center, a1, a2 );
-		inRenderer.SetDepthWriteEnabled( true );
-	}
-	
-	inRenderer.ApplyCamera( inCamera );
-
-	_skybox.draw( inRenderer, inCamera );
-	
-	drawPatchGrids( inRenderer, inCamera );
-
-	if( inCamera -> _drawLights ) {
-		for( int n = 0; n < MAX_LIGHTS; n++ ) { 
-			if( _lights[ n ]._type ) 
-				inRenderer.PushLight( &_lights[ n ] );
-		}
-	}
-
-	drawObjects( inRenderer );
-
-	if( inCamera -> _drawLights ) {
-		for( int n = 0; n < MAX_LIGHTS; n++ ) { 
-			if( _lights[ n ]._type ) 
-				inRenderer.PopLight();
-		}
-	}
-
-	inCamera -> processBillboards( this );
-	inCamera -> renderBillboards( inRenderer );	
-	
-	if( inCamera -> _drawShadow && inCamera -> _shadowCatcher ) {
-
-		inRenderer.BeginFlatShadows( inCamera, &_lights[ 0 ]._location );
-
-		for ( unsigned int n = 0; n < _objects.size(); n++ ) {
-			slWorldObject *wo = _objects[ n ];
-			
-			if( wo && wo != inCamera -> _shadowCatcher )
-				wo -> draw( inRenderer );
-		}
-		
-		inRenderer.EndFlatShadows();
-	}
-
-	if( inCamera -> _drawBlur ) 
-		inRenderer.ReadToTexture( *inCamera );
-}
-
-
-void slWorld::drawPatchGrids( slRenderGL& inRenderer, slCamera *inCamera ) {
-	for ( unsigned int n = 0; n < _patches.size(); n++ ) {
-		slPatchGrid *pg = _patches[ n ];
-		
-		if( pg )
-			pg -> draw( inRenderer, inCamera );
-	}
-}
-
-void slWorld::drawObjects( slRenderGL& inRenderer ) {
-	for ( unsigned int n = 0; n < _objects.size(); n++ ) {
-		slWorldObject *wo = _objects[ n ];
-		
-		if( wo && wo -> _textureMode == slBitmapNone )
-			wo -> draw( inRenderer );
-	}
-}
-
-
-
-
-
 
 /**
- * \brief Adds a camera to the world.
- */
+	\brief Adds a camera to the world.
+*/
 
 void slWorld::addCamera( slCamera *camera ) {
 	_cameras.push_back( camera );
 }
 
 /**
- * \brief Removes a camera from the world.
- */
+	\brief Removes a camera from the world.
+*/
 
 void slWorld::removeCamera( slCamera *camera ) {
 	std::vector<slCamera*>::iterator ci;
@@ -305,23 +236,26 @@ void slWorld::removeCamera( slCamera *camera ) {
 }
 
 /**
- * \brief Renders all of the cameras in the world .
- */
+	\brief Renders all of the cameras in the world .
+*/
 
-//void slWorld::renderCameras() {
-//	std::vector<slCamera*>::iterator ci;
-//
-//	for ( ci = _cameras.begin(); ci != _cameras.end(); ci++ )
-//		( *ci )->renderWorld( this, 0, 1 );
-//}
+void slWorld::renderCameras() {
+	std::vector<slCamera*>::iterator ci;
+
+	for ( ci = _cameras.begin(); ci != _cameras.end(); ci++ )
+		( *ci )->renderWorld( this, 0, 1 );
+}
 
 /**
  * Adds an object to the world.
  */
 
-void slWorld::addObject( slWorldObject *inObject ) {
+slWorldObject *slWorld::addObject( slWorldObject *inObject ) {
 	_objects.push_back( inObject );
+
 	_initialized = false;
+
+	return inObject;
 }
 
 /**
@@ -377,8 +311,9 @@ void slWorld::removePatchGrid( slPatchGrid *g ) {
 slStationary::slStationary( slShape *s, slVector *loc, double rot[3][3], void *data ) {
 	_type = WO_STATIONARY;
 
-	setShape( s );
+	s->_referenceCount++;
 
+	_shape = s;
 	_userData = data;
 
 	slVectorCopy( loc, &_position.location );
@@ -394,6 +329,11 @@ slStationary::slStationary( slShape *s, slVector *loc, double rot[3][3], void *d
 
 double slWorld::runWorld( double deltaT, double timestep, int *error ) {
 	double total = 0.0;
+#if HAVE_LIBENET
+
+	static int lastSecond = 0;
+
+#endif
 
 	removeEmptyObjects();
 
@@ -401,11 +341,36 @@ double slWorld::runWorld( double deltaT, double timestep, int *error ) {
 
 	if ( !_initialized ) slVclipDataInit( this );
 
-	while ( total < deltaT && !*error ) {
+	while ( total < deltaT && !*error )
 		total += step( timestep, error );
-	}
 
 	_age += total;
+
+#if HAVE_LIBENET
+	if ( _netsimData.server && _netsimData.isMaster && ( int )_age >= lastSecond ) {
+		lastSecond = ( int )_age + 1;
+
+		slNetsimBroadcastSyncMessage( _netsimData.server, _age );
+	}
+
+	if ( _netsimData.server && !_netsimData.isMaster && _detectCollisions ) {
+		int maxIndex;
+		slVector max, min;
+
+		maxIndex = ( _clipData->count * 2 ) - 1;
+
+		min.x = *_clipData->boundListPointers[0][0]->value;
+		min.y = *_clipData->boundListPointers[2][0]->value;
+		min.z = *_clipData->boundListPointers[2][0]->value;
+
+		max.x = *_clipData->boundListPointers[0][maxIndex]->value;
+		max.y = *_clipData->boundListPointers[1][maxIndex]->value;
+		max.z = *_clipData->boundListPointers[2][maxIndex]->value;
+
+		slNetsimSendBoundsMessage( _netsimClient, &min, &max );
+	}
+
+#endif
 
 	return total;
 }
@@ -429,15 +394,13 @@ double slWorld::step( double stepSize, int *error ) {
 		( *li )->step( stepSize );
 
 	if ( _detectCollisions ) {
-		
-		if ( !_initialized ) 
-			slVclipDataInit( this );
+		if ( !_initialized ) slVclipDataInit( this );
 
 		if ( _clipGrid ) {
 			_clipGrid->assignObjectsToPatches( this );
 			result = 0;
 		} else {
-			_clipData -> pruneAndSweep();
+			_clipData->pruneAndSweep();
 			result = _clipData->clip( 0.0, 0, _boundingBoxOnlyCollisions );
 		}
 
@@ -447,11 +410,14 @@ double slWorld::step( double stepSize, int *error ) {
 			return 0;
 		}
 
-		for ( unsigned int cn = 0; cn < _clipData->collisionCount; cn++ ) {
+		unsigned int cn;
+
+		for ( cn = 0; cn < _clipData->collisionCount; cn++ ) {
 			slCollision *c = &_clipData->collisions[ cn];
 			slWorldObject *w1;
 			slWorldObject *w2;
 			slPairFlags *flags;
+			unsigned int x;
 
 			w1 = _objects[ c->n1 ];
 			w2 = _objects[ c->n2 ];
@@ -463,8 +429,6 @@ double slWorld::step( double stepSize, int *error ) {
 				dJointID id;
 				double mu = 0;
 				double e = 0;
-				double erp = 0;
-				double cfm = 0;
 
 				if ( w1->getType() == WO_LINK ) {
 					slLink *l = ( slLink* )w1;
@@ -476,79 +440,81 @@ double slWorld::step( double stepSize, int *error ) {
 					bodyY = l->_odeBodyID;
 				}
 
-				if ( w1->getType() == WO_LINK && w2->getType() == WO_LINK ) {
-					slMultibody *mb1 = (( slLink* )w1 )->getMultibody();
-					slMultibody *mb2 = (( slLink* )w2 )->getMultibody();
-
-					if ( mb1 && mb1 == mb2 && mb1->getCFM() != 0.0 ) {
-						cfm = mb1->getCFM();
-						erp = mb1->getERP();
-					}
-				}
-
 				mu = 1.0 + ( w1->_mu + w2->_mu ) / 2.0;
 
-				// e = ( w1->_e + w2->_e ) / ( 2.0 * ( c -> _contactPoints ) );
-				e = ( w1->_e + w2->_e ) / 2.0;
+				e = ( w1->_e + w2->_e ) / ( 2.0 * c->points.size() );
 
-				for ( int n = 0; n < c -> _contactPoints; n++ ) {
+				for ( x = 0; x < c->points.size(); x++ ) {
 					dContact contact;
 
 					memset( &contact, 0, sizeof( dContact ) );
-					memcpy( &contact.geom, &c -> _contactGeoms[ n ], sizeof( dContactGeom ) );
+					contact.surface.mode = dContactSoftERP | dContactApprox1 | dContactBounce;
 
-					contact.geom.g1 = NULL;
-					contact.geom.g2 = NULL;
-
-					contact.surface.mode = dContactBounce | dContactApprox1 | dContactSoftERP;
+					// contact.surface.soft_cfm = 0.01;
 					contact.surface.soft_erp = 0.05;
 					contact.surface.mu = mu;
 					contact.surface.mu2 = 0;
 					contact.surface.bounce = e;
 					contact.surface.bounce_vel = 0.05;
 
-					if( fabs( contact.geom.depth ) > 0.4 ) {
-					//	printf( "depth = %f, e = %f\n", contact.geom.depth, e );
-					//	printf( "normal: ( %f, %f, %f )\n", contact.geom.normal[ 0 ], contact.geom.normal[ 1 ], contact.geom.normal[ 2 ] );
+					if ( w1->getType() == WO_LINK && w2->getType() == WO_LINK ) {
+						slMultibody *mb1 = (( slLink* )w1 )->getMultibody();
+						slMultibody *mb2 = (( slLink* )w2 )->getMultibody();
+
+						if ( mb1 && mb1 == mb2 && mb1->getCFM() != 0.0 ) {
+							contact.surface.mode = dContactSoftERP | dContactApprox1 | dContactBounce | dContactSoftCFM;
+							contact.surface.soft_cfm = mb1->getCFM();
+							contact.surface.soft_erp = mb1->getERP();
+						}
 					}
 
-				
-					if( cfm != 0.0 || erp != 0.0 ) {
-						contact.surface.mode |= dContactSoftCFM;
-						contact.surface.soft_cfm = cfm;
-						contact.surface.soft_erp = erp;
+					if ( c->depths[x] < -0.5 ) {
+						// this is a scenerio we might want to look at... it may indicate
+						// problems with the collision detection code.
+						slMessage( 50, "warning: collision depth = %f for pair (%d, %d)\n", c->depths[x], c->n1, c->n2 );
 					}
+
+					contact.geom.depth = -c->depths[x];
+
+					contact.geom.g1 = NULL;
+					contact.geom.g2 = NULL;
+
+					contact.geom.normal[0] = -c->normal.x;
+					contact.geom.normal[1] = -c->normal.y;
+					contact.geom.normal[2] = -c->normal.z;
+
+					slVector *v = &c->points[x];
+
+					contact.geom.pos[0] = v->x;
+					contact.geom.pos[1] = v->y;
+					contact.geom.pos[2] = v->z;
 
 					id = dJointCreateContact( _odeWorldID, _odeCollisionGroupID, &contact );
-					dJointAttach( id, bodyX, bodyY );
+					dJointAttach( id, bodyY, bodyX );
 				}
 			}
 
-			if ( ( *flags & BT_CALLBACK ) && _collisionCallback && w1 && w2 ) {
-				slVector pos, normal;
+			if (( *flags & BT_CALLBACK ) && _collisionCallback && w1 && w2 && c->points.size() > 0 ) {
+				slVector pos;
+				slVector face;
+				pos.x = c->points[0].x;
+				pos.y = c->points[0].y;
+				pos.z = c->points[0].z;
+				face.x = c->normal.x;
+				face.y = c->normal.y;
+				face.z = c->normal.z;
 
-				dContactGeom *geom = &c -> _contactGeoms[ 0 ];
-
-				slVectorSet( &pos,    geom -> pos[ 0 ],    geom -> pos[ 1 ],    geom -> pos[ 2 ] );
-				slVectorSet( &normal, geom -> normal[ 0 ], geom -> normal[ 1 ], geom -> normal[ 2 ] );
-
-				_collisionCallback( w1->getCallbackData(), w2->getCallbackData(), CC_NORMAL, &pos, &normal );
+				_collisionCallback( w1->getCallbackData(), w2->getCallbackData(), CC_NORMAL, &pos, &face );
 			}
 		}
 	}
 
-	for ( wi = _objects.begin(); wi != _objects.end(); wi++ ) {
-		slWorldObject *w = *wi;
-
-		if( w && w -> _shape )
-			w -> _shape -> updateLastPosition( &w -> _position );
-	}
-
 	if ( simulate != 0 ) {
-		if ( _odeStepMode == 0 ) 
+		if ( _odeStepMode == 0 ) {
 			dWorldStep( _odeWorldID, stepSize );
-		else
+		} else {
 			dWorldQuickStep( _odeWorldID, stepSize );
+		}
 
 		dJointGroupEmpty( _odeCollisionGroupID );
 
@@ -601,7 +567,7 @@ void slWorld::updateNeighbors() {
 
 	std::map< slPairFlags* , slCollisionCandidate >::iterator ci;
 
-	for ( ci = _proximityData->_candidates.begin(); ci != _proximityData->_candidates.end(); ci++ ) {
+	for ( ci = _proximityData->candidates.begin(); ci != _proximityData->candidates.end(); ci++ ) {
 		slCollisionCandidate c = ci->second;
 
 		o1 = _objects[ c._x ];
@@ -624,8 +590,8 @@ void slWorld::updateNeighbors() {
 	}
 }
 
-void slWorld::setGravity( slVector *inG ) {
-	dWorldSetGravity( _odeWorldID, inG -> x, inG -> y, inG -> z );
+void slWorld::setGravity( slVector *gravity ) {
+	dWorldSetGravity( _odeWorldID, gravity->x, gravity->y, gravity->z );
 }
 
 slObjectLine *slWorld::addObjectLine( slWorldObject *src, slWorldObject *dst, int stipple, slVector *color ) {
@@ -726,8 +692,9 @@ void slWorld::setBackgroundTextureColor( slVector *v ) {
 	slVectorCopy( v, &backgroundTextureColor );
 }
 
-void slWorld::setBackgroundTexture( slTexture2D *inTexture ) {
-	backgroundTexture = inTexture;
+void slWorld::setBackgroundTexture( int n, int mode ) {
+	backgroundTexture = n;
+	isBackgroundImage = mode;
 }
 
 
@@ -737,7 +704,9 @@ void slWorld::setCollisionCallbacks( int( *check )( void*, void*, int t ), void(
 }
 
 slWorldObject *slWorld::getObject( unsigned int n ) {
-	return ( n >= _objects.size() ) ? NULL : _objects[ n ];
+	if ( n > _objects.size() ) return NULL;
+
+	return _objects[n];
 }
 
 void slWorld::setQuickstepIterations( int n ) {

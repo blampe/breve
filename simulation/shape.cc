@@ -19,133 +19,86 @@
  *****************************************************************************/
 
 #include "simulation.h"
-#include "mesh.h"
+#include "glIncludes.h"
+#include "gldraw.h"
 #include "camera.h"
 #include "volInt.h"
 #include "vclip.h"
 #include "vclipData.h"
 
+void slShape::draw( slCamera *c, slPosition *pos, double textureScaleX, double textureScaleY, int mode, int flags ) {
+	unsigned char bound, axis;
 
-slVector *slPositionVertex( const slPosition *p, const slVector *v, slVector *o ) {
-	slVectorXform( p->rotation, v, o );
-	slVectorAdd( &p->location, o, o );
+	bound = ( mode & DM_BOUND ) && !( flags & DO_NO_BOUND );
+	axis = ( mode & DM_AXIS ) && !( flags & DO_NO_AXIS );
 
-	return o;
-}
+	if ( _drawList == 0 || _recompile || ( flags & DO_RECOMPILE ) ) slCompileShape( this, c->_drawMode, flags );
 
-void slShape::draw( const slRenderGL& inRender ) {
-	if( _vertexBuffer.size() == 0 )
-		fillVertexBuffer();
+	glPushMatrix();
 
-	_vertexBuffer.bind();
-	_vertexBuffer.draw();
-	_vertexBuffer.unbind();
-}
+	glTranslated( pos->location.x, pos->location.y, pos->location.z );
 
-void slShape::fillVertexBuffer() {
+	slMatrixGLMult( pos->rotation );
 
- 	int polys = 0;
- 	std::vector<slFace*>::iterator fi;
+	glPushAttrib( GL_TRANSFORM_BIT );
 
- 	for ( fi = faces.begin(); fi != faces.end(); fi++ ) {
- 		slFace *f = *fi;
- 		polys += f -> _pointCount;
- 	}
+	glMatrixMode( GL_TEXTURE );
 
- 	_vertexBuffer.resize( polys * 3, VB_XYZ | VB_UV | VB_NORMAL );
+	glLoadIdentity();
 
-// a wrap-around point indexer
-#define POINT_INDEX( f, n ) ( ( f ) -> points[ ( n ) < ( f ) -> _pointCount ? ( n ) : ( n ) - ( f ) -> _pointCount ] )
+	glTranslatef( 0.5, 0.5, 0.0 );
 
-	int pointIndex = 0;
+	if( textureScaleX > 0.0 && textureScaleY > 0.0 )
+		glScalef( 1.0 / textureScaleX, 1.0 / textureScaleY, 1.0 );
 
-	for ( fi = faces.begin(); fi != faces.end(); fi++ ) {
-		slFace *f = *fi;
-		slVector center;
+	glPopAttrib();
 
+	if ( flags & DO_OUTLINE ) {
+		glPushAttrib( GL_ENABLE_BIT );
+		glDisable( GL_LIGHTING );
+		glPushMatrix();
+		glScalef( .99, .99, .99 );
+		glPolygonOffset( 1, 2 );
+		glEnable( GL_POLYGON_OFFSET_FILL );
+		glCallList( _drawList );
+		glPopMatrix();
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		glColor4f( 0, 0, 0, .5 );
+		glDepthMask( GL_FALSE );
+		slRenderShape( this, GL_LINE_LOOP, 0 );
+		glDepthMask( GL_FALSE );
+		glDisable( GL_POLYGON_OFFSET_FILL );
 
-		slVectorSet( &center, 0, 0, 0 );
-
-		for( int i = 0; i < f -> _pointCount; i++ ) {
-			slPoint *p = f -> points[ i ];
-			slVectorAdd( &p -> vertex, &center, &center );
+		if ( _type == ST_SPHERE ) {
+			glColor4f( 1, 1, 1, 0 );
+			glDisable( GL_DEPTH_TEST );
+			glScalef( .96, .96, .96 );
+			glCallList( _drawList );
+			glEnable( GL_DEPTH_TEST );
 		}
 
-		slVectorMul( &center, 1.0 / f -> _pointCount, &center );
-
-		slVector *norm = &f -> plane.normal;
-		slVector xAxis, yAxis;
-		slPerpendicularVectors( norm, &xAxis, &yAxis );
-
-		for( int p = 0; p < f -> _pointCount; p++ ) {
-			slPoint *p1 = POINT_INDEX( f, p     );
-			slPoint *p2 = POINT_INDEX( f, p + 1 );
-
-			float *f;
-			f = _vertexBuffer.vertex( pointIndex     );
-			f[ 0 ] = p1 -> vertex.x;
-			f[ 1 ] = p1 -> vertex.y;
-			f[ 2 ] = p1 -> vertex.z;
-			f = _vertexBuffer.vertex( pointIndex + 1 );
-			f[ 0 ] = p2 -> vertex.x;
-			f[ 1 ] = p2 -> vertex.y;
-			f[ 2 ] = p2 -> vertex.z;
-			f = _vertexBuffer.vertex( pointIndex + 2 );
-			f[ 0 ] = center.x;
-			f[ 1 ] = center.y;
-			f[ 2 ] = center.z;
-
-			f = _vertexBuffer.texcoord( pointIndex     );
-			f[ 0 ] = slVectorDot( &p1 -> vertex, &xAxis );
-			f[ 1 ] = slVectorDot( &p1 -> vertex, &yAxis );
-
-			f = _vertexBuffer.texcoord( pointIndex + 1 );
-			f[ 0 ] = slVectorDot( &p2 -> vertex, &xAxis );
-			f[ 1 ] = slVectorDot( &p2 -> vertex, &yAxis );
-
-			f = _vertexBuffer.texcoord( pointIndex + 2 );
-			f[ 0 ] = slVectorDot( &center, &xAxis );
-			f[ 1 ] = slVectorDot( &center, &yAxis );
-			
-			f = _vertexBuffer.normal( pointIndex     );
-			f[ 0 ] = norm -> x;
-			f[ 1 ] = norm -> y;
-			f[ 2 ] = norm -> z;
-
-			f = _vertexBuffer.normal( pointIndex + 1 );
-			f[ 0 ] = norm -> x;
-			f[ 1 ] = norm -> y;
-			f[ 2 ] = norm -> z;
-
-			f = _vertexBuffer.normal( pointIndex + 2 );
-			f[ 0 ] = norm -> x;
-			f[ 1 ] = norm -> y;
-			f[ 2 ] = norm -> z;
-
-			pointIndex += 3;
-		}
+		glPopAttrib();
+	} else {
+		glCallList( _drawList );
 	}
 
-	_vertexBuffer.bind();
-	_vertexBuffer.draw( VB_TRIANGLES );
-	_vertexBuffer.unbind();
-}
+	if ( bound || axis ) {
+		glPushAttrib( GL_COLOR_BUFFER_BIT );
+		glEnable( GL_BLEND );
+		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		glColor4f( 0.0, 0.0, 0.0, 0.5 );
+		glScalef( 1.1, 1.1, 1.1 );
 
-void slShape::slMatrixToODEMatrix( const double inM[ 3 ][ 3 ], dReal *outM ) {
-    outM[ 0 ]  = inM[ 0 ][ 0 ];
-    outM[ 1 ]  = inM[ 0 ][ 1 ];
-    outM[ 2 ]  = inM[ 0 ][ 2 ];
-    outM[ 3 ]  = 0.0;
-    outM[ 4 ]  = inM[ 1 ][ 0 ];
-    outM[ 5 ]  = inM[ 1 ][ 1 ];
-    outM[ 6 ]  = inM[ 1 ][ 2 ];
-    outM[ 7 ]  = 0.0;
-    outM[ 8 ]  = inM[ 2 ][ 0 ];
-    outM[ 9 ]  = inM[ 2 ][ 1 ];
-    outM[ 10 ] = inM[ 2 ][ 2 ];
-    outM[ 11 ] = 0.0;
-}
+		if ( axis ) slDrawAxis( _max.x, _max.y );
 
+		if ( bound ) slRenderShape( this, GL_LINE_LOOP, 0 );
+
+		glPopAttrib();
+	}
+
+	glPopMatrix();
+}
 
 slSphere::slSphere( double radius, double density ) : slShape() {
 	_type = ST_SPHERE;
@@ -153,59 +106,52 @@ slSphere::slSphere( double radius, double density ) : slShape() {
 
 	_density = density;
 
-	if ( radius <= 0.0 ) 
-		throw slException( std::string( "invalid size for new sphere (density <= 0.0)" ) );
+	if ( radius <= 0.0 ) throw slException( std::string( "invalid size for new sphere (density <= 0.0)" ) );
 
-	if ( density <= 0.0 ) 
-		throw slException( std::string( "invalid density for new sphere (radius <= 0.0)" ) );
+	if ( density <= 0.0 ) throw slException( std::string( "invalid density for new sphere (radius <= 0.0)" ) );
+
+	slVectorSet( &_max, _radius, _radius, _radius );
 
 	_mass = _density * M_PI * _radius * _radius * _radius * 4.0 / 3.0;
 
-	_odeGeomID[ 0 ] = dCreateSphere( 0, _radius );
-	_odeGeomID[ 1 ] = dCreateSphere( 0, _radius );
-
-	setDensity( _density );
+	slSphereInertiaMatrix( _radius, _mass, _inertia );
 }
 
-slBox::slBox( slVector *inSize, double inDensity ) : slShape() {
-	if ( inDensity < 0.0 )
+/*!
+	\brief TO BE DEPRECATED Creates a cube.
+
+	This method will be removed once a suitable handling system is in
+	place to allow for an error from the constructor.
+*/
+
+slShape *slNewCube( slVector *size, double density ) {
+	slShape *s;
+
+	if ( density < 0.0 )
 		throw slException( std::string( "invalid density for new cube (density <= 0.0)" ) );
 
-	if ( inSize->x <= 0.0 || inSize->y <= 0.0 || inSize->z <= 0 )
+	if ( size->x <= 0.0 || size->y <= 0.0 || size->z <= 0 )
 		throw slException( std::string( "invalid size for new sphere (side <= 0.0)" ) );
 
-	slVectorCopy( inSize, &_size ); 
+	s = new slShape();
 
-	if ( !slSetCube( this, inSize, inDensity ) ) {
-		 release();
-		throw slException( std::string( "could not create a cube with the specified parameters" ) );
+	if ( !slSetCube( s, size, density ) ) {
+		slShapeFree( s );
+		return NULL;
 	}
-}
 
-void slBox::finishShape( double inDensity ) {
-	if( _odeGeomID[ 0 ] ) 	
-		dGeomDestroy( _odeGeomID[ 0 ] );
-
-	if( _odeGeomID[ 1 ] ) 	
-		dGeomDestroy( _odeGeomID[ 1 ] );
-
-	float sx = _size.x * _scale.x;
-	float sy = _size.y * _scale.y;
-	float sz = _size.z * _scale.z;
-
-	_odeGeomID[ 0 ] = dCreateBox( 0, sx, sy, sz );
-	_odeGeomID[ 1 ] = dCreateBox( 0, sx, sy, sz );
-
-	slShape::finishShape( inDensity );
+	return s;
 }
 
 slShape *slNewNGonDisc( int count, double radius, double height, double density ) {
+	slShape *s;
+
 	if ( radius <= 0.0 || height <= 0.0 || density <= 0.0 || count < 3 ) return NULL;
 
-	slMeshShape *s = new slMeshShape();
+	s = new slShape();
 
 	if ( !slSetNGonDisc( s, count, radius, height, density ) ) {
-		s->release();
+		slShapeFree( s );
 		return NULL;
 	}
 
@@ -213,66 +159,190 @@ slShape *slNewNGonDisc( int count, double radius, double height, double density 
 }
 
 slShape *slNewNGonCone( int count, double radius, double height, double density ) {
+	slShape *s;
+
 	if ( radius <= 0.0 || height <= 0.0 || density <= 0.0 || count < 3 ) return NULL;
 
-	slMeshShape *s = new slMeshShape();
+	s = new slShape();
 
 	if ( !slSetNGonCone( s, count, radius, height, density ) ) {
-		s->release();
+		slShapeFree( s );
 		return NULL;
 	}
 
 	return s;
 }
 
-void slShape::retain() {
-	_referenceCount++;
-}
+void slShapeFree( slShape *s ) {
+	if ( --s->_referenceCount ) return;
 
-void slShape::release() {
-	if ( --_referenceCount ) 
-		return;
-		
-	delete this;
+	delete s;
 }
 
 slShape::~slShape() {
 	std::vector< slFeature* >::iterator fi;
 
-	for ( fi = features.begin() ; fi != features.end(); fi++ ) 
-		delete *fi;
+	for ( fi = features.begin() ; fi != features.end(); fi++ ) delete *fi;
 
-	if( _odeGeomID[ 0 ] ) 
-		dGeomDestroy( _odeGeomID[ 0 ] );
-
-	if( _odeGeomID[ 1 ] ) 
-		dGeomDestroy( _odeGeomID[ 1 ] );
+	if ( _drawList ) glDeleteLists( _drawList, 1 );
 }
 
+slShape *slShapeInitNeighbors( slShape *s, double density ) {
+	int m, o, faceCount;
+	slPoint *p, *start, *end;
+	slEdge *e;
+	slFace *face;
+	slVector normal;	// for the voronoi not the normal of the face
+	int edges = 0, en;
+	std::vector<slEdge*>::iterator ei;
+	std::vector<slPoint*>::iterator pi;
+	std::vector<slFace*>::iterator fi;
 
-int slShape::findPointIndex( slVector *inVertex ) {
-   for ( unsigned int n = 0; n < points.size(); n++ ) {
-        if ( !slVectorCompare( inVertex, &points[ n ]->vertex ) ) 
-			return n;
-    }
+	s->_density = density;
 
-	return -1;
+	slVectorZero( &s->_max );
+
+	for ( pi = s->points.begin(); pi != s->points.end(); pi++ ) {
+		p = *pi;
+
+		if ( ! p->neighbors ) p->neighbors = new slEdge*[p->edgeCount];
+
+		if ( ! p->faces ) p->faces = new slFace*[p->edgeCount];
+
+		if ( ! p->voronoi ) p->voronoi = new slPlane[p->edgeCount];
+
+		// now check to see if it's a maximum for the shape
+
+		if ( p->vertex.x > s->_max.x ) s->_max.x = p->vertex.x;
+
+		if ( p->vertex.y > s->_max.y ) s->_max.y = p->vertex.y;
+
+		if ( p->vertex.z > s->_max.z ) s->_max.z = p->vertex.z;
+
+		// reset edgeCount to 0 so it can act as a counter
+		// as the actual edges are added below
+
+		p->edgeCount = 0;
+	}
+
+	/* for each edge, add the edge as a neighbor to the point on each side */
+
+	for ( ei = s->edges.begin(); ei != s->edges.end(); ei++ ) {
+		e = *ei;
+
+		// left point...
+
+		start = e->points[0];
+		end = e->points[1];
+
+		start->neighbors[start->edgeCount] = e;
+		end->neighbors[end->edgeCount] = e;
+
+		// update the voronoi planes for the points and edges
+
+		slVectorSub( &start->vertex, &end->vertex, &normal );
+		slVectorNormalize( &normal );
+		slSetPlane( &start->voronoi[start->edgeCount], &normal, &start->vertex );
+
+		slSetPlane( &e->voronoi[1], &normal, &end->vertex );
+
+		slVectorMul( &normal, -1, &normal );
+		slSetPlane( &end->voronoi[end->edgeCount], &normal, &end->vertex );
+
+		slSetPlane( &e->voronoi[0], &normal, &start->vertex );
+
+		start->edgeCount++;
+		end->edgeCount++;
+
+		edges++;
+
+		for ( en = 0;en < 4;en++ ) {
+			if ( !e->neighbors[en] ) {
+				slMessage( DEBUG_ALL, "error initializing shape neighbors: edge %p is missing adjacent features\n", e );
+				return NULL;
+			}
+		}
+	}
+
+	// add the face neighbors for the all the faces
+
+	for ( fi = s->faces.begin(); fi != s->faces.end(); fi++ ) {
+		slVector normal;
+
+		face = *fi;
+
+		for ( m = 0;m < face->edgeCount;m++ ) {
+			slVector *eStart, *eFinish, edgeVector;
+			int edgeNeighborIndex;
+
+			// grab the edge's vertices
+
+			e = face->neighbors[m];
+			eStart = &(( slPoint* )e->neighbors[0] )->vertex;
+			eFinish = &(( slPoint* )e->neighbors[1] )->vertex;
+
+			if ( e->neighbors[2] == face ) {
+				face->faces[m] = e->faces[1];
+				edgeNeighborIndex = 2;
+			} else {
+				face->faces[m] = e->faces[0];
+				edgeNeighborIndex = 3;
+			}
+
+			// set the voronoi plane for this edge
+
+			slVectorSub( eStart, eFinish, &edgeVector );
+
+			slVectorCross( &face->plane.normal, &edgeVector, &normal );
+
+			if ( slVectorDot( &normal, eStart ) > 0.0 ) slVectorMul( &normal, -1, &normal );
+
+			slSetPlane( &face->voronoi[m], &normal, eFinish );
+
+			slVectorMul( &normal, -1, &normal );
+
+			slSetPlane( &e->voronoi[edgeNeighborIndex], &normal, eFinish );
+		}
+
+		face->faces[face->edgeCount] = *fi;
+	}
+
+	// update the neighbors for the points
+
+	for ( pi = s->points.begin(); pi != s->points.end(); pi++ ) {
+		p = *pi;
+
+		faceCount = 0;
+
+		for ( m = 0;m < p->edgeCount;m++ ) {
+			int found2 = 0, found3 = 0;
+			e = p->neighbors[m];
+
+			// if one of the faces on this edge has not already
+			// been added to this point, add it
+
+			for ( o = 0;o < faceCount;o++ ) if ( p->faces[o] == e->neighbors[2] ) found2 = 1;
+
+			for ( o = 0;o < faceCount;o++ ) if ( p->faces[o] == e->neighbors[3] ) found3 = 1;
+
+			if ( !found2 ) p->faces[faceCount++] = e->faces[0];
+
+			if ( !found3 ) p->faces[faceCount++] = e->faces[1];
+		}
+	}
+
+	if ( slSetMassProperties( s, density ) ) return NULL;
+
+	return s;
 }
 
+/*!
+	\brief Sets the mass of the shape.
 
-void slShape::finishShape( double density ) {
-	_density = density;
+	Using the shape's volume, sets the density of the shape so that
+	the desired mass is achived.
+*/
 
-	if( slSetMassProperties( this, density ) ) 
-		throw slException( "an error occurred computing the mass for this shape" );
-}
-
-/**
- * \brief Sets the mass of the shape.
- * 
- * Using the shape's volume, sets the density of the shape so that
- * the desired mass is achived.
- */
 void slShape::setMass( double newMass ) {
 	double volume;
 
@@ -287,29 +357,21 @@ void slShape::setMass( double newMass ) {
 	setDensity( _density );
 }
 
-/**
- * \brief Sets the density of the shape.
- * 
- * Sets the density of the change, which modifies the mass.
- */
+/*!
+	\brief Sets the density of the shape.
+
+	Sets the density of the change, which modifies the mass.
+*/
 
 void slShape::setDensity( double newDensity ) {
 	slSetMassProperties( this, newDensity );
 }
 
-/**
- * Sets the inertia matrix of the shape.
- */
+/*!
+	\brief Sets the density of the sphere.
 
-void slShape::setInertiaMatrix( slMatrix inInertia ) {
-	slMatrixCopy( inInertia, _inertia );
-}
-
-/**
- * \brief Sets the density of the sphere.
- * Sets the density of the change, which modifies the mass.
- */
-
+	Sets the density of the change, which modifies the mass.
+*/
 void slSphere::setDensity( double newDensity ) {
 	double volume = _mass / _density;
 
@@ -332,22 +394,32 @@ slFace *slAddFace( slShape *s, slVector **points, int nPoints ) {
 	slFace *f;
 	slVector **rpoints = NULL;
 
-	if ( nPoints < 3 ) 
-		return NULL;
+	if ( nPoints < 3 ) return NULL;
 
 	f = new slFace;
 
-	f -> _pointCount = nPoints;
-	f -> neighbors = new slEdge*[nPoints];
-	f -> voronoi = new slPlane[nPoints];
-	f -> points = new slPoint*[nPoints];
-	f -> faces = new slFace*[( nPoints + 1 )];
-	f -> drawFlags = 0;
+	f->type = FT_FACE;
+
+	f->edgeCount = 0;
+
+	f->neighbors = new slEdge*[nPoints];
+
+	f->voronoi = new slPlane[nPoints];
+
+	f->points = new slPoint*[nPoints];
+
+	f->faces = new slFace*[( nPoints + 1 )];
+
+	f->drawFlags = 0;
 
 	slVectorSub( points[1], points[0], &x );
+
 	slVectorSub( points[2], points[1], &y );
+
 	slVectorCross( &x, &y, &f->plane.normal );
+
 	slVectorNormalize( &f->plane.normal );
+
 	slVectorCopy( points[1], &f->plane.vertex );
 
 	slVectorSet( &origin, 0, 0, 0 );
@@ -358,34 +430,46 @@ slFace *slAddFace( slShape *s, slVector **points, int nPoints ) {
 		rpoints = new slVector*[nPoints];
 
 		for ( n = 0;n < nPoints;n++ ) rpoints[n] = points[( nPoints - 1 ) - n];
+
 		for ( n = 0;n < nPoints;n++ ) points[n] = rpoints[n];
 
 		delete[] rpoints;
 
-		slVectorSub( points[1], points[0], &x );
-		slVectorSub( points[2], points[1], &y );
-		slVectorCross( &x, &y, &f->plane.normal );
-		slVectorNormalize( &f->plane.normal );
 		slVectorCopy( points[1], &f->plane.vertex );
+
+		slVectorSub( points[1], points[0], &x );
+
+		slVectorSub( points[2], points[1], &y );
+
+		slVectorCross( &x, &y, &f->plane.normal );
+
+		slVectorNormalize( &f->plane.normal );
 	}
 
-	for ( n = 0;n < nPoints;n++ ) 
-		f->points[n] = slAddPoint( s, points[ n ] );
+	for ( n = 0;n < nPoints;n++ ) f->points[n] = slAddPoint( s, points[n] );
 
-	for ( n = 0;n < nPoints; n++ ) {
-		int nextIndex = ( n + 1 ) % nPoints;
+	f->edgeCount = nPoints;
 
-		f->neighbors[n] = slAddEdge( s, f, points[n], points[ nextIndex ] );
+	for ( n = 0;n < nPoints - 1;n++ ) {
+		f->neighbors[n] = slAddEdge( s, f, points[n], points[n + 1] );
 
 		// z is normal to the voronoi slPlane--that means it's parallel to the
 		// slFace of the slPlane and perpendicular to the edge we're looking at
 
-		slVectorSub( points[ nextIndex ], points[n], &x );
+		slVectorSub( points[n + 1], points[n], &x );
 		slVectorCross( &f->plane.normal, &x, &y );
 
 		slVectorNormalize( &y );
 		slSetPlane( &f->voronoi[n], &y, points[n] );
 	}
+
+	f->neighbors[n] = slAddEdge( s, f, points[n], points[0] );
+
+	slVectorSub( points[0], points[nPoints - 1], &x );
+	slVectorCross( &f->plane.normal, &x, &y );
+
+	slVectorNormalize( &y );
+	slSetPlane( &f->voronoi[nPoints - 1], &y, points[nPoints - 1] );
 
 	s->faces.push_back( f );
 	s->features.push_back( f );
@@ -393,13 +477,13 @@ slFace *slAddFace( slShape *s, slVector **points, int nPoints ) {
 	return f;
 }
 
-/**
- * \brief Add an edge to a shape.
- * 
- * The points of the edge should always be passed in moving clockwise
- * around the face of the plane, where the face of the clock is pointing
- * towards the normal (the "top" of the slPlane).
- */
+/*!
+	\brief Add an edge to a shape.
+
+	The points of the edge should always be passed in moving clockwise
+	around the face of the plane, where the face of the clock is pointing
+	towards the normal (the "top" of the slPlane).
+*/
 
 slEdge *slAddEdge( slShape *s, slFace *f, slVector *start, slVector *end ) {
 	slEdge *e, *originalEdge = NULL;
@@ -442,6 +526,8 @@ slEdge *slAddEdge( slShape *s, slFace *f, slVector *start, slVector *end ) {
 	}
 
 	e = new slEdge;
+
+	e->type = FT_EDGE;
 
 	// if this is the mirror of another edge, copy in the neighbors
 	// and voronoi slPlanes, bearing in mind that the order of the
@@ -490,16 +576,17 @@ slEdge *slAddEdge( slShape *s, slFace *f, slVector *start, slVector *end ) {
 	}
 
 	s->edges.push_back( e );
+
 	s->features.push_back( e );
 
 	return e;
 }
 
-/**
- * \brief Adds a point to a shape.
- *
- * Called as part of slAddEdge and slAddFace, not typically called manually.
- */
+/*!
+	\brief Adds a point to a shape.
+
+	Called as part of slAddEdge and slAddFace, not typically called manually.
+*/
 
 slPoint *slAddPoint( slShape *s, slVector *vertex ) {
 	slPoint *p;
@@ -511,23 +598,32 @@ slPoint *slAddPoint( slShape *s, slVector *vertex ) {
 		p = *pi;
 
 		if ( !slVectorCompare( vertex, &p->vertex ) ) {
+			p->edgeCount++;
+
 			return p;
 		}
 	}
 
 	p = new slPoint;
 
+	p->type = FT_POINT;
+
+	if ( !p ) return NULL;
+
 	slVectorCopy( vertex, &p->vertex );
 
-	s -> points.push_back( p );
-	s -> features.push_back( p );
+	p->edgeCount = 1;
+
+	s->points.push_back( p );
+
+	s->features.push_back( p );
 
 	return p;
 }
 
-/**
- * \brief Fills in an slPlane struct.
- */
+/*!
+	\brief Fills in an slPlane struct.
+*/
 
 slPlane *slSetPlane( slPlane *p, slVector *normal, slVector *vertex ) {
 	slVectorCopy( normal, &p->normal );
@@ -609,16 +705,14 @@ slShape *slSetCube( slShape *s, slVector *size, double density ) {
 
 	slAddFace( s, face, 4 );
 
-	s -> finishShape( density );
-
-	return s;
+	return slShapeInitNeighbors( s, density );
 }
 
 /*!
 	\brief Sets a shape to be an extruded polygon.
 */
 
-slShape *slSetNGonDisc( slMeshShape *s, int sideCount, double radius, double height, double density ) {
+slShape *slSetNGonDisc( slShape *s, int sideCount, double radius, double height, double density ) {
 	int n;
 	slVector *tops, *bottoms, sides[4];
 	slVector **topP, **bottomP, *sideP[4];
@@ -633,8 +727,6 @@ slShape *slSetNGonDisc( slMeshShape *s, int sideCount, double radius, double hei
 
 	bottomP = new slVector*[sideCount + 1];
 
-	float angleStart = .5 * 2.0 * M_PI / sideCount;
-
 	for ( n = 0;n < sideCount;n++ ) {
 		topP[sideCount - ( n + 1 )] = &tops[n];
 		bottomP[n] = &bottoms[n];
@@ -642,14 +734,15 @@ slShape *slSetNGonDisc( slMeshShape *s, int sideCount, double radius, double hei
 		tops[n].y = ( height / 2 );
 		bottoms[n].y = -( height / 2 );
 
-		tops[n].x = radius * cos( angleStart + n * ( 2 * M_PI / sideCount ) );
-		tops[n].z = radius * sin( angleStart + n * ( 2 * M_PI / sideCount ) );
+		tops[n].x = radius * cos( n * ( 2 * M_PI / sideCount ) );
+		tops[n].z = radius * sin( n * ( 2 * M_PI / sideCount ) );
 
-		bottoms[n].x = radius * cos( angleStart + n * ( 2 * M_PI / sideCount ) );
-		bottoms[n].z = radius * sin( angleStart + n * ( 2 * M_PI / sideCount ) );
+		bottoms[n].x = radius * cos( n * ( 2 * M_PI / sideCount ) );
+		bottoms[n].z = radius * sin( n * ( 2 * M_PI / sideCount ) );
 	}
 
 	slVectorCopy( &tops[0], &tops[n] );
+
 	slVectorCopy( &bottoms[0], &bottoms[n] );
 
 	slAddFace( s, topP, sideCount );
@@ -675,16 +768,14 @@ slShape *slSetNGonDisc( slMeshShape *s, int sideCount, double radius, double hei
 	delete[] topP;
 	delete[] bottomP;
 
-	s -> finishShape( density );
-
-	return s;
+	return slShapeInitNeighbors( s, density );
 }
 
-/**
- * \brief Sets a shape to be a cone with a polygon base.
- */
+/*!
+	\brief Sets a shape to be a cone with a polygon base.
+*/
 
-slShape *slSetNGonCone( slMeshShape *s, int sideCount, double radius, double height, double density ) {
+slShape *slSetNGonCone( slShape *s, int sideCount, double radius, double height, double density ) {
 	int n;
 	slVector top;
 	slVector *bottoms, sides[3];
@@ -727,9 +818,15 @@ slShape *slSetNGonCone( slMeshShape *s, int sideCount, double radius, double hei
 
 	delete[] bottomP;
 
-	s -> finishShape( density );
+	return slShapeInitNeighbors( s, density );
+}
 
-	return s;
+void slCubeInertiaMatrix( slVector *c, double mass, double i[3][3] ) {
+	slMatrixZero( i );
+
+	i[0][0] = 1.0 / 12.0 * mass * ( c->y * c->y + c->z * c->z );
+	i[1][1] = 1.0 / 12.0 * mass * ( c->x * c->x + c->z * c->z );
+	i[2][2] = 1.0 / 12.0 * mass * ( c->x * c->x + c->y * c->y );
 }
 
 void slSphereInertiaMatrix( double r, double mass, double i[3][3] ) {
@@ -792,6 +889,8 @@ int slShape::pointOnShape( slVector *dir, slVector *point ) {
 
 		D = slVectorDot( &f->plane.normal, &f->plane.vertex );
 
+		// printf("d = %f\n", D);
+
 		X = f->plane.normal.x * dir->x;
 		Y = f->plane.normal.y * dir->y;
 		Z = f->plane.normal.z * dir->z;
@@ -807,7 +906,7 @@ int slShape::pointOnShape( slVector *dir, slVector *point ) {
 
 			// now figure out if the point in question is within the face
 
-			result = slClipPointMax( &pointOnPlane, f->voronoi, &pos, f->_pointCount, &update, &distance );
+			result = slClipPointMax( &pointOnPlane, f->voronoi, &pos, f->edgeCount, &update, &distance );
 
 			// if this point is within the voronoi region of the plane, it must be on the face.
 			// even if it's not, it might be due to small mathematical error, so we'll keep track
@@ -828,13 +927,12 @@ int slShape::pointOnShape( slVector *dir, slVector *point ) {
 	return -1;
 }
 
-/**
- * \brief Returns the point where a ray send from location with direction hit the shape.
- * The location and the direction must be given int the frame of the shape. But the returned
- * point is relative to the location. This function should only be use by the slWorldObjectRaytrace
- * function.
- */
-
+/*!
+	\brief Returns the point where a ray send from location with direction hit the shape.
+        The location and the direction must be given int the frame of the shape. But the returned
+        point is relative to the location. This function should only be use by the slWorldObjectRaytrace
+        function.
+*/
 int slRayHitsShape( slShape *s, slVector *dir, slVector *target, slVector *point ) {
 	slVector invert;
 	slVectorMul( dir, -1, &invert );
@@ -888,8 +986,12 @@ int slShape::rayHitsShape( slVector *dir, slVector *target, slVector *point ) {
 	double minDistance = 1.0e10;
 	bool isFirst = true;
 	std::vector<slFace*>::iterator fi;
+	//printf("xxx");
+//	 irReflect(target, dir, 0.5);
+//       slMessage(DEBUG_ALL, " [ %f, %f, %f ] %f", dir->x, dir->y, dir->z, atan2(dir->z, dir->x)*180/M_PI);
+//        slMessage(DEBUG_ALL, " [ %f, %f, %f ] ", target->x, target->y, target->z );
 
-
+	// point = (0,0,0)'
 	slVectorSet( point, 0.0, 0.0, 0.0 );
 
 	slVectorSet( &pos.location, 0.0, 0.0, 0.0 );
@@ -907,6 +1009,8 @@ int slShape::rayHitsShape( slVector *dir, slVector *target, slVector *point ) {
 		slVectorAdd( &f->plane.vertex, target, &newPlane.vertex );
 
 		D = slVectorDot( &newPlane.normal, &newPlane.vertex );
+
+		//printf("d = %f\n", D);
 
 		X = newPlane.normal.x * dir->x;
 		Y = newPlane.normal.y * dir->y;
@@ -930,7 +1034,7 @@ int slShape::rayHitsShape( slVector *dir, slVector *target, slVector *point ) {
 
 			/* now figure out if the point in question is within the face */
 
-			result = slClipPoint( &checkPointOnPlane, f->voronoi, &pos, f->_pointCount, &update, &distance );
+			result = slClipPoint( &checkPointOnPlane, f->voronoi, &pos, f->edgeCount, &update, &distance );
 
 			/* if this point is within the voronoi region of the plane, it must be */
 			/* on the face */
@@ -958,13 +1062,136 @@ int slShape::rayHitsShape( slVector *dir, slVector *target, slVector *point ) {
 	return -1;
 }
 
-void slShape::setScale( slVector *scale ) {
-	_scale = *scale;
+/*
+float calculateArea(slFace *face){
+	for(int i=0; i< face->edgeCount-1; i++){
 
-	// printf( "scale = %f %f, %f\n", scale -> x, scale -> y, scale -> y );
-	// printf( "total scale = %f %f, %f\n", _transform[ 0 ][ 0 ], _transform[ 1 ][ 1 ], _transform[ 2 ][ 2 ] );
+		//slMessage(DEBUG_ALL, "normal(%f|%f|%f)\n",i,
+		//		f->plane.normal.x, f->plane.normal.y, f->plane.normal.z, area);
+		//slMessage(DEBUG_ALL, "i:%d edgeCount:%d area:%f\n",i, f->edgeCount,area);
+		slMessage(DEBUG_ALL, "p%d(%f|%f|%f)\n",i, face->points[i]->vertex.x ,
+				face->points[i]->vertex.y,face->points[i]->vertex.z);
+	}
+	slMessage(DEBUG_ALL, "p%d(%f|%f|%f)\n",i, face->points[i]->vertex.x ,
+			face->points[i]->vertex.y,face->points[i]->vertex.z);
+	return 5;
+}
+*/
+/*
+int slShape::irReflect(slVector *pos, slVector *dir, double maxAngle){
 
-	finishShape( _density );
+
+	double angle, area, sum_area = 0;
+	slVector face_normal;
+	slVector v1;
+	slVector v2;
+	slPoint p1;
+	area = 0;
+	slVectorSet(&v1, 0.0, 0.0, 0.0);
+	slVectorSet(&v2, 0.0, 0.0, 0.0);
+	std::vector<slFace*>::iterator fi;
+//	slMessage(DEBUG_ALL, " irReflect start:\n");
+
+	for(fi = faces.begin(); fi != faces.end(); fi++ ) {
+		area = 0;
+		slFace *f = *fi;
+	//	p1 = f->points[0];
+	//	v1 = &f->points[0]->vertex;
+
+		slVectorSub(&f->points[0]->vertex, &f->points[1]->vertex, &v1);
+		slVectorSub(&f->points[2]->vertex, &f->points[1]->vertex, &v2);
+
+		slVectorCross(&v1, &v2, &face_normal);
+		angle = slVectorAngle(&face_normal, dir);//evtl einen Vector invertieren
+
+		//slVectorPrint(&f->points[0]->vertex);
+		//slVectorPrint(&f->points[1]->vertex);
+
+		//slVectorPrint(&v1);
+		//slVectorPrint(&v2);
+		//slVectorPrint(&face_normal);
+		slVectorNormalize(&face_normal);
+		slVectorPrint(&face_normal);
+		slVectorPrint(dir);
+		slMessage(DEBUG_ALL, " irReflect angle: %f\n",angle);
+	//	slMessage(DEBUG_ALL, " irReflect maxangle: %f\n",maxAngle);
+
+	//	if(angle < maxAngle){
+			//Fläche des Polygons berechnen
+		area = calculateArea(f);
+
+			//slMessage(DEBUG_ALL, "abc");
+		slMessage(DEBUG_ALL, "area:%f\n",area);
+
+			//Projektionsfläche auf Sichtebene
+			area *= cos(angle);
+			// Reflektion abhängig von Winkel
+
+			//Reflektion abhängig von Abstand zur Sensorachse/SensorHauptrichtung
+
+			sum_area += area;
+	//	}
+	//	  slMessage(DEBUG_ALL, " irReflect sum_area: %f\n",sum_area);
+
+	}
+
+	return 0;
+}
+
+
+*/
+
+
+void slSphere::scale( slVector *scale ) {
+	_recompile = 1;
+	_radius *= scale->x;
+	slShapeInitNeighbors( this, this->_density );
+}
+
+void slShape::scale( slVector *scale ) {
+	std::vector<slFace*>::iterator fi;
+	std::vector<slPoint*>::iterator pi;
+	slPoint *p;
+	slFace *f;
+
+	slVector v;
+	double m[3][3];
+
+	slMatrixIdentity( m );
+	m[0][0] = scale->x;
+	m[1][1] = scale->y;
+	m[2][2] = scale->z;
+
+	_recompile = 1;
+
+	for ( pi = points.begin(); pi != points.end(); pi++ ) {
+		p = *pi;
+
+		slVectorCopy( &p->vertex, &v );
+		slVectorXform( m, &v, &p->vertex );
+	}
+
+	for ( fi = faces.begin(); fi != faces.end(); fi++ ) {
+		f = *fi;
+
+		slVectorCopy( &f->plane.vertex, &v );
+		slVectorXform( m, &v, &f->plane.vertex );
+		slVectorCopy( &f->plane.normal, &v );
+		slVectorXform( m, &v, &f->plane.normal );
+		slVectorNormalize( &f->plane.normal );
+	}
+
+	slShapeInitNeighbors( this, _density );
+}
+
+/*!
+	\brief Serializes a shape and returns data that can later be deserialized.
+
+	This function returns an slMalloc'd pointer.
+*/
+
+slSerializedShapeHeader *slSerializeShape( slShape *s, int *length ) {
+	return s->serialize( length );
 }
 
 slSerializedShapeHeader *slSphere::serialize( int *length ) {
@@ -973,23 +1200,10 @@ slSerializedShapeHeader *slSphere::serialize( int *length ) {
 	*length = sizeof( slSerializedShapeHeader );
 	header = ( slSerializedShapeHeader* )slMalloc( sizeof( slSerializedShapeHeader ) );
 
-	header->_type 		= ST_SPHERE;
-	header->_radius 	= _radius;
-	header->_density 	= _density;
-
-	return header;
-}
-
-slSerializedShapeHeader *slBox::serialize( int *length ) {
-	slSerializedShapeHeader *header;
-
-	*length = sizeof( slSerializedShapeHeader );
-	header = ( slSerializedShapeHeader* )slMalloc( sizeof( slSerializedShapeHeader ) );
-
-	header->_type 		= ST_BOX;
-	header->_density 	= _density;
-
-	slVectorCopy( &_size, &header->_max );
+	header->type = ST_SPHERE;
+	header->radius = _radius;
+	header->mass = _mass;
+	header->density = _density;
 
 	return header;
 }
@@ -1012,7 +1226,7 @@ slSerializedShapeHeader *slShape::serialize( int *length ) {
 
 		// the number of edges on the face == number of points
 
-		facePointCount += face->_pointCount;
+		facePointCount += face->edgeCount;
 	}
 
 	// figure out the total length of the data
@@ -1025,15 +1239,21 @@ slSerializedShapeHeader *slShape::serialize( int *length ) {
 
 	header = ( slSerializedShapeHeader* )data;
 
-	// fill in the header 
+	/* fill in the header */
 
-	header->_faceCount 	= faceCount;
-	header->_type 		= _type;
-	header->_density 	= _density;
+	header->faceCount = faceCount;
 
-	slVectorCopy( &_max, &header->_max );
+	header->type = _type;
 
-	// skip over the header 
+	slMatrixCopy( _inertia, header->inertia );
+
+	header->density = _density;
+
+	header->mass = _mass;
+
+	slVectorCopy( &_max, &header->max );
+
+	/* skip over the header */
 
 	position = data + sizeof( slSerializedShapeHeader );
 
@@ -1041,11 +1261,11 @@ slSerializedShapeHeader *slShape::serialize( int *length ) {
 		face = *fi;
 		fhead = ( slSerializedFaceHeader* )position;
 
-		fhead->vertexCount = face->_pointCount;
+		fhead->vertexCount = face->edgeCount;
 
 		position += sizeof( slSerializedFaceHeader );
 
-		for ( p = 0;p < face->_pointCount;p++ ) {
+		for ( p = 0;p < face->edgeCount;p++ ) {
 			v = ( slVector* )position;
 
 			slVectorCopy( &(( slPoint* )face->points[p] )->vertex, v );
@@ -1056,31 +1276,26 @@ slSerializedShapeHeader *slShape::serialize( int *length ) {
 	return ( slSerializedShapeHeader* )data;
 }
 
-slShape *slShape::deserialize( slSerializedShapeHeader *header ) {
+slShape *slDeserializeShape( slSerializedShapeHeader *header, int length ) {
 	slShape *s;
 	slSerializedFaceHeader *face;
 	char *p;
 	int n, vind;
 	slVector *v, *vectors, **vectorp;
 
-	if ( header->_type == ST_BOX ) 
-		return new slBox( &header->_max, header->_density );
+	if ( header->type == ST_SPHERE ) return new slSphere( header->radius, header->mass );
 
-	if ( header->_type == ST_SPHERE ) 
-		return new slSphere( header->_radius, header->_density );
-
-
-	s = new slMeshShape();
+	s = new slShape();
 
 	// offset the pointer to the endge of the header
 
 	p = ( char* )header + sizeof( slSerializedShapeHeader );
 
-	for ( n = 0;n < header->_faceCount;n++ ) {
+	for ( n = 0;n < header->faceCount;n++ ) {
 		face = ( slSerializedFaceHeader* )p;
 
-		vectors = new slVector[ face->vertexCount ];
-		vectorp = new slVector*[ face->vertexCount ];
+		vectors = new slVector[face->vertexCount];
+		vectorp = new slVector*[face->vertexCount];
 
 		p += sizeof( slSerializedFaceHeader );
 
@@ -1100,51 +1315,43 @@ slShape *slShape::deserialize( slSerializedShapeHeader *header ) {
 		delete[] vectorp;
 	}
 
-	s -> finishShape( header->_density );
+	slShapeInitNeighbors( s, header->density );
 
 	return s;
 }
 
-void slSphere::bounds( const slPosition *position, slVector *outMin, slVector *outMax ) const {
-	slVector min, max;
-	float r = _radius * _transform[ 0 ][ 0 ];
+void slSphere::bounds( const slPosition *position, slVector *min, slVector *max ) const {
+	max->x = position->location.x + ( _radius );
+	max->y = position->location.y + ( _radius );
+	max->z = position->location.z + ( _radius );
 
-	slVectorSet( &max,  r,  r,  r );
-	slVectorSet( &min, -r, -r, -r );
+	min->x = position->location.x - ( _radius );
+	min->y = position->location.y - ( _radius );
+	min->z = position->location.z - ( _radius );
 
-	slVectorAdd( &max, &position -> location, outMax );
-	slVectorAdd( &min, &position -> location, outMin );
 }
 
-void slShape::bounds( const slPosition *position, slVector *outMin, slVector *outMax ) const {
+void slShape::bounds( const slPosition *position, slVector *min, slVector *max ) const {
 	std::vector< slPoint* >::const_iterator pi;
 
-	slVector min, max;
-
-	slVectorSet( &max, INT_MIN, INT_MIN, INT_MIN );
-	slVectorSet( &min, INT_MAX, INT_MAX, INT_MAX );
+	slVectorSet( max, INT_MIN, INT_MIN, INT_MIN );
+	slVectorSet( min, INT_MAX, INT_MAX, INT_MAX );
 
 	for ( pi = points.begin(); pi != points.end(); pi++ ) {
 		slPoint *p = *pi;
-		slVector loc, tloc;
+		slVector loc;
 
-		tloc.x = p -> vertex.x * _scale.x;
-		tloc.y = p -> vertex.y * _scale.y;
-		tloc.z = p -> vertex.z * _scale.z;
-		
-		slVectorXform( position->rotation, &tloc, &loc );
+		slVectorXform( position->rotation, &p->vertex, &loc );
+		slVectorAdd( &loc, &position->location, &loc );
 
-		if ( loc.x > max.x ) max.x = loc.x;
-		if ( loc.y > max.y ) max.y = loc.y;
-		if ( loc.z > max.z ) max.z = loc.z;
+		if ( loc.x > max->x ) max->x = loc.x;
+		if ( loc.y > max->y ) max->y = loc.y;
+		if ( loc.z > max->z ) max->z = loc.z;
 
-		if ( loc.x < min.x ) min.x = loc.x;
-		if ( loc.y < min.y ) min.y = loc.y;
-		if ( loc.z < min.z ) min.z = loc.z;
+		if ( loc.x < min->x ) min->x = loc.x;
+		if ( loc.y < min->y ) min->y = loc.y;
+		if ( loc.z < min->z ) min->z = loc.z;
 	}
-
-	slVectorAdd( &min, &position->location, outMin );
-	slVectorAdd( &max, &position->location, outMax );
 }
 
 double slShape::getMass() {
@@ -1155,80 +1362,64 @@ double slShape::getDensity() {
 	return _density;
 }
 
+slMeshShape::slMeshShape( char *filename, char *name ) : slSphere( 1, 1 ) {
+#ifdef HAVE_LIB3DS
+	_mesh = new slMesh( filename, name );
 
+	// get the new radius, and force the mass to update
 
-
-
-
-#define X .525731112119133606 
-#define Z .850650808352039932
-
-static GLfloat sphereVertexData[12][3] = {    
-	{-X, 0.0, Z}, {X, 0.0, Z}, {-X, 0.0, -Z}, {X, 0.0, -Z},	
-	{0.0, Z, X}, {0.0, Z, -X}, {0.0, -Z, X}, {0.0, -Z, -X},	
-	{Z, X, 0.0}, {-Z, X, 0.0}, {Z, -X, 0.0}, {-Z, -X, 0.0} 
-};
-
-static GLuint sphereIndices[20][3] = { 
-	{0,4,1}, {0,9,4}, {9,5,4}, {4,5,8}, {4,8,1},	
-	{8,10,1}, {8,3,10}, {5,3,8}, {5,2,3}, {2,7,3},	
-	{7,10,3}, {7,6,10}, {7,11,6}, {11,0,6}, {0,1,6}, 
-	{6,1,10}, {9,0,11}, {9,11,2}, {9,2,5}, {7,2,11} };
-
-void normalize(GLfloat *a) {
-	GLfloat d=sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
-	a[0]/=d; a[1]/=d; a[2]/=d;
+	_radius = _mesh->maxReach();
+	setDensity( 1.0 );
+#else
+	throw "this software was compiled without lib3ds mesh support";
+#endif
 }
 
-int	slSphere::addTriangles( GLfloat *inX, GLfloat *inY, GLfloat *inZ, int inDiv, float inR, int inIndex ) {
-	if ( inDiv <= 0 ) {
-		float *v;
 
-		v = _vertexBuffer.normal( inIndex	 );
-		v[ 0 ] = inX[ 0 ]; v[ 1 ] = inX[ 1 ]; v[ 2 ] = inX[ 2 ];
-
-		v = _vertexBuffer.normal( inIndex + 1 );
-		v[ 0 ] = inY[ 0 ]; v[ 1 ] = inY[ 1 ]; v[ 2 ] = inY[ 2 ];
-
-		v = _vertexBuffer.normal( inIndex + 2 );
-		v[ 0 ] = inZ[ 0 ]; v[ 1 ] = inZ[ 1 ]; v[ 2 ] = inZ[ 2 ];
-
-		v = _vertexBuffer.vertex( inIndex	 );
-		v[ 0 ] = inR * inX[ 0 ]; v[ 1 ] = inR * inX[ 1 ]; v[ 2 ] = inR * inX[ 2 ];
-
-		v = _vertexBuffer.vertex( inIndex + 1 );
-		v[ 0 ] = inR * inY[ 0 ]; v[ 1 ] = inR * inY[ 1 ]; v[ 2 ] = inR * inY[ 2 ];
-
-		v = _vertexBuffer.vertex( inIndex + 2 );
-		v[ 0 ] = inR * inZ[ 0 ]; v[ 1 ] = inR * inZ[ 1 ]; v[ 2 ] = inR * inZ[ 2 ];
-		
-		inIndex += 3;
-
-    } else {
-        GLfloat ab[3], ac[3], bc[3];
-
-        for( int i = 0; i < 3; i++ ) {
-            ab[ i ]=( inX[ i ] + inY[ i ] ) / 2;
-            ac[ i ]=( inX[ i ] + inZ[ i ] ) / 2;
-            bc[ i ]=( inY[ i ] + inZ[ i ] ) / 2;
-        }
-
-        normalize( ab ); normalize( ac ); normalize( bc );
-        inIndex = addTriangles( inX, ab, ac, inDiv - 1, inR, inIndex );
-        inIndex = addTriangles( inY, bc, ab, inDiv - 1, inR, inIndex );
-        inIndex = addTriangles( inZ, ac, bc, inDiv - 1, inR, inIndex );
-        inIndex = addTriangles(  ab, bc, ac, inDiv - 1, inR, inIndex );  
-    }  
-	
-	return inIndex;
+slMeshShape::~slMeshShape() {
+#ifdef _HAVE_LIB3DS
+	delete _mesh;
+#endif
 }
 
-void slSphere::fillVertexBuffer() {
-	int divisions = 1;
-	int vertices = 0;
+void slMeshShape::draw( slCamera *c, slPosition *pos, double textureScale, int mode, int flags ) {
+#ifdef _HAVE_LIB3DS
+	float scale[4] = { 1.0 / textureScale, 1.0 / textureScale, 1.0 / textureScale, 1.0 / textureScale };
 
- 	_vertexBuffer.resize( 20 * 3 * (int)pow( 4, ( divisions ) ), VB_XYZ | VB_NORMAL );
+	glPushMatrix();
+	glTranslated( pos->location.x, pos->location.y, pos->location.z );
+	slMatrixGLMult( pos->rotation );
 
-    for( int i = 0; i < 20; i++ )
-        vertices = addTriangles( sphereVertexData[ sphereIndices[ i ][ 0 ] ], sphereVertexData[ sphereIndices[ i ][ 1 ] ], sphereVertexData[ sphereIndices[ i ][ 2 ] ], divisions, _radius, vertices );
+	glTexGeni( GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
+	glTexGenfv( GL_S, GL_OBJECT_PLANE, scale );
+	glTexGeni( GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
+	glTexGenfv( GL_T, GL_OBJECT_PLANE, scale );
+
+	glEnable( GL_TEXTURE_GEN_S );
+	glEnable( GL_TEXTURE_GEN_T );
+
+	if ( _drawList == 0 || _recompile ) {
+		if ( _drawList == 0 ) _drawList = glGenLists( 1 );
+
+		glNewList( _drawList, GL_COMPILE );
+
+		_mesh->draw();
+
+		glEndList();
+	}
+
+	glCallList( _drawList );
+
+	glDisable( GL_TEXTURE_GEN_S );
+	glDisable( GL_TEXTURE_GEN_T );
+
+	glPopMatrix();
+#endif
+}
+
+slVector *slPositionVertex( const slPosition *p, const slVector *v, slVector *o ) {
+	slVectorXform( p->rotation, v, o );
+	slVectorAdd( &p->location, o, o );
+
+	return o;
 }

@@ -59,13 +59,17 @@ slLink::slLink( slWorld *w ) : slWorldObject() {
 }
 
 slLink::~slLink() {
-	if ( _multibody && _multibody->getRoot() == this ) 
-		_multibody->setRoot( NULL );
+	// slLink *r = NULL;
+	// if(multibody) r = multibody->getRoot();
+	// printf("deleting link %p [%p root %p]\n", this, multibody, r);
+
+	if ( _multibody && _multibody->getRoot() == this ) _multibody->setRoot( NULL );
 
 	// This is a bad situation here: slJointBreak modifies the
 	// joint list.  I intend to fix this.
 
 	while ( _inJoints.size() != 0 )( *_inJoints.begin() )->breakJoint();
+
 	while ( _outJoints.size() != 0 )( *_outJoints.begin() )->breakJoint();
 
 	dBodyDestroy( _odeBodyID );
@@ -118,69 +122,110 @@ void slLink::step( slWorld *world, double step ) {
 */
 
 void slLink::setShape( slShape *s ) {
-	slWorldObject::setShape( s );
+	if ( _shape ) slShapeFree( _shape );
 
-	// dMatrix3 is actually 4x3.
+	_shape = s;
+
+	s->_referenceCount++;
+
+	// The ODE docs call dMatrix3 a 3x3 matrix.  but it's actually 4x3.
+	// go figure.
 
 	dMassSetZero( &_massData );
 
 	_massData.mass = _shape->_mass;
+
 	_massData.c[0] = 0.0;
+
 	_massData.c[1] = 0.0;
+
 	_massData.c[2] = 0.0;
+
 	_massData.c[3] = 0.0;
+
 	_massData.I[0] = s->_inertia[0][0];
+
 	_massData.I[1] = s->_inertia[0][1];
+
 	_massData.I[2] = s->_inertia[0][2];
+
 	_massData.I[3] = 0.0;
+
 	_massData.I[4] = s->_inertia[1][0];
+
 	_massData.I[5] = s->_inertia[1][1];
+
 	_massData.I[6] = s->_inertia[1][2];
+
 	_massData.I[7] = 0.0;
+
 	_massData.I[8] = s->_inertia[2][0];
+
 	_massData.I[9] = s->_inertia[2][1];
+
 	_massData.I[10] = s->_inertia[2][2];
+
 	_massData.I[11] = 0.0;
 
 	dBodySetMass( _odeBodyID, &_massData );
 }
 
-void slLink::setLabel( const char *inLabel ) {
-	_label = inLabel;
+/*
+	\brief Sets the label associated with this link.
+*/
+
+void slLink::setLabel( char *l ) {
+	_label = l;
 }
 
-void slLink::setLocation( slVector *inLocation ) {
+/*!
+	\brief Sets the location for a single link.
+*/
+
+void slLink::setLocation( slVector *location ) {
 	_justMoved = 1;
 
 	if ( _simulate ) {
-		if ( _odeBodyID ) dBodySetPosition( _odeBodyID, inLocation->x, inLocation->y, inLocation->z );
+		if ( _odeBodyID ) dBodySetPosition( _odeBodyID, location->x, location->y, location->z );
 	} else {
-		slVectorCopy( inLocation, &_stateVector[ _currentState].location );
-		slVectorCopy( inLocation, &_stateVector[!_currentState].location );
+		slVectorCopy( location, &_stateVector[ _currentState].location );
+		slVectorCopy( location, &_stateVector[!_currentState].location );
 	}
 
-	slWorldObject::setLocation( inLocation );
+	slVectorCopy( location, &_position.location );
+
+	updateBoundingBox();
 }
 
-void slLink::setRotation( double inRotation[3][3] ) {
+/*!
+	\brief Sets the rotation for a single link
+*/
+
+void slLink::setRotation( double rotation[3][3] ) {
 	_justMoved = 1;
 
 	if ( _simulate ) {
 		dReal r[ 16 ];
 
-		slSlToODEMatrix( inRotation, r );
+		slSlToODEMatrix( rotation, r );
 		dBodySetRotation( _odeBodyID, r );
 	} else {
 		slQuat q;
 
-		slMatrixToQuat( inRotation, &q );
+		slMatrixToQuat( rotation, &q );
 
-		slQuatCopy( &q, &_stateVector[  _currentState ].rotQuat );
-		slQuatCopy( &q, &_stateVector[ !_currentState ].rotQuat );
+		slQuatCopy( &q, &_stateVector[ _currentState].rotQuat );
+		slQuatCopy( &q, &_stateVector[!_currentState].rotQuat );
 	}
 
-	slWorldObject::setRotation( inRotation );
+	slMatrixCopy( rotation, _position.rotation );
+
+	updateBoundingBox();
 }
+
+/*!
+	\brief Gets the rotational and/or linear velocity of a link.
+*/
 
 void slLink::getVelocity( slVector *linear, slVector *rotational ) {
 	slLinkIntegrationPosition *config;
@@ -196,7 +241,9 @@ void slLink::getVelocity( slVector *linear, slVector *rotational ) {
 			const dReal *v = dBodyGetLinearVel( _odeBodyID );
 
 			linear->x = v[0];
+
 			linear->y = v[1];
+
 			linear->z = v[2];
 		}
 
@@ -204,11 +251,17 @@ void slLink::getVelocity( slVector *linear, slVector *rotational ) {
 			const dReal *v = dBodyGetAngularVel( _odeBodyID );
 
 			rotational->x = v[0];
+
 			rotational->y = v[1];
+
 			rotational->z = v[2];
 		}
 	}
 }
+
+/*!
+	\brief Gets the rotation of this link.
+*/
 
 void slLink::getRotation( double m[3][3] ) {
 	const dReal *rotation;
@@ -220,6 +273,10 @@ void slLink::getRotation( double m[3][3] ) {
 		slODEToSlMatrix(( dReal* )rotation, m );
 	}
 }
+
+/*!
+	\brief Sets the linear and/or rotational velocity of a link.
+*/
 
 void slLink::setVelocity( slVector *velocity, slVector *rotational ) {
 	slLinkIntegrationPosition *config;
@@ -246,6 +303,10 @@ void slLink::setVelocity( slVector *velocity, slVector *rotational ) {
 	}
 }
 
+/*!
+	\brief Sets the linear and/or rotational acceleration of a link.
+*/
+
 void slLink::setAcceleration( slVector *linear, slVector *rotational ) {
 	if ( linear ) {
 		slVectorCopy( linear, &_acceleration.b );
@@ -260,13 +321,19 @@ void slLink::setAcceleration( slVector *linear, slVector *rotational ) {
 	}
 }
 
-void slLink::applyForce( slVector *f, slVector *t ) {
-	if ( f ) 
-		dBodySetForce( _odeBodyID, f->x, f->y, f->z );
+/*!
+	\brief Apply a linear/rotational force to a link.
+*/
 
-	if ( t ) 
-		dBodySetTorque( _odeBodyID, t->x, t->y, t->z );
+void slLink::applyForce( slVector *f, slVector *t ) {
+	if ( f ) dBodySetForce( _odeBodyID, f->x, f->y, f->z );
+
+	if ( t ) dBodySetTorque( _odeBodyID, t->x, t->y, t->z );
 }
+
+/*!
+	\brief Updates the link positions from the ODE positions.
+*/
 
 void slLink::updatePositionFromODE() {
 	const dReal *positionV;
@@ -276,13 +343,16 @@ void slLink::updatePositionFromODE() {
 	if ( !_simulate || !_odeBodyID ) return;
 
 	positionV = dBodyGetPosition( _odeBodyID );
+
 	rotationV = dBodyGetRotation( _odeBodyID );
 
 	_position.location.x = positionV[0];
+
 	_position.location.y = positionV[1];
+
 	_position.location.z = positionV[2];
 
-	slODEToSlMatrix( ( dReal* )rotationV, _position.rotation );
+	slODEToSlMatrix(( dReal* )rotationV, _position.rotation );
 }
 
 /*!
@@ -311,7 +381,7 @@ int slLink::checkSelfPenetration( slWorld *world ) {
 
 			slPairFlags *flags = slVclipPairFlags( vc, _clipNumber, link2->_clipNumber );
 
-			if (( slVclipFlagsShouldTest( *flags ) ) && vc->testPair( &c, NULL, 0 ) ) {
+			if (( slVclipFlagsShouldTest( *flags ) ) && vc->testPair( &c, NULL ) ) {
 				return 1;
 			}
 		}
@@ -343,7 +413,7 @@ std::vector< void* > slLink::userDataForPenetratingObjects( slWorld *w ) {
 			slCollisionCandidate c( vc, ln, n );
 			slPairFlags *flags = slVclipPairFlags( vc, ln, n );
 
-			if (( slVclipFlagsShouldTest( *flags ) && *flags & BT_SIMULATE ) && vc->testPair( &c, NULL, 0 ) ) {
+			if (( slVclipFlagsShouldTest( *flags ) && *flags & BT_SIMULATE ) && vc->testPair( &c, NULL ) ) {
 				penetrations.push_back( w->_objects[ n ]->getCallbackData() );
 			}
 		}
@@ -513,30 +583,32 @@ slJoint *slLink::link( slWorld *world, slLink *parent, int jointType, slVector *
 	switch ( jointType ) {
 
 		case JT_BALL:
-			joint->_odeJointID = dJointCreateBall( world->_odeWorldID, NULL );
+			joint->_odeJointID = dJointCreateBall( world->_odeWorldID, world->_odeJointGroupID );
 
-			joint->_odeMotorID = dJointCreateAMotor( world->_odeWorldID, NULL );
+			joint->_odeMotorID = dJointCreateAMotor( world->_odeWorldID, world->_odeJointGroupID );
 
 			dJointAttach( joint->_odeMotorID, cBodyID, pBodyID );
 
 			break;
 
 		case JT_UNIVERSAL:
-			joint->_odeJointID = dJointCreateUniversal( world->_odeWorldID, NULL );
+			joint->_odeJointID = dJointCreateUniversal( world->_odeWorldID, world->_odeJointGroupID );
 
-			joint->_odeMotorID = dJointCreateAMotor( world->_odeWorldID, NULL );
+			joint->_odeMotorID = dJointCreateAMotor( world->_odeWorldID, world->_odeJointGroupID );
+
+			dJointSetAMotorMode( joint->_odeMotorID, dAMotorEuler );
 
 			dJointAttach( joint->_odeMotorID, cBodyID, pBodyID );
 
 			break;
 
 		case JT_REVOLUTE:
-			joint->_odeJointID = dJointCreateHinge( world->_odeWorldID, NULL );
+			joint->_odeJointID = dJointCreateHinge( world->_odeWorldID, world->_odeJointGroupID );
 
 			break;
 
 		case JT_PRISMATIC:
-			joint->_odeJointID = dJointCreateSlider( world->_odeWorldID, NULL );
+			joint->_odeJointID = dJointCreateSlider( world->_odeWorldID, world->_odeJointGroupID );
 
 			dJointSetSliderParam( joint->_odeJointID, dParamHiStop, 2.0 );
 
@@ -545,7 +617,7 @@ slJoint *slLink::link( slWorld *world, slLink *parent, int jointType, slVector *
 			break;
 
 		case JT_FIX:
-			joint->_odeJointID = dJointCreateFixed( world->_odeWorldID, NULL );
+			joint->_odeJointID = dJointCreateFixed( world->_odeWorldID, world->_odeJointGroupID );
 
 			break;
 	}
@@ -575,14 +647,21 @@ slJoint *slLink::link( slWorld *world, slLink *parent, int jointType, slVector *
 			slVectorNormalize( &tp );
 
 			dJointSetAMotorNumAxes( joint->_odeMotorID, 3 );
+
+			dJointSetAMotorMode( joint->_odeMotorID, dAMotorEuler );
+
 			dJointSetAMotorAxis( joint->_odeMotorID, 0, 1, tn.x, tn.y, tn.z );
+
 			dJointSetAMotorAxis( joint->_odeMotorID, 1, 0, 0, 0, 0 );
+
 			dJointSetAMotorAxis( joint->_odeMotorID, 2, 2, tp.x, tp.y, tp.z );
+
 			dJointSetAMotorMode( joint->_odeMotorID, dAMotorEuler );
 
 			// See the note in \ref slJoint::setLimits.  These odd stops are required for stability.
 
 			dJointSetAMotorParam( joint->_odeMotorID, dParamLoStop2, -( M_PI / 2.0 ) + 0.35 );
+
 			dJointSetAMotorParam( joint->_odeMotorID, dParamHiStop2, ( M_PI / 2.0 ) - 0.35 );
 
 			break;
@@ -593,10 +672,12 @@ slJoint *slLink::link( slWorld *world, slLink *parent, int jointType, slVector *
 			slVectorNormalize( &axis2 );
 
 			dJointSetUniversalAxis1( joint->_odeJointID, tn.x, tn.y, tn.z );
+
 			dJointSetUniversalAxis2( joint->_odeJointID, axis2.x, axis2.y, axis2.z );
+
 			dJointSetAMotorAxis( joint->_odeMotorID, 0, 2, tn.x, tn.y, tn.z );
+
 			dJointSetAMotorAxis( joint->_odeMotorID, 2, 2, axis2.x, axis2.y, axis2.z );
-			dJointSetAMotorMode( joint->_odeMotorID, dAMotorEuler );
 
 			break;
 

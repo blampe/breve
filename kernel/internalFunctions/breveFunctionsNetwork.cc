@@ -36,6 +36,19 @@
 
 #define BRNETWORKSERVERPOINTER(p)	((brNetworkServer*)BRPOINTER(p))
 
+/*!
+	\brief Data about a network client, passed off to the function which
+	handles the connection.
+*/
+
+struct brNetworkClientData {
+	brEngine *engine;
+	brNetworkServer *server;
+	int socket;
+
+	struct sockaddr_in addr;
+};
+
 /*! \addtogroup InternalFunctions */
 /*@{*/
 
@@ -195,7 +208,7 @@ brNetworkServer *brListenOnPort( int port, brEngine *engine ) {
 	serverData->index = NULL;
 
 	serverData->engine = engine;
-	serverData->recipient = engine-> getController();
+	serverData->recipient = engine->controller;
 	serverData->port = port;
 	serverData->socket = ssock;
 	serverData->terminate = 0;
@@ -226,11 +239,11 @@ void *brListenOnSocket( void *data ) {
 			// fcntl(clientData.socket, F_SETFL, O_NONBLOCK);
 			printf( "about to lock\n" );
 
-			clientData.engine -> lock();
+			brEngineLock( clientData.engine );
 
 			brHandleConnection( &clientData );
 
-			clientData.engine -> unlock();
+			brEngineUnlock( clientData.engine );
 
 #if WINDOWS
 			closesocket( clientData.socket );
@@ -281,19 +294,16 @@ int brSendBackXMLObject( int sockfd, brInstance *i ) {
 	char *buffer = NULL;
 	int returnedValue = 0;
 
-	if ( i ) {  
-		// If we have an instance, let XML encode it...
-
+	if ( i ) {  // If we have an instance, let XML encode it...
 		slStringStream *xmlBuffer = slOpenStringStream();
 		FILE *file = xmlBuffer->fp;
-		brXMLWriteObjectToStream( i, file, 0 );
+		stXMLWriteObjectToStream(( stInstance* )i->userData, file, 0 );
 		buffer = slCloseStringStream( xmlBuffer );
 	}
 
 	returnedValue = brSendBackXMLString( sockfd, buffer );
 
-	if ( buffer ) 
-		slFree( buffer );
+	if ( buffer ) slFree( buffer );
 
 	return returnedValue;
 }
@@ -369,7 +379,7 @@ void *brHandleConnection( void *p ) {
 
 			eval[0].set( buffer );
 
-			brMethodCallByNameWithArgs( data->engine-> getController(), "parse-xml-network-request", args, 1, &result );
+			brMethodCallByNameWithArgs( data->engine->controller, "parse-xml-network-request", args, 1, &result );
 
 			args[0] = &result;
 
@@ -499,7 +509,7 @@ int brHandleHTTPConnection( brNetworkClientData *data, char *request ) {
 		slFree( str );
 	}
 
-	result = brMethodCallByNameWithArgs( data->engine-> getController(), method, evalPtrs, count, &target );
+	result = brMethodCallByNameWithArgs( data->engine->controller, method, evalPtrs, count, &target );
 
 	for ( n = 0;n < count;n++ ) {
 		delete evalPtrs[ n ];
@@ -519,7 +529,7 @@ int brHandleHTTPConnection( brNetworkClientData *data, char *request ) {
 		return 0;
 	}
 
-	string = brFormatEvaluation( &target, data->engine -> getController() );
+	string = brFormatEvaluation( &target, data->engine->controller );
 
 	if ( strstr( string, ".html" ) ) {
 		brSendPage( data, string );

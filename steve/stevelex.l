@@ -28,8 +28,6 @@
 
 #include "steveparse.tab.h"
 
-void stParseAddDocumentingComment( const char *comment );
-
 static const char *parseString;
 static int parseLength;
 static int parseLoc = 0;
@@ -41,11 +39,11 @@ int lineno = 1;
 
 int gErrorLine = 0;
 
-// yylval might not be big enough for a double 
+/* yylval might not be big enough for a double */
 
 extern brEngine *parseEngine;
 
-void yyerror( const char* );
+void yyerror(char *);
 
 FILE *docHandle = NULL;
 
@@ -58,26 +56,19 @@ WORDBREAK	[^0-9a-zA-Z\-_]
 
 WHITESPACE	[\ \t]+
 
-%x BLOCKCOMMENT
 %x COMMENT
 
 %%
 
-#!					{ BEGIN( BLOCKCOMMENT ); }
+#!						{ BEGIN(COMMENT); }
 
-<BLOCKCOMMENT>\r\n			{ lineno++; }
-<BLOCKCOMMENT>\r			{ lineno++; }
-<BLOCKCOMMENT>\n			{ lineno++; }
-<BLOCKCOMMENT>.				{ }
-<BLOCKCOMMENT>!#			{ BEGIN(0); }
+<COMMENT>\r\n			{ lineno++; }
+<COMMENT>\r				{ lineno++; }
+<COMMENT>\n				{ lineno++; }
+<COMMENT>.				{ /* block comment */ }
+<COMMENT>!#				{ BEGIN(0); }
 
-^[\ \t]*%.*				{ stParseAddDocumentingComment( yytext ); };
-
-#					{ BEGIN( COMMENT ); };
-<COMMENT>\r\n				{ lineno++; BEGIN( 0 ); }
-<COMMENT>\r				{ lineno++; BEGIN( 0 ); }
-<COMMENT>\n				{ lineno++; BEGIN( 0 ); }
-<COMMENT>.				{ }
+#.*						{ /* comment */ };
 
 \+[\ ]*to/{WORDBREAK}	{ return TO_PUBLIC; }
 \-[\ ]*to/{WORDBREAK}	{ return TO_PRIVATE; }
@@ -146,6 +137,8 @@ for						{ return FOR; }
 if						{ return IF; }
 else					{ return ELSE; }
 
+xxxxin						{ return ST_IN; }
+
 new						{ return NEW; }
 free					{ return FREE; }
 die						{ return DIE; }
@@ -168,7 +161,7 @@ path					{ return PATH; }
 ([a-zA-Z_]|[a-zA-Z_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])	{ 
 		brEval *defineEval;
 
-		defineEval = steveData->defines[ yytext ];
+		defineEval = steveData->defines[ yytext];
 
 		if(defineEval) {
 			brEval *copy = new brEval;
@@ -193,6 +186,7 @@ path					{ return PATH; }
 
 \"([^\"]|(\\\"))*\"	{ yylval.string = slStrdup(yytext); return STRING_VALUE; }
 
+^[\ \t]*%.*			{ /* self documenting comment */ };
 ^[\ \t]*\+[\ ]*section{WORDBREAK}.*	{ /* section */ }
 
 [\t ]				;
@@ -200,8 +194,6 @@ path					{ return PATH; }
 ::[xX]				{ return X_ELEMENT; }
 ::[yY]				{ return Y_ELEMENT; }
 ::[zZ]				{ return Z_ELEMENT; }
-
-::([a-zA-Z_]|[a-zA-Z_][a-zA-Z0-9\-_]*[a-zA-Z0-9_])			{ yylval.string = slStrdup( yytext + 2 ); return DOT_NOTATOR; }
 
 "=="				{ return EQ; }
 "!="				{ return NE; }
@@ -220,7 +212,7 @@ path					{ return PATH; }
 
 .					{ return yytext[0]; }
 
-\"[^\"\n]*			{ yyerror( "unterminated string constant" ); }
+\"[^\"\n]*			{ yyerror("unterminated string constant"); }
 
 %%
 
@@ -228,8 +220,10 @@ int yywrap() {
     return 1;
 }
 
-void yyerror( const char *c ) {
+void yyerror(char *c) {
     stParseError(parseEngine, PE_PARSE, "%s in file \"%s\" at line %d near \"%s\"", c, yyfile, lineno, yytext);
+    // YY_FLUSH_BUFFER;
+
     gErrorLine = lineno;
 }
 

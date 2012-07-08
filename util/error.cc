@@ -26,35 +26,24 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "slutil.h"
+#include "util.h"
 
 static int gDebugLevel;
 
-static void( *gMessageOutputFunction )( const char * ) = slStdoutMessageCallback;
-static void( *gErrorOutputFunction )( const char * ) = slStderrMessageCallback;
+static void( *gMessageOutputFunction )( const char * ) = slStderrMessageCallback;
+
 
 void slSetDebugLevel( int level ) {
 	gDebugLevel = level;
 }
 
-void slSetMessageCallbackFunctions( void( out )( const char * ), void( err )( const char * ) ) {
-	gMessageOutputFunction = out;
-	gErrorOutputFunction   = err;
-}
-
 void slSetMessageCallbackFunction( void( f )( const char * ) ) {
 	gMessageOutputFunction = f;
-	gErrorOutputFunction   = f;
 }
 
 void slStderrMessageCallback( const char *string ) {
 	fprintf( stderr, "%s", string );
 	fflush( stderr );
-}
-
-void slStdoutMessageCallback( const char *string ) {
-	fprintf( stdout, "%s", string );
-	fflush( stdout );
 }
 
 /*!
@@ -80,18 +69,14 @@ void slFatal( char *format, ... ) {
 }
 
 void slFormattedMessage( int level, const char *format ) {
-	if( level > gDebugLevel )
+	if ( level > gDebugLevel || !gMessageOutputFunction )
 		return;
 
-	if( level <= 0 ) {
-		if( gMessageOutputFunction ) gMessageOutputFunction( format );
-	} else {
-		if( gErrorOutputFunction ) gErrorOutputFunction( format );
-	}
+	gMessageOutputFunction( format );
 }
 
 void slMessage( int level, const char *format, ... ) {
-	if ( level > gDebugLevel )
+	if ( level > gDebugLevel || !gMessageOutputFunction )
 		return;
 
 	va_list vp;
@@ -114,11 +99,7 @@ void slMessage( int level, const char *format, ... ) {
 #endif
 	va_end( vp );
 
-	if( level <= 0 ) {
-		if( gMessageOutputFunction ) gMessageOutputFunction( queueMessage );
-	} else {
-		if( gErrorOutputFunction ) gErrorOutputFunction( queueMessage );
-	}
+	gMessageOutputFunction( queueMessage );
 
 	free( queueMessage );
 }

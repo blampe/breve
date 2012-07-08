@@ -38,66 +38,115 @@
 
 #include "steve.h"
 
-/**
- * \brief Increments the retain count of a pointer of a given type.
- * Calls type-specific retain functions.
- */
+/*!
+	\brief Increments the retain count of a brEval.
+
+	Calls type-specific retain functions.
+*/
+
+void stGCRetain( brEval *e ) {
+	stGCRetainPointer( e->getPointer(), e->type() );
+}
+
+/*!
+	\brief Increments the retain count of a pointer of a given type.
+
+	Calls type-specific retain functions.
+*/
 
 void stGCRetainPointer( void *pointer, int type ) {
-	// if( pointer == (void*)0x5f5f5f5f || type == 0x5f5f5f5f )
-	// 	slMessage(DEBUG_WARN, "possible GC of uninitialized value?\n" );
+	if( pointer == (void*)0x5f5f5f5f || type == 0x5f5f5f5f )
+		slMessage(DEBUG_WARN, "possible GC of uninitialized value?\n" );
+
+	if ( type == AT_NULL || !pointer ) return;
+
+	brInstance *bi;
 
 	switch ( type ) {
+
 		case AT_INSTANCE:
-			if( pointer ) {
-				brInstance *bi = ( brInstance* )pointer;
+			bi = ( brInstance* )pointer;
 
-				// needed to protect bridge instances
-				if ( bi->object->type->_typeSignature != STEVE_TYPE_SIGNATURE || bi -> status != AS_ACTIVE ) 
-					return;
+			// needed to protect bridge instances
+			if ( bi->object->type->_typeSignature != STEVE_TYPE_SIGNATURE ) return;
 
-				stInstanceRetain(( stInstance* )bi->userData );
-			}
+			if ( bi->status != AS_ACTIVE ) return;
+
+			stInstanceRetain(( stInstance* )bi->userData );
 
 			break;
 
 		case AT_LIST:
+			brEvalListRetain(( brEvalListHead* )pointer );
+
+			break;
+
 		case AT_HASH:
+			brEvalHashRetain(( brEvalHash* )pointer );
+
+			break;
+
 		case AT_DATA:
-			if( pointer )
-				( ( brEvalObject* )pointer ) -> retain();
+			brDataRetain(( brData* )pointer );
+
+			break;
+
 		default:
 			break;
 	}
 }
 
-/**
- * \brief Decrements the retain count of a pointer of a given type.
- *
- * Calls type-specific unretain functions.
- */
+/*!
+	\brief Decrements the retain count of a brEval.
+
+	Calls \ref stGCUnretainPointer.
+*/
+
+void stGCUnretain( brEval *e ) {
+	stGCUnretainPointer( e->getPointer(), e->type() );
+}
+
+/*!
+	\brief Decrements the retain count of a pointer of a given type.
+
+	Calls type-specific unretain functions.
+*/
 
 void stGCUnretainPointer( void *pointer, int type ) {
+	if ( type == AT_NULL || type == AT_INT || type == AT_DOUBLE || type == AT_MATRIX || type == AT_VECTOR || !pointer ) return;
+
+	brInstance *bi;
+
 	switch ( type ) {
 
 		case AT_INSTANCE:
-			if( pointer ) {
-				brInstance *bi = ( brInstance* )pointer;
+			bi = ( brInstance* )pointer;
 
-				// needed to protect bridge instances
-				if ( bi->object->type->_typeSignature != STEVE_TYPE_SIGNATURE || bi -> status != AS_ACTIVE ) 
-					return;
+			// needed to protect bridge instances
+			if ( bi->object->type->_typeSignature != STEVE_TYPE_SIGNATURE ) return;
 
-				stInstanceUnretain(( stInstance* )bi->userData );
-			}
+			if ( bi->status != AS_ACTIVE ) return;
+
+			stInstanceUnretain(( stInstance* )bi->userData );
 
 			break;
 
 		case AT_LIST:
+			brEvalListUnretain(( brEvalListHead* )pointer );
+
+			break;
+
 		case AT_HASH:
+			brEvalHashUnretain(( brEvalHash* )pointer );
+
+			break;
+
 		case AT_DATA:
-			if( pointer )
-				( ( brEvalObject* )pointer ) -> unretain();
+			brDataUnretain(( brData* )pointer );
+
+			break;
+
+		case AT_STRING:
 			break;
 
 		default:
@@ -105,13 +154,20 @@ void stGCUnretainPointer( void *pointer, int type ) {
 	}
 }
 
-/**
- * \brief Collects memory if the retain count of a pointer is 0.
- */
+/*!
+	\brief Collects memory if the retain count of an eval is 0.
+*/
+
+void stGCCollect( brEval *e ) {
+	stGCCollectPointer( e->getPointer(), e->type() );
+}
+
+/*!
+	\brief Collects memory if the retain count of a pointer is 0.
+*/
 
 void stGCCollectPointer( void *pointer, int type ) {
-	if( !stGCNEEDSCOLLECT( type ) || !pointer )
-		return;
+	if ( type == AT_NULL || type == AT_INT || type == AT_DOUBLE || type == AT_MATRIX || type == AT_VECTOR || !pointer ) return;
 
 	brInstance *bi;
 
@@ -186,6 +242,16 @@ void brEvalListRetain( brEvalListHead *lh ) {
 }
 
 /*!
+	\brief Decrements the retain list count.
+
+	If the count is then zero, the list is freed with brEvalListFree.
+*/
+
+void brEvalListUnretain( brEvalListHead *lh ) {
+	lh->unretain();
+}
+
+/*!
 	\brief Collects an evalList, if it's ready for GC.
 
 	Frees the list if the retainCount is less than 1.
@@ -201,6 +267,14 @@ void brEvalListCollect( brEvalListHead *lh ) {
 
 void brEvalHashRetain( brEvalHash *h ) {
 	h->retain();
+}
+
+/*!
+	\brief Decrements the retain count of the eval hash.
+*/
+
+void brEvalHashUnretain( brEvalHash *h ) {
+	h->unretain();
 }
 
 /*!

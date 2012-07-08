@@ -37,6 +37,7 @@
 #define stEvalList brEvalList
 #define stEvalListHead brEvalListHead
 #define stNewEvalList() 	(new brEvalListHead())
+#define brEvalListNew() 	(new brEvalListHead())
 #define stPluginFindFile brPluginFindFile
 
 #define STINT		BRINT
@@ -126,6 +127,7 @@ class brEval {
 			stGCRetainPointer( _values.pointerValue, _type );
 		}
 
+
 		void clear() { collect(); _type = AT_NULL; }
 
 		inline unsigned char type() { return _type; }
@@ -183,19 +185,15 @@ class brEvalObject {
 		void collect();
 };
 
-//
-// Functions and macros for dealing with the brEvalListHead class
-//
+class brEvalListHead: public brEvalObject {
+    public:
+        brEvalListHead();
+        ~brEvalListHead();
 
-class brEvalListHead;
+        std::vector< brEval* > _vector;
 
-int brEvalListInsert( brEvalListHead *head, int index, brEval *value );
-brEval *brEvalListIndexLookup( brEvalListHead *inList, int inIndex );
-int brEvalListLength( brEvalListHead *inList );
-brEvalListHead *brEvalListNew();
-
-#define brEvalListAppend( a, eval ) brEvalListInsert( (a), brEvalListLength( a ), (eval) )
-
+        inline std::vector< brEval* > &getVector() { return _vector; }
+};
 
 class brData: public brEvalObject {
     public:
@@ -209,8 +207,17 @@ class brData: public brEvalObject {
 brData *brDataNew(void *data, int length);
 void brDataFree(brData *data);
 
+/* 
+	The following functions are used to create & edit evaluation lists.
+	You can create brEvalLists to be returned by your functions.
+	Don't worry about freeing brEvalLists, this is done by the engine.
+*/
 
-//	Use these macros to treat brEval pointers as specific types. 
+int brEvalListInsert( brEvalListHead *head, int index, brEval *value );
+
+#define brEvalListAppend( a, eval ) brEvalListInsert( (a), (a)->_vector.size(), (eval) )
+
+/* Use these macros to treat brEval pointers as specific types. */
 
 #define BRINT(e)		( (e)->getInt() )
 #define BRFLOAT(e)		( (e)->getDouble() )

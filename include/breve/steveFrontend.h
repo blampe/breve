@@ -1,13 +1,9 @@
-#ifndef _STEVE_FRONTEND_H
-#define _STEVE_FRONTEND_H
-
 #define ST_STACK_SIZE   0x4000
-#define STEVE_TYPE_SIGNATURE		0x73747665
 
 #include <vector>
 #include <map>
 
-class stStackRecord;
+#define STEVE_TYPE_SIGNATURE		0x73747665
 
 struct stSteveData {
 	stSteveData() {
@@ -28,8 +24,6 @@ struct stSteveData {
 
 	std::vector< stObject* > objects;
 	std::vector< std::string > filesSeen;
-	std::map< std::string, std::vector< std::string > > 	_includes;
-	std::map< std::string, std::vector< std::string > > 	_paths;
 
 	std::map< std::string, brEval* > defines;
 
@@ -38,7 +32,7 @@ struct stSteveData {
 
 	// the stack pointer and memory for running steve code
 
-	char stackBase[ ST_STACK_SIZE ];
+	char stackBase[ST_STACK_SIZE];
 	char *stack;
 
 	stStackRecord *stackRecord;
@@ -67,14 +61,13 @@ char *stFindParseTrack( slList *, const char * );
 stVersionRequirement *stMakeVersionRequirement( float, int );
 int stCheckVersionRequirement( float, stVersionRequirement * );
 void stObjectAllocationReport( stObject * );
-void stParseError( brEngine *, int, const char *, ... );
+void stParseError( brEngine *, int, char *, ... );
 
 void stSteveCleanup( void* );
 
-int stPreprocess( stSteveData *, brEngine *, const char *, const char * );
+int stPreprocess(stSteveData *, brEngine *, const char *);
 
 int stSetControllerName(stSteveData *, brEngine *, const char *);
 
 void stSetParseData( stSteveData *, const char *, int );
 
-#endif

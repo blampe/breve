@@ -24,7 +24,6 @@
 #include "evaluation.h"
 #include "world.h"
 #include "shape.h"
-#include "mesh.h"
 
 #define BRSHAPEPOINTER(p)	((slShape*)BRPOINTER(p))
 
@@ -32,7 +31,8 @@
 /*@{*/
 
 int brIShapeNew( brEval args[], brEval *target, brInstance *i ) {
-	target->set( new slMeshShape() );
+
+	target->set( new slShape() );
 
 	return EC_OK;
 }
@@ -67,10 +67,11 @@ int brIAddShapeFace( brEval args[], brEval *target, brInstance *i ) {
 }
 
 int brIFinishShape( brEval args[], brEval *target, brInstance *i ) {
-	slMeshShape *s = (slMeshShape*)BRSHAPEPOINTER( &args[0] );
+	slShape *s = BRSHAPEPOINTER( &args[0] );
 	double density = BRDOUBLE( &args[1] );
 
-	s -> finishShape( density );
+	if ( !slShapeInitNeighbors( s, density ) ) 
+		return EC_ERROR;
 
 	return EC_OK;
 }
@@ -93,27 +94,9 @@ int brIShapeSetMass( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-int brIShapeSetInertiaMatrix( brEval args[], brEval *target, brInstance *i ) {
-	slShape *s = BRSHAPEPOINTER( &args[ 0 ] );
-	s -> setInertiaMatrix( BRMATRIX( &args[ 1 ] ) );
-
-	return EC_OK;
-}
-
 int brIMeshShapeNew( brEval args[], brEval *target, brInstance *i ) {
-	char *path = brFindFile( i -> engine, BRSTRING( &args[ 0 ] ), NULL );
 
-	if( !path ) {
-		slMessage( DEBUG_ALL, "Could not locate mesh file \"%s\"", BRSTRING( &args[ 0 ] ) );
-		return EC_ERROR;
-	}
-
-#ifdef HAVE_LIBASSIMP
-	target -> set( slAIImport::Import( path ) );
-#else
-	slMessage( DEBUG_ALL, "Cannot load mesh shape -- this binary was built without libassimp" );
-	return EC_ERROR;
-#endif
+	target->set( new slMeshShape( BRSTRING( &args[0] ), BRSTRING( &args[1] ) ) );
 
 	return EC_OK;
 }
@@ -127,7 +110,7 @@ int brISphereNew( brEval args[], brEval *target, brInstance *i ) {
 
 int brICubeNew( brEval args[], brEval *target, brInstance *i ) {
 
-	target->set( new slBox( &BRVECTOR( &args[0] ), BRDOUBLE( &args[1] ) ) );
+	target->set( slNewCube( &BRVECTOR( &args[0] ), BRDOUBLE( &args[1] ) ) );
 
 	return EC_OK;
 }
@@ -147,9 +130,7 @@ int brINGonConeNew( brEval args[], brEval *target, brInstance *i ) {
 }
 
 int brIFreeShape( brEval args[], brEval *target, brInstance *i ) {
-	slShape *s = BRSHAPEPOINTER( &args[0] );
-	
-	s -> release();
+	slShapeFree( BRSHAPEPOINTER( &args[0] ) );
 
 	return EC_OK;
 }
@@ -157,10 +138,10 @@ int brIFreeShape( brEval args[], brEval *target, brInstance *i ) {
 int brIDataForShape( brEval args[], brEval *target, brInstance *i ) {
 	void *serialShape;
 	int length;
-	slShape *s = BRSHAPEPOINTER( &args[0] );
 
-	serialShape = s -> serialize( &length );
-	target -> set( new brData( serialShape, length ) );
+	serialShape = slSerializeShape( BRSHAPEPOINTER( &args[0] ), &length );
+
+	target->set( new brData( serialShape, length ) );
 
 	slFree( serialShape );
 
@@ -171,25 +152,22 @@ int brIShapeForData( brEval args[], brEval *target, brInstance *i ) {
 	brData *d = BRDATA( &args[0] );
 
 	if ( !d ) {
-		target->set( (void*)NULL );
+
+		target->set(( void* )NULL );
+
 		return EC_OK;
 	}
 
-	target->set( slShape::deserialize(( slSerializedShapeHeader* )d->data ) );
+	target->set( slDeserializeShape(( slSerializedShapeHeader* )d->data, d->length ) );
 
 	return EC_OK;
 }
 
-int brIShapeSetScale( brEval args[], brEval *target, brInstance *i ) {
+int brIScaleShape( brEval args[], brEval *target, brInstance *i ) {
 	slShape *s = BRSHAPEPOINTER( &args[0] );
-	s -> setScale( &BRVECTOR( &args[ 1 ] ) );
+	slVector *scaleValue = &BRVECTOR( &args[1] );
 
-	return EC_OK;
-}
-
-int brIShapeGetScale( brEval args[], brEval *target, brInstance *i ) {
-	slShape *s = BRSHAPEPOINTER( &args[0] );
-	target -> set( *s -> scale() );
+	s->scale( scaleValue );
 
 	return EC_OK;
 }
@@ -235,11 +213,9 @@ void breveInitShapeFunctions( brNamespace *n ) {
 	brNewBreveCall( n, "finishShape", brIFinishShape, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "shapeSetDensity", brIShapeSetDensity, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "shapeSetMass", brIShapeSetMass, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
-	brNewBreveCall( n, "shapeSetInertiaMatrix", brIShapeSetInertiaMatrix, AT_NULL, AT_POINTER, AT_MATRIX, 0 );
-	brNewBreveCall( n, "shapeSetScale", brIShapeSetScale, AT_NULL, AT_POINTER, AT_VECTOR, 0 );
-	brNewBreveCall( n, "shapeGetScale", brIShapeGetScale, AT_VECTOR, AT_POINTER, 0 );
+	brNewBreveCall( n, "scaleShape", brIScaleShape, AT_NULL, AT_POINTER, AT_VECTOR, 0 );
 	brNewBreveCall( n, "newSphere", brISphereNew, AT_POINTER, AT_DOUBLE, AT_DOUBLE, 0 );
-	brNewBreveCall( n, "meshShapeNew", brIMeshShapeNew, AT_POINTER, AT_STRING, AT_STRING, AT_DOUBLE, 0 );
+	brNewBreveCall( n, "meshShapeNew", brIMeshShapeNew, AT_POINTER, AT_STRING, AT_STRING, 0 );
 	brNewBreveCall( n, "newCube", brICubeNew, AT_POINTER, AT_VECTOR, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "newNGonDisc", brINGonDiscNew, AT_POINTER, AT_INT, AT_DOUBLE, AT_DOUBLE, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "newNGonCone", brINGonConeNew, AT_POINTER, AT_INT, AT_DOUBLE, AT_DOUBLE, AT_DOUBLE, 0 );

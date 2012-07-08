@@ -40,18 +40,32 @@ int brICameraSetZClip( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
- * \brief Clears the camera with the background color.
- */
+/*!
+	\brief Sets OpenGL smoothing for a camera.
+
+	void cameraSetDrawSmooth(int smooth).
+*/
+
+int brICameraSetDrawSmooth( brEval args[], brEval *target, brInstance *i ) {
+	slCamera *camera = BRCAMERAPOINTER( &args[0] );
+	camera->_drawSmooth = BRINT( &args[1] );
+	camera->setRecompile();
+	return EC_OK;
+}
+
+/*!
+	\brief Clears the camera with the background color.
+*/
 
 int brICameraClear( brEval args[], brEval *target, brInstance *i ) {
 	slCamera *camera = BRCAMERAPOINTER( &args[0] );
+	slWorld *w = i->engine->world;
 
-	if ( camera->_activateContextCallback ) 
-		camera -> _activateContextCallback();
+	if ( camera->_activateContextCallback ) camera->_activateContextCallback();
 
+	glClearColor( w->backgroundColor.x, w->backgroundColor.y, w->backgroundColor.z, 1.0 );
 
-	i -> engine -> clear();
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	return EC_OK;
 }
@@ -65,11 +79,13 @@ int brICameraClear( brEval args[], brEval *target, brInstance *i ) {
 int brICameraSetBlur( brEval args[], brEval *target, brInstance *i ) {
 	slCamera *camera = BRCAMERAPOINTER( &args[0] );
 
-	if( camera -> _activateContextCallback ) 
-		camera -> _activateContextCallback();
+	if ( camera->_activateContextCallback ) camera->_activateContextCallback();
 
-	camera -> _drawBlur = BRINT( &args[1] );
-	camera -> setRecompile();
+	camera->clear( i->engine->world );
+
+	camera->_drawBlur = BRINT( &args[1] );
+
+	camera->setRecompile();
 
 	return EC_OK;
 }
@@ -285,28 +301,10 @@ int brICameraGetRotation( brEval args[], brEval *target, brInstance *i ) {
 }
 
 /*!
-	\brief Gets the position for a camera
+	\brief Enables or disables a camera's text display.
 
-	void cameraGetPosition(slCamera pointer, int).
+	void cameraTextSetEnabled(slCamera pointer, int).
 */
-
-int brICameraGetPosition( brEval args[], brEval *target, brInstance *i ) {
-	slCamera *camera = BRCAMERAPOINTER( &args[0] );
-	slVector v;
-
-	v.x = camera->_location.x;
-	v.y = camera->_location.y;
-	v.z = camera->_location.z;
-
-	target->set( v );
-
-	return EC_OK;
-}
-
-/**
- * Enables or disables a camera's text display.
- * void cameraTextSetEnabled(slCamera pointer, int).
- */
 
 int brICameraTextSetEnabled( brEval args[], brEval *target, brInstance *i ) {
 	slCamera *camera = BRCAMERAPOINTER( &args[0] );
@@ -316,20 +314,6 @@ int brICameraTextSetEnabled( brEval args[], brEval *target, brInstance *i ) {
 	return EC_OK;
 }
 
-/**
- * Sets the color of the display text.
- */
-
-int brICameraSetTextColor( brEval args[], brEval *target, brInstance *i ) {
-	slCamera *camera = BRCAMERAPOINTER( &args[0] );
-	slVector *color = &BRVECTOR( &args[1] );
-
-	camera->setTextColor( color );
-
-	return EC_OK;
-}
-
-
 /*@}*/
 
 void breveInitCameraFunctions( brNamespace *n ) {
@@ -338,15 +322,14 @@ void breveInitCameraFunctions( brNamespace *n ) {
 	brNewBreveCall( n, "cameraResizeDisplay", brICameraResizeDisplay, AT_NULL, AT_POINTER, AT_INT, AT_INT, 0 );
 	brNewBreveCall( n, "cameraSetRotation", brICameraSetRotation, AT_NULL, AT_POINTER, AT_DOUBLE, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "cameraGetRotation", brICameraGetRotation, AT_VECTOR, AT_POINTER, 0 );
-	brNewBreveCall( n, "cameraGetPosition", brICameraGetPosition, AT_VECTOR, AT_POINTER, 0 );	
 	brNewBreveCall( n, "cameraNew", brICameraNew, AT_POINTER, 0 );
 	brNewBreveCall( n, "cameraSetBlur", brICameraSetBlur, AT_NULL, AT_POINTER, AT_INT, 0 );
 	brNewBreveCall( n, "cameraClear", brICameraClear, AT_NULL, AT_POINTER, 0 );
 
-	brNewBreveCall( n, "cameraSetTextColor", brICameraSetTextColor, AT_NULL, AT_POINTER, AT_VECTOR, 0 );
 	brNewBreveCall( n, "cameraGetHeight", brICameraGetHeight, AT_INT, AT_POINTER, 0 );
 	brNewBreveCall( n, "cameraGetWidth", brICameraGetWidth, AT_INT, AT_POINTER, 0 );
 
+	brNewBreveCall( n, "cameraSetDrawSmooth", brICameraSetDrawSmooth, AT_NULL, AT_POINTER, AT_INT, 0 );
 	brNewBreveCall( n, "cameraSetDrawFog", brICameraSetDrawFog, AT_NULL, AT_POINTER, AT_INT, 0 );
 	brNewBreveCall( n, "cameraSetFogIntensity", brICameraSetDrawFog, AT_NULL, AT_POINTER, AT_DOUBLE, 0 );
 	brNewBreveCall( n, "cameraSetFogColor", brICameraSetFogColor, AT_NULL, AT_POINTER, AT_VECTOR, 0 );

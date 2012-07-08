@@ -3,128 +3,37 @@
 #include "glIncludes.h"
 #include "sensor.h"
 
-#include "render.h"
-#include "world.h"
-
-
-void slTransform::updateTransform( const slTransform& inParent ) {
-
+void slWorldObject::draw( slCamera *camera ) {
+	if ( _shape )
+		_shape->draw( camera, &_position, _textureScaleX, _textureScaleY, _drawMode, 0 );
 }
 
-slWorldObject::slWorldObject() {
-	_drawMode = 0;
-	_texture = NULL;
-	_textureMode = 0;
-	_textureScaleX = 16;
-	_textureScaleY = 16;
-	_simulate = 0;
-	_drawAsPoint = false;
-	_drawShadow = true;
+void slObjectLine::draw( slCamera *camera ) {
+	const slVector *x, *y;
 
-	_lightExposure = 0;
+	if ( !_src || !_dst ) return;
 
-	_shape = NULL;
-	_displayShape = NULL;
+	if ( !_stipple ) return;
 
-	_proximityRadius = 0.00001;
+	x = &_src->getPosition().location;
 
-	_billboardRotation = 0;
-	_alpha = 1.0;
+	y = &_dst->getPosition().location;
 
-	_userData = NULL;
+	glLineStipple( 2, _stipple );
 
-	_e = 0.4;
-	_mu = 0.15;
+	glEnable( GL_LINE_STIPPLE );
 
-	slVectorSet(&_color, 1, 1, 1);
+	glColor4f( _color.x, _color.y, _color.z, _transparency );
 
-	slMatrixIdentity(_position.rotation);
-	slVectorSet(&_position.location, 0, 0, 0);
-}
+	glBegin( GL_LINES );
 
-slWorldObject::~slWorldObject() {
-	std::vector<slObjectConnection*>::iterator ci;
+	glVertex3f( x->x, x->y, x->z );
 
-	for(ci = _connections.begin(); ci != _connections.end(); ci++ ) {
-		(*ci)->_src = NULL;
-		(*ci)->_dst = NULL;
-	}
+	glVertex3f( y->x, y->y, y->z );
 
-	if( _shape ) 
-		_shape -> release();
+	glEnd();
 
-	if( _displayShape ) 
-		_displayShape -> release();
-
-}
-
-void slWorldObject::draw( const slRenderGL& inRenderer ) {
-	if ( _displayShape ) {
-		const slVector *scale = _displayShape -> scale();
-	
-		inRenderer.PushMatrix( slMatrixGeometry );
-		inRenderer.Translate( slMatrixGeometry, _position.location.x, _position.location.y, _position.location.z );
-
-		inRenderer.MulMatrix( slMatrixGeometry, _position.rotation );
-		inRenderer.Scale( slMatrixGeometry, scale -> x, scale -> y, scale -> z );
-
-		if( _texture ) {	
-			inRenderer.PushMatrix( slMatrixTexture );
-			inRenderer.Translate( slMatrixTexture, 0.5, 0.5, 0.0 );
-
-			if( _textureScaleX > 0.0 && _textureScaleY > 0.0 )
-				inRenderer.Scale( slMatrixTexture, 1.0 / _textureScaleX, 1.0 / _textureScaleY, 1.0 );
-
-			_texture -> bind();
-		}
-		
-		float c[] = { _color.x, _color.y, _color.z, _alpha };
-		inRenderer.SetBlendColor( c );
-
-		_displayShape -> draw( inRenderer );
-
-		if( _texture ) {
-			inRenderer.PopMatrix( slMatrixTexture );
-			_texture -> unbind();
-		}
-		
-		inRenderer.PopMatrix( slMatrixGeometry );
-	}
-}
-
-void slObjectLine::draw( slCamera *camera ) {	
-	if( _src && _dst && _stipple ) {
-		const slVector *v1 = &_src->getPosition().location;
-		const slVector *v2 = &_dst->getPosition().location;
-
-#ifndef OPENGLES
-		glLineStipple( 2, _stipple );
-		glEnable( GL_LINE_STIPPLE );
-#endif
-
-		slVertexBufferGL buffer;
-		buffer.resize( 2, VB_XYZ );
-
-		float *v;
-
-		// float c[] = { _color.x, _color.y, _color.z, _transparency };
-		// inRenderer.SetBlendColor( c );
-
-		v = buffer.vertex( 0 );
-		v[ 0 ] = v1 -> x;
-		v[ 1 ] = v1 -> y;
-		v[ 2 ] = v1 -> z;
-		v = buffer.vertex( 1 );
-		v[ 0 ] = v2 -> x;
-		v[ 1 ] = v2 -> y;
-		v[ 2 ] = v2 -> z;
-
-		buffer.draw( VB_LINE_STRIP );
-
-#ifndef OPENGLES
-		glDisable( GL_LINE_STIPPLE );
-#endif
-	}
+	glDisable( GL_LINE_STIPPLE );
 }
 
 void slWorldObject::setCallbackData( void *data ) {
@@ -139,6 +48,10 @@ void slWorldObject::setCollisionE( double e ) {
 	_e = e;
 }
 
+void slWorldObject::setCollisionET( double eT ) {
+	_eT = eT;
+}
+
 void slWorldObject::setCollisionMU( double mu ) {
 	_mu = mu;
 }
@@ -147,8 +60,16 @@ void slWorldObject::setNeighborhoodSize( double size ) {
 	_proximityRadius = size;
 }
 
-void slWorldObject::setTexture( slTexture2D *inTexture ) {
-	_texture = inTexture;
+/*!
+	\brief Sets the texture number for this object.
+
+	Previous versions of this library used -1 to indicate no texture,
+	while the current version uses 0.  This function recognizes negative
+	numbers for backward compatability.
+*/
+
+void slWorldObject::setTexture( int t ) {
+	_texture = ( t > 0 ) ? t : 0;
 }
 
 void slWorldObject::setTextureMode( int m ) {
@@ -159,9 +80,12 @@ void slWorldObject::setDrawAsPoint( bool p ) {
 	_drawAsPoint = p;
 }
 
-void slWorldObject::setTextureScale( double inTX, double inTY ) {
-	_textureScaleX = inTX;
-	_textureScaleY = inTY;
+void slWorldObject::setTextureScale( double sx, double sy ) {
+	_textureScaleX = sx;
+	_textureScaleY = sy;
+
+	if ( _shape )
+		_shape->recompile();
 }
 
 void slWorldObject::setBitmapRotation( double rot ) {
@@ -191,11 +115,6 @@ void slWorldObject::setAlpha( double alpha ) {
 void slWorldObject::setColor( slVector *c ) {
 	slVectorCopy( c, &_color );
 }
-
-void slWorldObject::setDrawShadows( bool inDraw ) {
-	_drawShadow = inDraw;
-}
-
 
 double slWorldObject::irSense(slPosition *sensorPos, std::string sensorType){
 	//ProximitySensor::getProximitySensor();
@@ -250,6 +169,9 @@ int slWorldObject::raytrace( slVector *location, slVector* direction, slVector *
 
 	slVectorInvXform( _position.rotation, &loc_wo_help, &loc_wo );
 
+//   slMessage(DEBUG_ALL, " [ %f, %f, %f ] %f %f ", dir_wo.x, dir_wo.y, dir_wo.z, atan2(dir_wo.z, dir_wo.x)*180/M_PI, atan2(direction->z, direction->x)*180/M_PI );
+//   slMessage(DEBUG_ALL, " [ %f, %f, %f ] ", loc_wo.x, loc_wo.y, loc_wo.z );
+
 	slVector point;
 
 	if ( _shape->rayHitsShape( &dir_wo, &loc_wo, &point ) < 0 ) {
@@ -260,6 +182,8 @@ int slWorldObject::raytrace( slVector *location, slVector* direction, slVector *
 	double d = slVectorLength( &point );
 
 	slVectorMul( &direction_norm, d, erg_dir );
+
+//	slMessage(DEBUG_ALL, "wo: erg_dir: [ %f, %f, %f ] distance:%f \n", erg_dir->x, erg_dir->y, erg_dir->z ,slVectorLength(erg_dir));
 
 	return 0;
 }
@@ -274,35 +198,9 @@ void slWorldObject::updateBoundingBox() {
 }
 
 void slWorldObject::getBounds( slVector *minBounds, slVector *maxBounds ) {
-	if ( minBounds ) 
-		slVectorCopy( &_min, minBounds );
+	if ( minBounds ) slVectorCopy( &_min, minBounds );
 
-	if ( maxBounds ) 
-		slVectorCopy( &_max, maxBounds );
+	if ( maxBounds ) slVectorCopy( &_max, maxBounds );
 }
 
-void slWorldObject::setShape( slShape *inShape ) {
-	if( _shape ) 	
-		_shape->release();
 
-	_shape = inShape;
-	_shape->retain();
-}
-
-void slWorldObject::setDisplayShape( slShape *inDisplayShape ) {
-	if( _displayShape ) 	
-		_displayShape->release();
-
-	_displayShape = inDisplayShape;
-	_displayShape->retain();
-}
-
-void slWorldObject::setRotation( double inRotation[ 3 ][ 3 ] ) {
-	slMatrixCopy( inRotation, _position.rotation );
-	updateBoundingBox();
-}
-
-void slWorldObject::setLocation( slVector *inLocation ) {
-	slVectorCopy( inLocation, &_position.location );
-	updateBoundingBox();
-}

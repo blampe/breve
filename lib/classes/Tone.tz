@@ -1,4 +1,4 @@
-@use Abstract.
+@use Object.
 
 Abstract : Tone (aka Tones) {
 	% A Tone is an object which plays a constant tone.  You can set 

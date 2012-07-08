@@ -21,10 +21,15 @@
 #ifndef _PATCH_H
 #define _PATCH_H
 
-#include "bigMatrix.hh"
-#include "render.h"
-#include "texture.h"
+#ifdef __cplusplus
+/*!
+	\brief Data associated with a certain region of 3D space.
+*/
 
+#include "bigMatrix.hh"
+#include "glIncludes.h"
+
+/* Forward declaration */
 class slPatchGrid;
 
 /**
@@ -98,74 +103,77 @@ class slPatch {
 		std::vector< slPatch* > _neighbors;
 };
 
-/**
- * \brief A grid of \ref slPatch objects, data associated with a certain region of 3D space.
- */
-
+/*!
+	\brief A grid of \ref slPatch objects.
+*/
 
 class slPatchGrid {
-	friend class slPatch;
-	
 	public:
-								slPatchGrid();
+		slPatchGrid();
 
-								slPatchGrid( const slVector *center, const slVector *patchSize, int x, int y, int z);
+        slPatchGrid(const slVector *center,
+                    const slVector *patchSize,
+                    const int x,
+                    const int y,
+                    const int z);
 
-								~slPatchGrid();
+		~slPatchGrid();
 
-		void 					draw( slRenderGL &inRenderer, slCamera *camera );
+		void compileCubeList();
 
-		slPatch* 				getPatchAtIndex( int x, int y, int z );
-		slPatch* 				getPatchAtLocation( const slVector *location );
-		void 					setDataAtIndex(int x, int y, int z, void *data);
-		void 					copyColorFrom3DMatrix(slBigMatrix3DGSL *m, int channel, double scale);
+		void draw(slCamera *camera);
+		void drawWithout3DTexture(slCamera *camera);
 
-		void 					assignObjectsToPatches( slWorld *w );
+		void setSmoothDrawing(int d) { drawSmooth = d; }
+
+		void textureDrawXPass( slVector &size, int dir );
+		void textureDrawYPass( slVector &size, int dir );
+		void textureDrawZPass( slVector &size, int dir );
+
+		slPatch* getPatchAtIndex( int x, int y, int z );
+		slPatch* getPatchAtLocation( const slVector *location );
+		void setDataAtIndex(int x, int y, int z, void *data);
+		void copyColorFrom3DMatrix(slBigMatrix3DGSL *m, int channel, double scale);
+
+		void assignObjectsToPatches(slWorld *w);
         
 		/**
 		 * Sets the PatchGrid to be drawn with or without volumetric texturing.
 		 */
-		void 					setDrawWithTexture( bool inUseTexture ) { _drawWithTexture = inUseTexture; }
-		void 					setSmoothDrawing( bool inSmooth ) { drawSmooth = inSmooth; }
-
-
-	protected:
-		void 					drawWithout3DTexture( slRenderGL &inRenderer, slCamera *camera );
-
-		void 					textureDrawXPass( slVector &size, int dir );
-		void 					textureDrawYPass( slVector &size, int dir );
-		void 					textureDrawZPass( slVector &size, int dir );
+		void setDrawWithTexture(bool t);
 
 		// below should be private/protected
 
-		unsigned int 			_xSize;
-		unsigned int 			_ySize;
-		unsigned int 			_zSize;
+		unsigned int _xSize;
+		unsigned int _ySize;
+		unsigned int _zSize;
 
-		slVector 				startPosition;
-		slVector 				patchSize;
+		slVector startPosition;
+		slVector patchSize;
 
-		slPatch 				***patches;
+		slPatch ***patches;
 
 		// colors holds all of the color information for the patches.  it is a raw 
 		// array of char values so that we can use it as texture data if desired.
 
-		unsigned char 			*colors;
+		unsigned char *colors;
 
-		unsigned int 			_textureX;
-		unsigned int 			_textureY;
-		unsigned int 			_textureZ;
+		unsigned int _textureX;
+		unsigned int _textureY;
+		unsigned int _textureZ;
 
-		bool 					drawSmooth;
-		void 					fillCubeBuffer();
+		int drawSmooth;
 
-		slTexture2D*			_texture;
-		slVertexBufferGL		_cubeBuffer;
-		slVertexBufferGL		_quadBuffer;
+		int _texture;
+		int _cubeDrawList;
 		
-		bool 					_drawWithTexture;
-		bool 					_textureNeedsUpdate;
+		bool _drawWithTexture;
+		bool _textureNeedsUpdate;
 
 };
+#else 
+typedef struct slPatchGrid slPatchGrid;
+typedef struct slPatch slPatch;
+#endif /* __cplusplus */
 
 #endif /* _PATCH_H */

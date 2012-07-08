@@ -50,13 +50,13 @@ void stParseSetEngine(brEngine *);
 void stParseSetObject(stObject *);
 void stParseSetObjectAndMethod(stObject *, stMethod *);
 
-void yyerror( const char * );
+void yyerror(char *);
 
 int yylex(void);
 
 double stDoubleFromIntOrDoubleExp(stExp *);
 
-int stGetTypeForString( char* );
+int stGetTypeForString(char *);
 
 %}
 
@@ -96,7 +96,7 @@ int stGetTypeForString( char* );
 %type <integer> vector_element math_assign_operator
 %type <number> object_version
 %type <string> object_aka method_head 
-%type <exp> number vector matrix string 
+%type <exp> number vector matrix string
 %type <exp> atomic_expression unary_expression mul_expression add_expression comp_expression
 %type <exp> log_expression land_expression method_call expression
 %type <exp> control_statement simple_statement statement compound_statement
@@ -113,7 +113,7 @@ int stGetTypeForString( char* );
 %type <exp> literal_value
 
 %token <number> FLOAT_VALUE
-%token <string> STRING_VALUE WORD_VALUE DOT_NOTATOR COMMENT_STRING DOCUMENTATION_COMMENT_STRING
+%token <string> STRING_VALUE WORD_VALUE
 %token <eval> ST_EVAL 
 %token <integer> INT_VALUE TYPE PLURAL_TYPE
 %token TO_PRIVATE TO_PUBLIC TO_PROTECTED WITH_INTERFACE
@@ -146,15 +146,9 @@ sucessful_parse
 		if(brGetError(parseEngine)) YYABORT;
 	}
 | GT { 
-		if( !currentMethod || !currentObject ) {
-			stParseError( parseEngine, PE_INTERNAL, "Could not locate current object or method for statement" );
-			YYERROR;
-		}
-
+		if(!currentMethod || !currentObject) YYERROR;
 	} statement {
-		if( brGetError( parseEngine ) ) 
-			YYABORT;
-
+		if(brGetError(parseEngine)) YYABORT;
 		steveData->singleStatement = $3;
 	}
 ;
@@ -216,7 +210,7 @@ header
 			brObject *o;
 			stObject *so;
 
-			o = brObjectFindWithPreferredType(parseEngine, $3, STEVE_TYPE_SIGNATURE );
+			o = brObjectFind(parseEngine, $3);
 			so = (stObject*)o->userData;
 
 			if(so) {
@@ -390,7 +384,7 @@ object_aka
 ;
 
 objecttype
-: WORD_VALUE ':' WORD_VALUE object_aka object_version { 
+: WORD_VALUE ':' WORD_VALUE	object_aka object_version { 
 		stObject *parentObject, *akaObject;
 		brObject *o;
 		float version;
@@ -398,13 +392,13 @@ objecttype
 		if($5) version = $5;
 		else version = 1.0;
 
-		o = brObjectFindWithTypeSignature( parseEngine, $3, STEVE_TYPE_SIGNATURE );
+		o = brObjectFind(parseEngine, $3);
 
 		if(o) currentObject = (stObject*)o->userData;
 		else currentObject = NULL;
 
 		if($4) {
-			o = brObjectFindWithTypeSignature( parseEngine, $4, STEVE_TYPE_SIGNATURE );
+			o = brObjectFind(parseEngine, $4);
 
 			if(o) akaObject = (stObject*)o->userData;
 			else akaObject = NULL;
@@ -428,7 +422,7 @@ objecttype
 			slFree($3);
 			slFree($4);
 		} else {
-			brObject *o = brObjectFindWithTypeSignature( parseEngine, $1, STEVE_TYPE_SIGNATURE );
+			brObject *o = brObjectFind(parseEngine, $1);
 
 			if(o) parentObject = (stObject*)o->userData;
 			else parentObject = NULL;
@@ -439,7 +433,7 @@ objecttype
 				slFree($3);
 				if($4) slFree($4);
 			} else {
-				currentObject = stObjectNew( parseEngine, steveData, $3, $4, parentObject, version, yyfile );
+				currentObject = stObjectNew(parseEngine, steveData, $3, $4, parentObject, version);
 				currentMethod = NULL;
 
 				slFree($1);
@@ -502,7 +496,7 @@ to
 ;
 
 method_head
-: to WORD_VALUE keyword_and_variables ':' {
+: to WORD_VALUE keyword_and_variables ':' { 
 		currentMethod = new stMethod($2, $3, yyfile, lineno);
 
 		delete $3;
@@ -823,7 +817,7 @@ expression
 	}
 | WORD_VALUE PLUSPLUS {
 		stExp *var = new stLoadExp(currentMethod, currentObject, $1, yyfile, lineno);
-		stExp *one = stIntExp(1, yyfile, lineno);
+		stExp *one = new stIntExp(1, yyfile, lineno);
 		stExp *newExp = new stBinaryExp(BT_ADD, var, one, yyfile, lineno); 
 
 		$$ = new stAssignExp(currentMethod, currentObject, $1, newExp, yyfile, lineno);
@@ -832,7 +826,7 @@ expression
 	}
 | WORD_VALUE MINUSMINUS {
 		stExp *var = new stLoadExp(currentMethod, currentObject, $1, yyfile, lineno);
-		stExp *one = stIntExp(1, yyfile, lineno);
+		stExp *one = new stIntExp(1, yyfile, lineno);
 		stExp *newExp = new stBinaryExp(BT_SUB, var, one, yyfile, lineno); 
 
 		$$ = new stAssignExp(currentMethod, currentObject, $1, newExp, yyfile, lineno);
@@ -850,9 +844,6 @@ expression
 	}
 | atomic_expression '{' expression'}' '=' expression {
 		$$ = new stListIndexAssignExp($1, $3, $6, yyfile, lineno);
-	}
-| atomic_expression DOT_NOTATOR '=' expression {
-		$$ = new stListIndexAssignExp($1, new stStringExp( $2, currentMethod, currentObject, yyfile, lineno ) , $4, yyfile, lineno);
 	}
 | atomic_expression '{' expression'}' math_assign_operator expression {
 		stExp *loadExp, *binExp;
@@ -959,7 +950,7 @@ unary_expression
 		$$ = new stListRemoveExp($2, NULL, yyfile, lineno);
 	}
 | UNPREPEND atomic_expression {
-		$$ = new stListRemoveExp($2, stIntExp(0, yyfile, lineno), yyfile, lineno);
+		$$ = new stListRemoveExp($2, new stIntExp(0, yyfile, lineno), yyfile, lineno);
 	}
 | PUSH expression WORD_VALUE atomic_expression {
 		if(strcmp($3, "onto")) {
@@ -981,7 +972,7 @@ unary_expression
 			delete $4;
 			$$ = NULL;
 		} else {
-			$$ = new stListInsertExp($4, $2, stIntExp( 0, yyfile, lineno ), yyfile, lineno);
+			$$ = new stListInsertExp($4, $2, new stIntExp( 0, yyfile, lineno ), yyfile, lineno);
 			slFree($3);
 		}
 	}
@@ -1028,9 +1019,6 @@ atomic_expression
 | atomic_expression '{' expression '}' { 
 		$$ = new stListIndexExp($1, $3, yyfile, lineno); 
 	}
-| atomic_expression DOT_NOTATOR { 
-		$$ = new stListIndexExp($1, new stStringExp( $2, currentMethod, currentObject, yyfile, lineno ), yyfile, lineno); 
-	}
 | WORD_VALUE '[' expression ']' {
 		$$ = new stArrayIndexExp(currentMethod, currentObject, $1, $3, yyfile, lineno);
 
@@ -1054,12 +1042,12 @@ atomic_expression
 		$$ = new stSelfExp(yyfile, lineno);
 	}
 | NEW WORD_VALUE { 
-		$$ = new stInstanceExp($2, stIntExp(1, yyfile, lineno), yyfile, lineno); 
+		$$ = new stInstanceExp($2, new stIntExp(1, yyfile, lineno), yyfile, lineno); 
 		slFree($2);
 	}
 | NEW STRING_VALUE { 
 		char *unquoted = slDequote($2);;
-		$$ = new stInstanceExp(unquoted, stIntExp(1, yyfile, lineno), yyfile, lineno); 
+		$$ = new stInstanceExp(unquoted, new stIntExp(1, yyfile, lineno), yyfile, lineno); 
 		slFree($2);
 		slFree(unquoted);
 	}
@@ -1197,16 +1185,15 @@ type
 ;
 
 number
-: INT_VALUE	 		{ $$ = stIntExp($1, yyfile, lineno); }
-| FLOAT_VALUE	   		{ $$ = stDoubleExp($1, yyfile, lineno); }
+: INT_VALUE	 		{ $$ = new stIntExp($1, yyfile, lineno); }
+| FLOAT_VALUE	   		{ $$ = new stDoubleExp($1, yyfile, lineno); }
 ;
 
 %%
 
 void stParseSetEngine(brEngine *e) {
 	parseEngine = e;
-	stParseSetObjectAndMethod( NULL, NULL );
-	brClearError( e );
+	brClearError(e);
 }
 
 void stParseSetObjectAndMethod(stObject *o, stMethod *m) {
@@ -1218,16 +1205,14 @@ void stParseSetSteveData(stSteveData *data) {
 	steveData = data;
 }
 
-double stDoubleFromIntOrDoubleExp( stExp *inExp ) {
-	brEval *e = &( ( stEvalExp* )inExp ) -> _eval;
-
-	if( e->type() == AT_DOUBLE ) return BRDOUBLE( e );
-	if( e->type() == AT_INT ) return (double)BRINT( e );
+double stDoubleFromIntOrDoubleExp(stExp *e) {
+	if(e->type == ET_DOUBLE) return ((stDoubleExp*)e)->doubleValue;
+	if(e->type == ET_INT) return (double)((stIntExp*)e)->intValue;
 
 	return 0.0;
 }
 
-int stGetTypeForString( const char *type ) {
+int stGetTypeForString(char *type) {
 	if(!strcmp(type, "int")) return AT_INT;
 	if(!strcmp(type, "double")) return AT_DOUBLE;
 	if(!strcmp(type, "float")) return AT_DOUBLE;
@@ -1241,21 +1226,4 @@ int stGetTypeForString( const char *type ) {
 	if(!strcmp(type, "data")) return AT_STRING;
 
 	return AT_UNDEFINED;
-}
-
-void stParseAddDocumentingComment( const char *comment ) {
-	while( *comment && ( *comment == '#' || *comment == '%' || isspace( *comment ) ) ) comment++;
-
-	std::string *target = NULL;
-
-	if( currentMethod ) {
-		target = &currentMethod->_comment;
-	} else if( currentObject ) {
-		target = &currentObject->_comment;
-	}
-
-	if( target ) {
-		if( target->size() != 0 ) (*target) += " ";
-		(*target) += comment;
-	}
 }

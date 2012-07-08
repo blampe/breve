@@ -26,9 +26,6 @@
 
 class slWorld;
 class slStationary;
-class slShape;
-class slMultibody;
-class slFace;
 
 typedef float slColor[4];
 
@@ -37,11 +34,10 @@ typedef float slColor[4];
 enum drawOptions {
     // control what types of objects are drawn 
 
-    DO_NO_SHADOWCATCHER 		= 0x000001,
+    DO_NO_STATIONARY			= 0x000001,
     DO_NO_LINK					= 0x000002,
     DO_NO_TERRAIN				= 0x000004,
 
-    DO_ONLY_SHADOWCATCHER		= 0x010000,
     // effects 
 
     DO_NO_TEXTURE 				= 0x000008,
@@ -65,6 +61,7 @@ enum drawOptions {
     DO_RECOMPILE				= 0x008000
 };
 
+void slInitGL(slWorld *, slCamera *);
 unsigned int slTextureNew(slCamera *);
 void slTextureFree(slCamera *, unsigned int);
 int slUpdateTexture(slCamera *, GLuint, unsigned char *, int, int, int);
@@ -114,7 +111,7 @@ void slBreakdownTriangle(slVector *vertices, int depth, slVector *xaxis, slVecto
 
 void slGlError(void);
 
-int slClearGLErrors( const char * );
+int slClearGLErrors(char *);
 
 void slFreeGL(slWorld *, slCamera *);
 

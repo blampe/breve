@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 44;
+	objectVersion = 42;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -79,24 +79,20 @@
 		4802DC6005616137008198B9 /* slGraphWindowController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 48D1C0BD04632D760093F8AA /* slGraphWindowController.mm */; };
 		4802DC6105616137008198B9 /* slGraphWindowView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 48D1C0D5046331F80093F8AA /* slGraphWindowView.mm */; };
 		480F317807146D7900E71420 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48807AB004DF1E2C00A8D232 /* AudioToolbox.framework */; };
+		480F317907146D7900E71420 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5BD21540397C2DA01980AE4 /* Carbon.framework */; };
 		480F317A07146D7A00E71420 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */; };
 		480F317B07146D8000E71420 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48807AA104DF1DB800A8D232 /* CoreAudio.framework */; };
 		480F317D07146D8200E71420 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5BD20F20397BFE301980AE4 /* GLUT.framework */; };
+		4832D4A409B9FFC200443499 /* DigitizerPlugin.o in Resources */ = {isa = PBXBuildFile; fileRef = 48ECC164071C13C100596F93 /* DigitizerPlugin.o */; };
+		48619FB8071475A500E0A1B6 /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5BD20F40397BFE301980AE4 /* QuickTime.framework */; };
 		48619FB9071475A500E0A1B6 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5BD20F30397BFE301980AE4 /* OpenGL.framework */; };
 		48620C9207944552009195E5 /* libbreve.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 48620C9107944552009195E5 /* libbreve.a */; };
+		48A2AC000B1BE9410010C477 /* QTInstrumentPlugin.o in Resources */ = {isa = PBXBuildFile; fileRef = 48A2ABFF0B1BE9410010C477 /* QTInstrumentPlugin.o */; };
 		48CE1D0408155BDE0030CBB8 /* DocumentIcons.icns in Resources */ = {isa = PBXBuildFile; fileRef = 48CE1CFB08155B1F0030CBB8 /* DocumentIcons.icns */; };
 		48E1722407AAAF370072492B /* JavaVM.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 48E1722307AAAF370072492B /* JavaVM.framework */; };
-		48E5F2E40D04F73B006E36B8 /* images in Resources */ = {isa = PBXBuildFile; fileRef = 48E5F2E30D04F73B006E36B8 /* images */; };
 		48ECC165071C13C100596F93 /* Digitizer.tz in CopyFiles */ = {isa = PBXBuildFile; fileRef = 48ECC163071C13C100596F93 /* Digitizer.tz */; };
 		48ECC170071C13F400596F93 /* Instrument.tz in CopyFiles */ = {isa = PBXBuildFile; fileRef = 48ECC16E071C13F400596F93 /* Instrument.tz */; };
 		48F0A4F309CCEE1900B52C28 /* libdl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48F0A4F209CCEE1900B52C28 /* libdl.dylib */; };
-		F1F8724A15A8D24E004B8041 /* libode.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F8724915A8D24E004B8041 /* libode.a */; };
-		F1F8724D15A8D26D004B8041 /* libgsl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F8724B15A8D26C004B8041 /* libgsl.a */; };
-		F1F8724E15A8D26D004B8041 /* libgslcblas.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F8724C15A8D26C004B8041 /* libgslcblas.a */; };
-		F1F8725015A8D27F004B8041 /* libpython.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F8724F15A8D27F004B8041 /* libpython.dylib */; };
-		F1F8725215A8D28D004B8041 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F8725115A8D28D004B8041 /* libexpat.dylib */; };
-		F1F8725415A8D292004B8041 /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F8725315A8D292004B8041 /* libcurl.dylib */; };
-		F1F8725615A8D2A7004B8041 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1F8725515A8D2A7004B8041 /* libz.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -128,23 +124,17 @@
 		48620C9107944552009195E5 /* libbreve.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbreve.a; path = ../lib/libbreve.a; sourceTree = SOURCE_ROOT; };
 		48807AA104DF1DB800A8D232 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
 		48807AB004DF1E2C00A8D232 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
+		48A2ABFF0B1BE9410010C477 /* QTInstrumentPlugin.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = QTInstrumentPlugin.o; path = ../plugins/slQTMusicPlugin/QTInstrumentPlugin.o; sourceTree = SOURCE_ROOT; };
 		48CE1CFB08155B1F0030CBB8 /* DocumentIcons.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = DocumentIcons.icns; sourceTree = SOURCE_ROOT; };
 		48D1C0BC04632D760093F8AA /* slGraphWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slGraphWindowController.h; sourceTree = SOURCE_ROOT; };
 		48D1C0BD04632D760093F8AA /* slGraphWindowController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = slGraphWindowController.mm; sourceTree = "<group>"; };
 		48D1C0D4046331F80093F8AA /* slGraphWindowView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slGraphWindowView.h; sourceTree = SOURCE_ROOT; };
 		48D1C0D5046331F80093F8AA /* slGraphWindowView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = slGraphWindowView.mm; sourceTree = "<group>"; };
 		48E1722307AAAF370072492B /* JavaVM.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaVM.framework; path = /System/Library/Frameworks/JavaVM.framework; sourceTree = "<absolute>"; };
-		48E5F2E30D04F73B006E36B8 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../lib/classes/images; sourceTree = SOURCE_ROOT; };
 		48ECC163071C13C100596F93 /* Digitizer.tz */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = Digitizer.tz; path = ../plugins/slDigitizerPlugin/Digitizer.tz; sourceTree = SOURCE_ROOT; };
+		48ECC164071C13C100596F93 /* DigitizerPlugin.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; name = DigitizerPlugin.o; path = ../plugins/slDigitizerPlugin/DigitizerPlugin.o; sourceTree = SOURCE_ROOT; };
 		48ECC16E071C13F400596F93 /* Instrument.tz */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = Instrument.tz; path = ../plugins/slQTMusicPlugin/Instrument.tz; sourceTree = SOURCE_ROOT; };
 		48F0A4F209CCEE1900B52C28 /* libdl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libdl.dylib; path = /usr/lib/libdl.dylib; sourceTree = "<absolute>"; };
-		F1F8724915A8D24E004B8041 /* libode.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libode.a; path = /usr/local/lib/libode.a; sourceTree = "<absolute>"; };
-		F1F8724B15A8D26C004B8041 /* libgsl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgsl.a; path = /usr/local/lib/libgsl.a; sourceTree = "<absolute>"; };
-		F1F8724C15A8D26C004B8041 /* libgslcblas.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgslcblas.a; path = /usr/local/lib/libgslcblas.a; sourceTree = "<absolute>"; };
-		F1F8724F15A8D27F004B8041 /* libpython.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpython.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/libpython.dylib; sourceTree = DEVELOPER_DIR; };
-		F1F8725115A8D28D004B8041 /* libexpat.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libexpat.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/libexpat.dylib; sourceTree = DEVELOPER_DIR; };
-		F1F8725315A8D292004B8041 /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/libcurl.dylib; sourceTree = DEVELOPER_DIR; };
-		F1F8725515A8D2A7004B8041 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/libz.dylib; sourceTree = DEVELOPER_DIR; };
 		F569DDB00398039F01B2CBA0 /* Template.tz */ = {isa = PBXFileReference; lastKnownFileType = text; name = Template.tz; path = ../lib/Template.tz; sourceTree = SOURCE_ROOT; };
 		F569DDB303980C9101B2CBA0 /* English */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Errors.strings; sourceTree = "<group>"; };
 		F569DDB503980C9101B2CBA0 /* English */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/General.strings; sourceTree = "<group>"; };
@@ -179,6 +169,8 @@
 		F5BD20D80397BFC001980AE4 /* slFullScreen.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slFullScreen.mm; sourceTree = "<group>"; };
 		F5BD20F20397BFE301980AE4 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = /System/Library/Frameworks/GLUT.framework; sourceTree = "<absolute>"; };
 		F5BD20F30397BFE301980AE4 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
+		F5BD20F40397BFE301980AE4 /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = /System/Library/Frameworks/QuickTime.framework; sourceTree = "<absolute>"; };
+		F5BD21540397C2DA01980AE4 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
 		F5BD21F60397C43E01980AE4 /* app_icon.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = app_icon.tiff; path = icons/app_icon.tiff; sourceTree = "<group>"; };
 		F5BD21F80397C43E01980AE4 /* Camera.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = Camera.tiff; path = icons/Camera.tiff; sourceTree = "<group>"; };
 		F5BD21F90397C43E01980AE4 /* move.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = move.tiff; path = icons/move.tiff; sourceTree = SOURCE_ROOT; };
@@ -199,17 +191,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F1F8725615A8D2A7004B8041 /* libz.dylib in Frameworks */,
-				F1F8725415A8D292004B8041 /* libcurl.dylib in Frameworks */,
-				F1F8725215A8D28D004B8041 /* libexpat.dylib in Frameworks */,
-				F1F8725015A8D27F004B8041 /* libpython.dylib in Frameworks */,
-				F1F8724D15A8D26D004B8041 /* libgsl.a in Frameworks */,
-				F1F8724E15A8D26D004B8041 /* libgslcblas.a in Frameworks */,
-				F1F8724A15A8D24E004B8041 /* libode.a in Frameworks */,
 				480F317807146D7900E71420 /* AudioToolbox.framework in Frameworks */,
+				480F317907146D7900E71420 /* Carbon.framework in Frameworks */,
 				480F317A07146D7A00E71420 /* Cocoa.framework in Frameworks */,
 				480F317B07146D8000E71420 /* CoreAudio.framework in Frameworks */,
 				480F317D07146D8200E71420 /* GLUT.framework in Frameworks */,
+				48619FB8071475A500E0A1B6 /* QuickTime.framework in Frameworks */,
 				48619FB9071475A500E0A1B6 /* OpenGL.framework in Frameworks */,
 				48620C9207944552009195E5 /* libbreve.a in Frameworks */,
 				48E1722407AAAF370072492B /* JavaVM.framework in Frameworks */,
@@ -223,21 +210,16 @@
 		1058C7A6FEA54F5311CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				48807AB004DF1E2C00A8D232 /* AudioToolbox.framework */,
-				1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */,
-				48807AA104DF1DB800A8D232 /* CoreAudio.framework */,
-				F5BD20F20397BFE301980AE4 /* GLUT.framework */,
+				48F0A4F209CCEE1900B52C28 /* libdl.dylib */,
+				48620C9107944552009195E5 /* libbreve.a */,
 				48E1722307AAAF370072492B /* JavaVM.framework */,
 				F5BD20F30397BFE301980AE4 /* OpenGL.framework */,
-				48620C9107944552009195E5 /* libbreve.a */,
-				F1F8725315A8D292004B8041 /* libcurl.dylib */,
-				48F0A4F209CCEE1900B52C28 /* libdl.dylib */,
-				F1F8725115A8D28D004B8041 /* libexpat.dylib */,
-				F1F8724B15A8D26C004B8041 /* libgsl.a */,
-				F1F8724C15A8D26C004B8041 /* libgslcblas.a */,
-				F1F8724915A8D24E004B8041 /* libode.a */,
-				F1F8724F15A8D27F004B8041 /* libpython.dylib */,
-				F1F8725515A8D2A7004B8041 /* libz.dylib */,
+				F5BD21540397C2DA01980AE4 /* Carbon.framework */,
+				F5BD20F20397BFE301980AE4 /* GLUT.framework */,
+				F5BD20F40397BFE301980AE4 /* QuickTime.framework */,
+				1058C7A7FEA54F5311CA2CBB /* Cocoa.framework */,
+				48807AA104DF1DB800A8D232 /* CoreAudio.framework */,
+				48807AB004DF1E2C00A8D232 /* AudioToolbox.framework */,
 			);
 			name = "Linked Frameworks";
 			sourceTree = "<group>";
@@ -266,31 +248,6 @@
 		2A37F4ABFDCFA73011CA2CEA /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				2A37F4B0FDCFA73011CA2CEA /* main.m */,
-				F5BD20C00397BFC001980AE4 /* slBreve.h */,
-				F5BD20C10397BFC001980AE4 /* slBreve.mm */,
-				F5BD20C20397BFC001980AE4 /* slBreveApplication.h */,
-				F5BD20C30397BFC001980AE4 /* slBreveApplication.mm */,
-				F5BD20C40397BFC001980AE4 /* slBreveEngine.h */,
-				F5BD20C50397BFC001980AE4 /* slBreveEngine.mm */,
-				F5BD20C60397BFC001980AE4 /* slBreveGLView.h */,
-				F5BD20C70397BFC001980AE4 /* slBreveGLView.mm */,
-				F5BD20CA0397BFC001980AE4 /* slBreveNibLoader.h */,
-				F5BD20CB0397BFC001980AE4 /* slBreveNibLoader.mm */,
-				F5BD20D10397BFC001980AE4 /* slBrevePrefs.h */,
-				F5BD20D20397BFC001980AE4 /* slBrevePrefs.mm */,
-				2A37F4AEFDCFA73011CA2CEA /* slBreveSourceDocument.h */,
-				2A37F4ACFDCFA73011CA2CEA /* slBreveSourceDocument.mm */,
-				F5BD20D30397BFC001980AE4 /* slCommandTextField.h */,
-				F5BD20D40397BFC001980AE4 /* slCommandTextField.mm */,
-				F5BD20D50397BFC001980AE4 /* slDemoMenu.h */,
-				F5BD20D60397BFC001980AE4 /* slDemoMenu.mm */,
-				F5BD20D70397BFC001980AE4 /* slFullScreen.h */,
-				F5BD20D80397BFC001980AE4 /* slFullScreen.mm */,
-				48D1C0BC04632D760093F8AA /* slGraphWindowController.h */,
-				48D1C0BD04632D760093F8AA /* slGraphWindowController.mm */,
-				48D1C0D4046331F80093F8AA /* slGraphWindowView.h */,
-				48D1C0D5046331F80093F8AA /* slGraphWindowView.mm */,
 				F5BD20A60397BEC801980AE4 /* slLogView.h */,
 				F5BD20A70397BEC801980AE4 /* slLogView.mm */,
 				F5BD20A80397BEC801980AE4 /* slMovieRecord.h */,
@@ -298,10 +255,35 @@
 				F5BD20AA0397BEC801980AE4 /* slObjectOutline.h */,
 				F5BD20AB0397BEC801980AE4 /* slObjectOutline.mm */,
 				F5BD20AC0397BEC801980AE4 /* slObjectOutlineItem.h */,
+				2A37F4AEFDCFA73011CA2CEA /* slBreveSourceDocument.h */,
+				2A37F4ACFDCFA73011CA2CEA /* slBreveSourceDocument.mm */,
 				F5BD20AD0397BEC801980AE4 /* slObjectOutlineItem.mm */,
 				F5BD20AE0397BEC801980AE4 /* slQuickparser.l */,
 				F5BD20B10397BEC801980AE4 /* slTextView.h */,
 				F5BD20B20397BEC801980AE4 /* slTextView.mm */,
+				2A37F4B0FDCFA73011CA2CEA /* main.m */,
+				F5BD20C00397BFC001980AE4 /* slBreve.h */,
+				F5BD20C10397BFC001980AE4 /* slBreve.mm */,
+				F5BD20C20397BFC001980AE4 /* slBreveApplication.h */,
+				F5BD20C30397BFC001980AE4 /* slBreveApplication.mm */,
+				F5BD20C40397BFC001980AE4 /* slBreveEngine.h */,
+				F5BD20C50397BFC001980AE4 /* slBreveEngine.mm */,
+				48D1C0D4046331F80093F8AA /* slGraphWindowView.h */,
+				48D1C0D5046331F80093F8AA /* slGraphWindowView.mm */,
+				48D1C0BC04632D760093F8AA /* slGraphWindowController.h */,
+				48D1C0BD04632D760093F8AA /* slGraphWindowController.mm */,
+				F5BD20C60397BFC001980AE4 /* slBreveGLView.h */,
+				F5BD20C70397BFC001980AE4 /* slBreveGLView.mm */,
+				F5BD20CA0397BFC001980AE4 /* slBreveNibLoader.h */,
+				F5BD20CB0397BFC001980AE4 /* slBreveNibLoader.mm */,
+				F5BD20D10397BFC001980AE4 /* slBrevePrefs.h */,
+				F5BD20D20397BFC001980AE4 /* slBrevePrefs.mm */,
+				F5BD20D30397BFC001980AE4 /* slCommandTextField.h */,
+				F5BD20D40397BFC001980AE4 /* slCommandTextField.mm */,
+				F5BD20D50397BFC001980AE4 /* slDemoMenu.h */,
+				F5BD20D60397BFC001980AE4 /* slDemoMenu.mm */,
+				F5BD20D70397BFC001980AE4 /* slFullScreen.h */,
+				F5BD20D80397BFC001980AE4 /* slFullScreen.mm */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -327,7 +309,6 @@
 				F5BD220A0397C57D01980AE4 /* docs */,
 				F5BD223E0397C59E01980AE4 /* demos */,
 				F5F64877039868A20154B402 /* classes */,
-				48E5F2E30D04F73B006E36B8 /* images */,
 				F569DDB203980C9101B2CBA0 /* Errors.strings */,
 				F569DDB403980C9101B2CBA0 /* General.strings */,
 				485C2C350559830F005859E4 /* breve.scriptSuite */,
@@ -347,8 +328,10 @@
 		48ECC16B071C13D200596F93 /* Plugins */ = {
 			isa = PBXGroup;
 			children = (
+				48A2ABFF0B1BE9410010C477 /* QTInstrumentPlugin.o */,
 				48ECC16E071C13F400596F93 /* Instrument.tz */,
 				48ECC163071C13C100596F93 /* Digitizer.tz */,
+				48ECC164071C13C100596F93 /* DigitizerPlugin.o */,
 			);
 			name = Plugins;
 			sourceTree = "<group>";
@@ -410,15 +393,9 @@
 		2A37F4A9FDCFA73011CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = 48C9358C094B452400B48959 /* Build configuration list for PBXProject "breve" */;
-			compatibilityVersion = "Xcode 2.4";
-			developmentRegion = English;
 			hasScannedForEncodings = 1;
-			knownRegions = (
-				en,
-			);
 			mainGroup = 2A37F4AAFDCFA73011CA2CEA /* OSX2 */;
 			projectDirPath = "";
-			projectRoot = "";
 			targets = (
 				480F31AA071472AD00E71420 /* breve.app */,
 				4802DC1A05616137008198B9 /* real_breve.app */,
@@ -453,7 +430,8 @@
 				4802DC4405616137008198B9 /* slGLWindow.nib in Resources */,
 				4802DC4905616137008198B9 /* breve.scriptSuite in Resources */,
 				4802DC4A05616137008198B9 /* breve.scriptTerminology in Resources */,
-				48E5F2E40D04F73B006E36B8 /* images in Resources */,
+				4832D4A409B9FFC200443499 /* DigitizerPlugin.o in Resources */,
+				48A2AC000B1BE9410010C477 /* QTInstrumentPlugin.o in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -471,7 +449,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This is a shell script that attempts to complete the entire\n# breve build process for Mac OS X, including the configure\n# step, the building of the breve libraries, and the building \n# of the final breve.app with the proper external libraries.\n\n### first do the configure, if neccessary\n\nif [ ! -f \"ConfigureLibraryList\" ]; then\n\techo \"ConfigureLibraryList not found!  Running configure...\"\n\t(cd ..; ./configure)\nfi\n\n### now build the breve engine libraries\n\n(cd ..; make lib/libbreve.a)\n\n### use the libraries provided by \"configure\" to build the \n### OS X application using xcodebuild\n\n### The ncurses library is required for command-line breve, but not \n### the OSX build.  Unforunately, it also breaks backwards compatabilty \n### for the OSX build, so we have to remove it from the library list\n\nexport LIBS=`cat ConfigureLibraryList | sed 's/-lncurses//' | sed 's/-ltermcap//'`\n\nxcodebuild -target real_breve.app BREVE_VERSION=$BREVE_VERSION";
+			shellScript = "# This is a shell script that attempts to complete the entire\n# breve build process for Mac OS X, including the configure\n# step, the building of the breve libraries, and the building \n# of the final breve.app with the proper external libraries.\n\n### first do the configure, if neccessary\n\nif [ ! -f \"ConfigureLibraryList\" ]; then\n\techo \"ConfigureLibraryList not found!  Running configure...\"\n\t(cd ..; ./configure)\nfi\n\n### now build the breve engine libraries\n\n(cd ..; make lib/libbreve.a)\n\n### use the libraries provided by \"configure\" to build the \n### OS X application using xcodebuild\n\n### The ncurses library is required for command-line breve, but not \n### the OSX build.  Unforunately, it also breaks backwards compatabilty \n### for the OSX build, so we have to remove it from the library list\n\nexport LIBS=`cat ConfigureLibraryList | sed 's/-lncurses//' | sed 's/-ltermcap//'`\n\nxcodebuild -activeconfiguration -target real_breve.app BREVE_VERSION=$BREVE_VERSION";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -559,18 +537,11 @@
 		48C93583094B452400B48959 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ADDITIONAL_SDKS = macosx;
-				ARCHS = (
-					i386,
-					x86_64,
-				);
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_VERSION = 4.2;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OPTIMIZATION_CFLAGS = "-O0 -g";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
@@ -589,15 +560,8 @@
 		48C93584094B452400B48959 /* Deployment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ADDITIONAL_SDKS = macosx;
-				ARCHS = (
-					i386,
-					x86_64,
-				);
 				COPY_PHASE_STRIP = YES;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_VERSION = 4.2;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -615,7 +579,6 @@
 		48C93588094B452400B48959 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
 				CC_VERSION = 3.x;
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = NO;
@@ -630,9 +593,8 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					MACOSX,
-					"BREVE_VERSION=$(BREVE_VERSION)",
+					"BREVE_VERSION=2.5",
 				);
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_PEDANTIC = NO;
 				GCC_WARN_SHADOW = NO;
@@ -651,14 +613,14 @@
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
+					/Users/jk/dev/breve/lib,
+					/usr/lib/gcc/darwin/3.3,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				OPTIMIZATION_CFLAGS = "-O0 -g";
 				OTHER_CFLAGS = "$(CPPFLAGS)";
 				OTHER_LDFLAGS = "$(LIBS)";
 				PRODUCT_NAME = breve;
-				SDKROOT = macosx;
 				SECTORDER_FLAGS = "";
 				UNSTRIPPED_PRODUCT = YES;
 				WARNING_CFLAGS = "-Wmost";
@@ -670,7 +632,6 @@
 		48C93589094B452400B48959 /* Deployment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
 				CC_VERSION = 3.x;
 				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = NO;
@@ -684,9 +645,8 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					MACOSX,
-					"BREVE_VERSION=$(BREVE_VERSION)",
+					"BREVE_VERSION=2.5",
 				);
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_PEDANTIC = NO;
 				GCC_WARN_SHADOW = NO;
@@ -705,13 +665,13 @@
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
+					/Users/jk/dev/breve/lib,
+					/usr/lib/gcc/darwin/3.3,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				OTHER_CFLAGS = "$(CPPFLAGS)";
 				OTHER_LDFLAGS = "$(LIBS)";
 				PRODUCT_NAME = breve;
-				SDKROOT = macosx;
 				SECTORDER_FLAGS = "";
 				UNSTRIPPED_PRODUCT = YES;
 				WARNING_CFLAGS = "-Wmost";
@@ -723,9 +683,6 @@
 		48C9358D094B452400B48959 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = /opt/local/include;
-				LIBRARY_SEARCH_PATHS = /opt/local/lib;
 			};
 			name = Development;
 		};
@@ -738,15 +695,8 @@
 		48F0A4DC09CCE98700B52C28 /* Deployment-Universal */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ADDITIONAL_SDKS = macosx;
-				ARCHS = (
-					i386,
-					x86_64,
-				);
 				COPY_PHASE_STRIP = YES;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_VERSION = 4.2;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -764,8 +714,6 @@
 		48F0A4DD09CCE98700B52C28 /* Deployment-Universal */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ADDITIONAL_SDKS = "";
-				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
 				CC_VERSION = 3.x;
 				COPY_PHASE_STRIP = YES;
 				DEAD_CODE_STRIPPING = NO;
@@ -779,9 +727,8 @@
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					MACOSX,
-					"BREVE_VERSION=$(BREVE_VERSION)",
+					"BREVE_VERSION=2.5",
 				);
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_PEDANTIC = NO;
 				GCC_WARN_SHADOW = NO;
@@ -800,13 +747,13 @@
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
+					/Users/jk/dev/breve/lib,
+					/usr/lib/gcc/darwin/3.3,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				OTHER_CFLAGS = "$(CPPFLAGS)";
 				OTHER_LDFLAGS = "$(LIBS)";
 				PRODUCT_NAME = breve;
-				SDKROOT = macosx;
 				SECTORDER_FLAGS = "";
 				UNSTRIPPED_PRODUCT = YES;
 				WARNING_CFLAGS = "-Wmost";
@@ -819,8 +766,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = (
-					i386,
 					ppc,
+					i386,
 				);
 			};
 			name = "Deployment-Universal";

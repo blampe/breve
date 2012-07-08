@@ -24,7 +24,7 @@
 	\brief Creates a new brData struct from a pointer and a data length.
 */
 
-brData::brData( const void *inData, int inLen ) : brEvalObject() {
+brData::brData( void *inData, int inLen ) : brEvalObject() {
 	length = inLen;
 	data = new unsigned char[ inLen ];
 	memcpy( data, inData, length );
@@ -36,6 +36,24 @@ brData::brData( const void *inData, int inLen ) : brEvalObject() {
 
 brData::~brData() {
 	delete[] data;
+}
+
+/*!
+    \brief Increments the retain count of a brData struct.
+*/
+
+void brDataRetain( brData *d ) {
+	d->retain();
+}
+
+/*!
+	\brief Decrements the retain count of a brData struct.
+
+	Frees the struct if the retain count hits 0.
+*/
+
+void brDataUnretain( brData *d ) {
+	d->unretain();
 }
 
 /*!
@@ -58,14 +76,10 @@ char *brDataHexEncode( brData *d ) {
 	if ( !d || d->length < 1 )
 		return slStrdup( "" );
 
-	return brHexEncode( (char*)d -> data, d -> length );
-}
+	char *string = ( char * )slMalloc(( d->length * 2 ) + 1 );
 
-char *brHexEncode( const char *inStr, int inLength ) {
-	char *string = ( char * )slMalloc( ( inLength * 2 ) + 1 );
-
-	for ( int n = 0; n < inLength; ++n )
-		snprintf( &string[n * 2], 3, "%02x", ( (unsigned char *)inStr)[ n ] );
+	for ( int n = 0; n < d->length; ++n )
+		snprintf( &string[n * 2], 3, "%02x", (( unsigned char * )d->data )[n] );
 
 	return string;
 }
@@ -76,23 +90,17 @@ char *brHexEncode( const char *inStr, int inLength ) {
 	Used for archiving and XML networking.
 */
 
-brData *brDataHexDecode( const char *string ) {
+brData *brDataHexDecode( char *string ) {
 	unsigned char *tmpData;
 	int length;
 	int n;
 	int l;
 
-	if ( !string ) 
-		return NULL;
+	if ( !string ) return NULL;
 
 	length = strlen( string );
 
-	// a zero-length decode is valid
-
-	if( length < 1 )
-		return new brData( "", 0 );
-
-	if ( length % 2 ) {
+	if (( length % 2 ) || length < 1 ) {
 		slMessage( DEBUG_ALL, "warning: error decoding hex data string (length = %d)\n", length );
 		return NULL;
 	}
@@ -102,13 +110,7 @@ brData *brDataHexDecode( const char *string ) {
 	tmpData = new unsigned char[ length ];
 
 	for ( n = 0; n < length; n++ ) {
-		char hex[ 3 ];
-
-		hex[ 0 ] = string[ n * 2 ];
-		hex[ 1 ] = string[ n * 2 + 1 ];
-		hex[ 2 ] = 0;
-
-		sscanf( hex, "%2x", &l );
+		sscanf( &string[ n * 2 ], "%2x", &l );
 		tmpData[ n ] = l & 0xff;
 	}
 

@@ -181,8 +181,6 @@ public:
     wxBitmap GetBitmapResource( const wxString& name );
     wxIcon GetIconResource( const wxString& name );
     static bool ShowToolTips();
-
-    bool Show( bool inShow );
 };
 
 #endif

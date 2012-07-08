@@ -25,9 +25,6 @@
 
 #include "worldObject.h"
 #include "multibody.h"
-#include "shape.h"
-
-class slJoint;
 
 /*!
 	\brief Holds link state data in an integratable structure.
@@ -121,7 +118,7 @@ class slLink: public slWorldObject {
 		 * Sets a label to be drawn with this link.
 		 */
 
-		void setLabel( const char *label );
+		void setLabel(char *label);
 
 		/**
 		 * Recursively builds a list of all directly and indirectly 

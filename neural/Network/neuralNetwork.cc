@@ -25,7 +25,7 @@
  */
 
 
-#include "simulation.h"
+#include "util.h"
 #include <string>
 #include <iostream>
 #include "neuralNetwork.hh"

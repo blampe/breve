@@ -1,7 +1,6 @@
 <?xml version='1.0'?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-<!-- <xsl:import href="/usr/local/lib/docbook-xsl-1.71.1/html/chunk.xsl"/>  -->
-<xsl:import href="chunk.xsl"/>
+<xsl:import href="/usr/local/lib/docbook-xsl-1.71.1/html/chunk.xsl"/>
 <xsl:include href="titlepages.xsl"/>
 
 <xsl:param name="base.dir" select="'htmldocs/'"/>
@@ -12,14 +11,11 @@
 
 <xsl:param name="xref.with.number.and.title" select="0"/>
 
-<!-- <xsl:param name="navig.graphics" select="1"/> -->
-<!-- <xsl:param name="img.src.path">../images/</xsl:param> -->
-<!-- <xsl:param name="admon.graphics" select="1"/> -->
-
+<xsl:param name="navig.graphics">../images/</xsl:param>
 <xsl:param name="navig.graphics.path">../images/</xsl:param>
 <xsl:param name="navig.graphics.extension" select="'.gif'"/>
 
-
+<xsl:param name="admon.graphics" select="1"/>
 <xsl:param name="admon.graphics.path">../images/</xsl:param>
 <xsl:param name="admon.graphics.extension" select="'.gif'"/>
 
@@ -40,7 +36,7 @@
 appendix  toc,title
 article/appendix  nop
 article   toc,title
-book      toc,title,figure,table,example,equation,index
+book      toc,title,figure,table,example,equation
 chapter   title
 part      toc,title
 preface   title

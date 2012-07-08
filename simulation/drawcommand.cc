@@ -35,17 +35,13 @@ void slDrawCommandList::addCommand( slDrawCommand *command ) {
 void slDrawCommandList::draw( slCamera *c ) {
 	std::list<slDrawCommand*>::iterator di;
 
-	#ifndef OPENGLES
 	glPushMatrix();
 
 	glTranslatef( _origin.x, _origin.y, _origin.z );
 
-	glDepthFunc( GL_ALWAYS );
-	glEnable( GL_BLEND );
-	glEnable( GL_LINE_SMOOTH );
+	// glDisable( GL_BLEND );
+	glDisable( GL_LINE_SMOOTH );
 	glEnable( GL_DEPTH_TEST );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
 	glLineWidth( 1.2 );
 	glDisable( GL_CULL_FACE );
 	glColor4f( 0.0, 0.0, 0.0, 0.5 );
@@ -58,13 +54,7 @@ void slDrawCommandList::draw( slCamera *c ) {
 		( *di )->execute( *this );
 	}
 
-	// is there an unterminated polygon in process?
-	if ( _drawingPolygon ) 
-		glEnd();
+	if ( _drawingPolygon ) glEnd();
 
 	glPopMatrix();
-
-	glDisable( GL_LINE_SMOOTH );
-	glDepthFunc( GL_LESS );
-	#endif
 }

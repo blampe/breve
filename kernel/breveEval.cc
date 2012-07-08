@@ -20,54 +20,27 @@
 
 #include "kernel.h"
 
-const char *brAtomicTypeStrings[] = {
-	"<invalid type>",
-	"undefined",
+char *brAtomicTypeStrings[] = {
+	NULL,
 	"NULL",
 	"int",
-	"pointer",
-	"type",
 	"double",
-	"vector",
-	"matrix",
-	"array",
 	"string",
 	"object",
+	"pointer",
+	"vector",
+	"matrix",
 	"list",
+	"array",
 	"data",
 	"hash"
 };
 
-
-brEvalObject::brEvalObject() {
-	_retainCount = 0;
-}
-
-brEvalObject::~brEvalObject() {
-
-}
-
-void brEvalObject::retain() {
-	_retainCount++;
-}
-
-void brEvalObject::unretain() {
-	_retainCount--;
-}
-
-void brEvalObject::collect() {
-	if( _retainCount < 1 ) 
-		delete this;
-}
-
 brEval::brEval( const brEval& inCopy ) {
-	_needsCollect = false;
-	brEvalCopy( &inCopy, this );
-}
+	_type = AT_NULL; 
+	_values.pointerValue = NULL;
 
-brEval::~brEval() {
-	if( _needsCollect )
-		stGCUnretainAndCollectPointer( _values.pointerValue, _type );
+	brEvalCopy( &inCopy, this );
 }
 
 brEval& brEval::operator=( const brEval& inCopy ) {
@@ -229,7 +202,11 @@ char *brObjectDescription( brInstance *i ) {
 
 char *brFormatEvaluation( brEval *e, brInstance *i ) {
 	std::set< brEvalListHead* > seen;
-	return brFormatEvaluationWithSeenList( e, i, seen );
+	char *result;
+
+	result = brFormatEvaluationWithSeenList( e, i, seen );
+
+	return result;
 }
 
 /**
@@ -288,7 +265,7 @@ char *brFormatEvaluationWithSeenList( brEval *e, brInstance *i, std::set< brEval
 
 				len = strlen( pi->object->name ) + strlen( desc ) + ( sizeof( void* ) * 2 + 2 ) + 20;
 
-				result = (char*)slMalloc( len );
+				result = ( char * )slMalloc( len );
 
 				snprintf( result, len, "%s (%p) %s", pi->object->name, pi, desc );
 
@@ -334,8 +311,6 @@ char *brFormatEvaluationWithSeenList( brEval *e, brInstance *i, std::set< brEval
 					if( li + 1 != listHead->_vector.end() ) {
 						rstr += ", ";
 					}
-
-					slFree( newString );
 				}
 
 				rstr += " }";

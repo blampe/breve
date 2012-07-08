@@ -32,9 +32,9 @@ class DLLEXPORT brEvalListHead: public brEvalObject {
 		brEvalListHead();
 		~brEvalListHead();
 
-		inline std::vector< brEval > const &getVector() const { return _vector; }
-
 		std::vector< brEval > _vector;
+
+		inline std::vector< brEval > const &getVector() const { return _vector; }
 };
 
 /*!
@@ -56,8 +56,6 @@ typedef struct brEvalListCopyRecord brEvalListCopyRecord;
 extern "C" {
 #endif
 
-DLLEXPORT brEvalListHead *brEvalListNew();
-
 int brEvalListCompare(const void *, const void *);
 
 int stDoEvalListIndex(brEvalListHead *, int, brEval *);
@@ -68,38 +66,26 @@ brEvalListHead *stDoEvalListDeepCopy(brEvalListHead *, slList **);
 brEvalListHead *brEvalListCopy(brEvalListHead *);
 
 /** 
- * Returns the length of the list (for use in plugins)
- */  
+    \brief Looks up a lists index, using the index if possible.
+    
+    Updates the index as far as it can as it traverses the list.
+*/  
 
-DLLEXPORT int brEvalListLength( brEvalListHead* );
+brEval *brEvalListIndexLookup( brEvalListHead*, int );
 
-/** 
- * \brief Looks up a lists index, using the index if possible.
- *  
- * Updates the index as far as it can as it traverses the list.
- */  
-
-DLLEXPORT brEval *brEvalListIndexLookup( brEvalListHead*, int );
-
-/**
- * \brief Inserts an element into the list, with its value taken from
- * the given pointer.
- */  
+/*!
+	\brief Inserts an element into the list, with its value taken from
+	the given pointer.
+*/  
         
 DLLEXPORT int brEvalListInsert(brEvalListHead *, int, brEval *);
 
-/** 
- * Returns the length of the list (for use in plugins)
- */  
+/*!
+	\brief Removes an arbitrary element from the list and places the removed
+	element in the provided brEval.
+*/
 
-DLLEXPORT int brEvalListAppend( brEvalListHead *inList, brEval *inEval );
-
-/**
- * Removes an arbitrary element from the list and places the removed
- * element in the provided brEval.
- */
-
-DLLEXPORT int brEvalListRemove(brEvalListHead *, int, brEval *);
+int brEvalListRemove(brEvalListHead *, int, brEval *);
 
 brEvalListHead *brEvalListDeepCopy(brEvalListHead *);
 brEvalListHead *brDoEvalListDeepCopy(brEvalListHead *, slList **);

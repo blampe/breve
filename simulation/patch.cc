@@ -20,6 +20,7 @@
 
 #include "simulation.h"
 #include "glIncludes.h"
+#include "gldraw.h"
 #include "camera.h"
 #include "vclip.h"
 #include "vclipData.h"
@@ -29,10 +30,6 @@
 
 PFNGLTEXIMAGE3DPROC wglTexImage3D = NULL;
 PFNGLTEXSUBIMAGE3DPROC wglTexSubImage3D = NULL;
-
-#define glTexImage3D     wglTexImage3D
-#define glTexSubImage3D  wglTexSubImage3D
-
 #endif
 
 /**
@@ -71,16 +68,16 @@ void slPatch::setColor( slVector *color ) {
 	else if ( color->x < 0.0 ) color->x = 0.0;
 
 	if ( color->y > 1.0 ) color->y = 1.0;
-	else if ( color->y < 0.0 ) color->y = 0.0;
+	else if ( color->x < 0.0 ) color->x = 0.0;
 
 	if ( color->z > 1.0 ) color->z = 1.0;
 	else if ( color->z < 0.0 ) color->z = 0.0;
 
-	grid -> colors[ this->colorOffset     ] = ( unsigned char )( 255 * color->x );
-	grid -> colors[ this->colorOffset + 1 ] = ( unsigned char )( 255 * color->y );
-	grid -> colors[ this->colorOffset + 2 ] = ( unsigned char )( 255 * color->z );
+	grid->colors[ this->colorOffset     ] = ( unsigned char )( 255 * color->x );
+	grid->colors[ this->colorOffset + 1 ] = ( unsigned char )( 255 * color->y );
+	grid->colors[ this->colorOffset + 2 ] = ( unsigned char )( 255 * color->z );
 
-	grid -> _textureNeedsUpdate = true;
+	grid->_textureNeedsUpdate = true;
 }
 
 /**
@@ -128,7 +125,9 @@ void slPatch::getLocation( slVector *location ) {
 
 slPatchGrid::slPatchGrid() {
 	_drawWithTexture = 1;
-	_texture = NULL;
+	_cubeDrawList = -1;
+	_texture = -1;
+	_cubeDrawList = -1;
 	_textureNeedsUpdate = true;
 }
 
@@ -146,10 +145,10 @@ slPatchGrid::slPatchGrid( const slVector *center, const slVector *patchSize, con
 		_zSize( z ) {
 	int a, b, c;
 
-	_drawWithTexture = true;
-	_texture = NULL;
-	
-	fillCubeBuffer();
+	_drawWithTexture = 1;
+	_cubeDrawList = -1;
+	_texture = -1;
+	_cubeDrawList = -1;
 
 #ifdef WINDOWS
 	// oh windows, why do you have to be such a douchebag about everything?!
@@ -199,6 +198,30 @@ slPatchGrid::slPatchGrid( const slVector *center, const slVector *patchSize, con
 		}
 	}
 
+#if 0
+	for ( c = 0;c < z;c++ ) {
+		for ( b = 0;b < x;b++ ) {
+			for ( a = 0;a < y;a++ ) {
+				int dx, dy, dz;
+
+				for ( dx = -1;dx < 2;dx++ ) {
+					if ( dx + a != -1 && dx + a != ( int )_xSize ) {
+						for ( dy = -1;dy < 2;dy++ ) {
+							if ( dy + b != -1 && dy + b != ( int )_ySize ) {
+								for ( dz = -1;dz < 2;dz++ ) {
+									if ( dz + c != -1 && dz + c != ( int )_zSize ) {
+										this->patches[c][b][a]._neighbors.push_back( &patches[c + dz][b + dy][a + dx] );
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+#endif
+
 	this->drawSmooth = 0;
 
 }
@@ -221,9 +244,6 @@ slPatchGrid::~slPatchGrid() {
 	delete[] patches;
 
 	delete[] colors;
-
-	if( _texture )
-		delete _texture;
 }
 
 /**
@@ -295,8 +315,7 @@ void slPatchGrid::assignObjectsToPatches( slWorld *w ) {
 					if ( flags & BT_CHECK ) {
 						slCollisionCandidate c( vc, x, y );
 
-						if ( vc->testPair( &c, ce, 0 ) == CT_PENETRATE ) 
-							ce = slNextCollision( vc );
+						if ( vc->testPair( &c, ce ) == CT_PENETRATE ) ce = slNextCollision( vc );
 					}
 				}
 			}
@@ -353,13 +372,19 @@ void slPatchGrid::copyColorFrom3DMatrix( slBigMatrix3DGSL *m, int channel, doubl
  *	\brief Draws the patch grid without using 3D textures.
  */
 
-void slPatchGrid::drawWithout3DTexture( slRenderGL &inRenderer, slCamera *camera ) {
+void slPatchGrid::drawWithout3DTexture( slCamera *camera ) {
 	int z, y, x;
 	unsigned int zVal, yVal, xVal;
-	int zMid = 0, yMid = 0, xMid = 0;
+	unsigned int zMid = 0, yMid = 0, xMid = 0;
 	slPatch *patch;
 	slVector translation, origin;
-		
+
+	glDisable( GL_LIGHTING );
+	// glDisable(GL_CULL_FACE);
+	glDepthMask( GL_FALSE );
+
+	if ( _cubeDrawList == -1 ) this->compileCubeList();
+
 	// we want to always draw from back to front for the
 	// alpha blending to work.  figure out the points
 	// closest to the camera.
@@ -367,26 +392,32 @@ void slPatchGrid::drawWithout3DTexture( slRenderGL &inRenderer, slCamera *camera
 	slVectorAdd( &camera->_location, &camera->_target, &origin );
 
 	xMid = ( int )(( origin.x - startPosition.x ) / patchSize.x );
+
 	if ( xMid < 0 ) xMid = 0;
-	if ( xMid >= (int)_xSize ) xMid = _xSize - 1;
+
+	if ( xMid > ( unsigned int )_xSize ) xMid = _xSize - 1;
 
 	yMid = ( int )(( origin.y - startPosition.y ) / patchSize.y );
+
 	if ( yMid < 0 ) yMid = 0;
-	if ( yMid >= (int)_ySize ) yMid = _ySize - 1;
+
+	if ( yMid > ( unsigned int )_ySize ) yMid = _ySize - 1;
 
 	zMid = ( int )(( origin.z - startPosition.z ) / patchSize.z );
-	if ( zMid < 0 ) zMid = 0;
-	if ( zMid >= (int)_zSize ) zMid = _zSize - 1;
 
-	inRenderer.SetBlendMode( slBlendAlpha );
-	
+	if ( zMid < 0 ) zMid = 0;
+
+	if ( zMid > ( unsigned int )_zSize ) zMid = _zSize - 1;
+
+	glEnable( GL_BLEND );
+
 	for ( z = 0; z < ( int )_zSize; z++ ) {
 		if ( z < ( int )zMid ) zVal = z;
 		else zVal = ( _zSize - 1 ) - ( z - zMid );
 
 		translation.z = startPosition.z + patchSize.z * zVal;
 
-		for ( x = 0;x < ( int )_xSize ;x++ ) {
+		for ( x = ( _xSize - 1 );x >= 0;x-- ) {
 			if ( x < ( int )xMid ) xVal = x;
 			else xVal = ( _xSize - 1 ) - ( x - xMid );
 
@@ -399,25 +430,32 @@ void slPatchGrid::drawWithout3DTexture( slRenderGL &inRenderer, slCamera *camera
 				patch = &patches[ zVal ][ xVal ][ yVal ];
 
 				if ( colors[ patch->colorOffset + 3 ] != 255 ) {
+					glPushMatrix();
+
 					translation.y = startPosition.y + patchSize.y * yVal;
 
-					inRenderer.PushMatrix( slMatrixGeometry );
+					glColor4ubv( &colors[patch->colorOffset] );
 
-					inRenderer.SetBlendColor( &colors[ patch->colorOffset ] );
-					inRenderer.Translate( slMatrixGeometry, translation.x, translation.y, translation.z );
-					inRenderer.Scale( slMatrixGeometry, patchSize.x, patchSize.y, patchSize.z );
+					glTranslatef( translation.x, translation.y, translation.z );
 
-					_cubeBuffer.bind();
-					_cubeBuffer.draw( VB_TRIANGLE_STRIP );		
-					_cubeBuffer.unbind();
+					glScalef( patchSize.x, patchSize.y, patchSize.z );
 
-					inRenderer.PopMatrix( slMatrixGeometry );
+					glCallList( _cubeDrawList );
+
+					glPopMatrix();
 				}
 			}
 		}
 	}
+
+	glDepthMask( GL_TRUE );
 }
 
+
+void slPatchGrid::setDrawWithTexture( bool t ) {
+
+	_drawWithTexture = t;
+}
 
 /**
  *	\brief Draws a set of patches using a volumetric 3D texture.
@@ -427,31 +465,27 @@ void slPatchGrid::drawWithout3DTexture( slRenderGL &inRenderer, slCamera *camera
  *	is slower than drawing with a 3D texture.
  */
 
-void slPatchGrid::draw( slRenderGL &inRenderer, slCamera *camera ) {
+void slPatchGrid::draw( slCamera *camera ) {
 	slVector origin, diff, adiff, size;
 
+	if ( !_drawWithTexture ) return drawWithout3DTexture( camera );
+
 #ifdef WINDOWS
-	if( !glTexImage3D || !glTexSubImage3D ) 
-		_drawWithTexture = false;
+	if( !wglTexImage3D || !wglTexSubImage3D ) 
+		return drawWithout3DTexture( camera );
 #endif
 
-
-#ifdef OPENGLES
-	// No GL_TEXTURE_3D support with OpenGL ES
-	_drawWithTexture = false;
-#endif
-
-	if ( !_drawWithTexture ) 
-		return drawWithout3DTexture( inRenderer, camera );
-
-#ifndef OPENGLES
-	if ( !_texture ) {
-		_texture = new slTexture2D();
-		_texture -> createTextureID();
+	if ( _texture == -1 ) {
+		_texture = slTextureNew( camera );
 		glEnable( GL_TEXTURE_3D );
-		glBindTexture( GL_TEXTURE_3D, _texture -> _textureID );
+		glBindTexture( GL_TEXTURE_3D, _texture );
+#ifdef WINDOWS
+		wglTexImage3D( GL_TEXTURE_3D, 0, GL_RGBA, _textureX, _textureY, _textureZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+#else
 		glTexImage3D( GL_TEXTURE_3D, 0, GL_RGBA, _textureX, _textureY, _textureZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
+#endif
 	}
+
 
 	slVectorAdd( &camera->_location, &camera->_target, &origin );
 
@@ -464,13 +498,11 @@ void slPatchGrid::draw( slRenderGL &inRenderer, slCamera *camera ) {
 	adiff.z = fabs( diff.z );
 
 	glDisable( GL_CULL_FACE );
-	
-//	inRenderer.SetBlendColor()
 
 	glColor4f( 1, 1, 1, 1 );
 
 	glEnable( GL_TEXTURE_3D );
-	glBindTexture( GL_TEXTURE_3D, _texture -> _textureID );
+	glBindTexture( GL_TEXTURE_3D, _texture );
 
 	if ( drawSmooth ) {
 		glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
@@ -486,15 +518,19 @@ void slPatchGrid::draw( slRenderGL &inRenderer, slCamera *camera ) {
 
 	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 
+#ifdef WINDOWS
+	wglTexSubImage3D( GL_TEXTURE_3D, 0, 0, 0, 0, _xSize, _ySize, _zSize, GL_RGBA, GL_UNSIGNED_BYTE, colors );
+#else
 	if( _textureNeedsUpdate ) { 
+		glPixelStorei( GL_UNPACK_ROW_LENGTH, _ySize );
 		glPixelTransferf( GL_ALPHA_SCALE, 3.0f );
 		glTexSubImage3D( GL_TEXTURE_3D, 0, 0, 0, 0, _ySize, _xSize, _zSize, GL_RGBA, GL_UNSIGNED_BYTE, colors );
 		glPixelTransferf( GL_ALPHA_SCALE, 1.0f );
 
 		_textureNeedsUpdate = false;
 	}
+#endif
 
-	_quadBuffer.bind();
 	glBegin( GL_QUADS );
 
 	size.x = patchSize.x * _xSize;
@@ -510,12 +546,9 @@ void slPatchGrid::draw( slRenderGL &inRenderer, slCamera *camera ) {
 
 	glEnd();
 
-	_quadBuffer.unbind();
-
 	glDisable( GL_TEXTURE_3D );
 
 	return;
-#endif
 }
 
 void slPatchGrid::textureDrawYPass( slVector &size, int dir ) {
@@ -531,7 +564,6 @@ void slPatchGrid::textureDrawYPass( slVector &size, int dir ) {
 		end = -1;
 	}
 
-#ifndef OPENGLES
 	for ( y = start; floor( y ) != end; y += inc ) {
 		double yp;
 
@@ -549,7 +581,6 @@ void slPatchGrid::textureDrawYPass( slVector &size, int dir ) {
 		glTexCoord3f( 0, ( y / _textureY ), ( float )_zSize / _textureZ );
 		glVertex3f( startPosition.x, yp, startPosition.z + size.z );
 	}
-#endif
 }
 
 void slPatchGrid::textureDrawXPass( slVector &size, int dir ) {
@@ -564,7 +595,7 @@ void slPatchGrid::textureDrawXPass( slVector &size, int dir ) {
 		inc = -.3;
 		end = -1;
 	}
-#ifndef OPENGLES
+
 	for ( x = start;floor( x ) != end;x += inc ) {
 		double xp;
 
@@ -582,7 +613,6 @@ void slPatchGrid::textureDrawXPass( slVector &size, int dir ) {
 		glTexCoord3f(( x / _textureX ), 0, ( float )_zSize / _textureZ );
 		glVertex3f( xp, startPosition.y, startPosition.z + size.z );
 	}
-#endif
 }
 
 void slPatchGrid::textureDrawZPass( slVector &size, int dir ) {
@@ -598,7 +628,6 @@ void slPatchGrid::textureDrawZPass( slVector &size, int dir ) {
 		end = -1;
 	}
 
-#ifndef OPENGLES
 	for ( z = start;floor( z ) != end;z += inc ) {
 		double zp;
 
@@ -616,7 +645,6 @@ void slPatchGrid::textureDrawZPass( slVector &size, int dir ) {
 		glTexCoord3f( 0, ( float )_ySize / _textureY, ( z / _textureZ ) );
 		glVertex3f( startPosition.x, startPosition.y + size.y, zp );
 	}
-#endif
 }
 
 slPatch* slPatchGrid::getPatchAtIndex( int x, int y, int z ) {
@@ -635,71 +663,28 @@ void slPatchGrid::setDataAtIndex( int x, int y, int z, void *data ) {
 	this->patches[ z ][ x ][ y ].data = data;
 }
 
-void slPatchGrid::fillCubeBuffer() {
-	_cubeBuffer.resize( 14, VB_XYZ );
-	
-	float *v;
-	
-	v = _cubeBuffer.vertex( 0 );
-	v[ 0 ] = -.5; v[ 1 ] = -.5; v[ 2 ] = -.5;
+void slPatchGrid::compileCubeList() {
+	_cubeDrawList = glGenLists( 1 );
 
-	v = _cubeBuffer.vertex( 1 );
-	v[ 0 ] =  .5; v[ 1 ] = -.5; v[ 2 ] = -.5;
-	
-	v = _cubeBuffer.vertex( 2 );
-	v[ 0 ] = -.5; v[ 1 ] = -.5; v[ 2 ] =  .5;
-	
-	v = _cubeBuffer.vertex( 3 );
-	v[ 0 ] =  .5; v[ 1 ] = -.5; v[ 2 ] =  .5;
-	
-	v = _cubeBuffer.vertex( 4 );
-	v[ 0 ] =  .5; v[ 1 ] =  .5; v[ 2 ] =  .5;
-	
-	v = _cubeBuffer.vertex( 5 );
-	v[ 0 ] =  .5; v[ 1 ] = -.5; v[ 2 ] = -.5;
-	
-	v = _cubeBuffer.vertex( 6 );
-	v[ 0 ] =  .5; v[ 1 ] =  .5; v[ 2 ] = -.5;
-	
-	v = _cubeBuffer.vertex( 7 );
-	v[ 0 ] = -.5; v[ 1 ] = -.5; v[ 2 ] = -.5;
-	
-	v = _cubeBuffer.vertex( 8 );
-	v[ 0 ] = -.5; v[ 1 ] =  .5; v[ 2 ] = -.5;
-	
-	v = _cubeBuffer.vertex( 9 );
-	v[ 0 ] = -.5; v[ 1 ] = -.5; v[ 2 ] =  .5;
-	
-	v = _cubeBuffer.vertex( 10 );
-	v[ 0 ] = -.5; v[ 1 ] =  .5; v[ 2 ] =  .5;
-	
-	v = _cubeBuffer.vertex( 11 );
-	v[ 0 ] =  .5; v[ 1 ] =  .5; v[ 2 ] =  .5;
-	
-	v = _cubeBuffer.vertex( 12 );
-	v[ 0 ] = -.5; v[ 1 ] =  .5; v[ 2 ] = -.5;
-	
-	v = _cubeBuffer.vertex( 13 );
-	v[ 0 ] =  .5; v[ 1 ] =  .5; v[ 2 ] = -.5;
+	glNewList( _cubeDrawList, GL_COMPILE );
 
+	glBegin( GL_TRIANGLE_STRIP );
+	glVertex3f( 0.0, 0.0, 0.0 );
+	glVertex3f( 1.0, 0.0, 0.0 );
+	glVertex3f( 0.0, 0.0, 1.0 );
+	glVertex3f( 1.0, 0.0, 1.0 );
+	glVertex3f( 1.0, 1.0, 1.0 );
+	glVertex3f( 1.0, 0.0, 0.0 );
+	glVertex3f( 1.0, 1.0, 0.0 );
+	glVertex3f( 0.0, 0.0, 0.0 );
+	glVertex3f( 0.0, 1.0, 0.0 );
+	glVertex3f( 0.0, 0.0, 1.0 );
+	glVertex3f( 0.0, 1.0, 1.0 );
+	glVertex3f( 1.0, 1.0, 1.0 );
+	glVertex3f( 0.0, 1.0, 0.0 );
+	glVertex3f( 1.0, 1.0, 0.0 );
 
-	_quadBuffer.resize( 6, VB_XY );
-	v = _quadBuffer.vertex( 0 );
-	v[ 0 ] = -.5; v[ 1 ] = -.5;
+	glEnd();
 
-	v = _quadBuffer.vertex( 1 );
-	v[ 0 ] = -.5; v[ 1 ] =  .5;
-
-	v = _quadBuffer.vertex( 2 );
-	v[ 0 ] =  .5; v[ 1 ] =  .5;
-
-	v = _quadBuffer.vertex( 3 );
-	v[ 0 ] =  .5; v[ 1 ] =  .5;
-
-	v = _quadBuffer.vertex( 4 );
-	v[ 0 ] =  .5; v[ 1 ] = -.5;
-
-	v = _quadBuffer.vertex( 5 );
-	v[ 0 ] = -.5; v[ 1 ] = -.5;
-
+	glEndList();
 }

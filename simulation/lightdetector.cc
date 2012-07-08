@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA *
  *****************************************************************************/
 
-#include "render.h"
 #include "simulation.h"
 #include "glIncludes.h"
 #include "world.h"
@@ -70,8 +69,6 @@ void slCamera::detectLightExposure( slWorld *w, int size, GLubyte *buffer ) {
 
 	if ( w->_objects.size() == 0 ) return;
 
-#ifndef OPENGLES
-
 	glDisable( GL_LIGHTING );
 
 	glDisable( GL_BLEND );
@@ -115,8 +112,6 @@ void slCamera::detectLightExposure( slWorld *w, int size, GLubyte *buffer ) {
 
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	slRenderGL r;
-
 	for ( wi = w->_objects.begin(); wi != w->_objects.end(); wi++ ) {
 		unsigned char br, bg, bb;
 		wo = *wi;
@@ -128,8 +123,9 @@ void slCamera::detectLightExposure( slWorld *w, int size, GLubyte *buffer ) {
 
 			glColor4ub( br, bg, bb, 0xff );
 
-			wo -> _lightExposure = 0;
-			wo -> draw( r );
+			wo->_lightExposure = 0;
+
+			if ( wo->_shape ) wo->_shape->draw( this, &wo->_position, 0, 0, 0, 0 );
 		}
 
 		n++;
@@ -158,5 +154,4 @@ void slCamera::detectLightExposure( slWorld *w, int size, GLubyte *buffer ) {
 	glDepthMask( GL_TRUE );
 
 	glDisable( GL_SCISSOR_TEST );
-#endif
 }

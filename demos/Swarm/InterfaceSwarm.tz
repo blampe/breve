@@ -431,14 +431,9 @@ Mobile : Bird (aka Birds) {
         return 1. 
 
     + to get-angle to otherMobile (object):
-        tempVector, velocity (vector).
+        tempVector (vector).
         
         tempVector = (otherMobile get-location) - (self get-location).
-		velocity = ( self get-velocity ).
-
-		if | tempVector | < 0.01 || | velocity | < 0.01:
-			return 0.
-
-        return angle( velocity, tempVector ).
+        return angle((self get-velocity), tempVector).
 }
  

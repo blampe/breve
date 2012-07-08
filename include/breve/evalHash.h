@@ -33,8 +33,7 @@ class brEvalHash : public brEvalObject {
 		~brEvalHash();
 
 		slHash *table;
-
-		// int retainCount;
+		int retainCount;
 };
 
 brEvalHash *brEvalHashNew(void);
@@ -49,5 +48,5 @@ void stRetainEvalHash(brEvalHash *);
 unsigned int brEvalHashFunction(void *, unsigned int);
 unsigned int brEvalHashCompareFunction(void *, void *);
 
-int brEvalHashLookup(brEvalHash *, brEval *, brEval *, bool inRemove = false );
+int brEvalHashLookup(brEvalHash *, brEval *, brEval *);
 void brEvalHashStore(brEvalHash *, brEval *, brEval *);
