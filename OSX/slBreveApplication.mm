@@ -27,48 +27,27 @@
 //
 
 #import "slBreveApplication.h"
-
+#import "slBreve.h"
 
 @implementation slBreveApplication
 
-- (void)sendEvent:(NSEvent*)e {
-    if(fullScreenView && [e type] == NSLeftMouseDown) {
-        [fullScreenView mouseDown: e];
-		return;
-    } else if(fullScreenView && [e type] == NSLeftMouseUp) {
-        [fullScreenView mouseUp: e];
-		return;
-	}
-    
-    [super sendEvent: e];
-}
-
-- (void)setFullScreenView:(id)f {
-    fullScreenView = f;
-}
-
-- (NSString*)fullscreen {
-	NSLog(@"getting full from app\n");
-	return @"puppy";
-}
-
 - (id)startSimulationFromScript:sender {
 	NSLog(@"starting simulation...\n");
-	[[self delegate] startSimulation];
+	[(slBreve *)[self delegate] startSimulation];
 
 	return NULL;
 }
 
 - (id)stopSimulationFromScript:sender {
 	NSLog(@"stopping simulation...\n");
-	[[self delegate] stopSimulation: self];
+	[(slBreve *)[self delegate] stopSimulation: self];
 
 	return NULL;
 }
 
 - (void)setFullscreen:(NSString*)s {
 	NSLog(@"application setting fullscreen\n");
-	[[self delegate] setFullScreen: [s intValue]];
+	[(slBreve *)[self delegate] setFullScreen: [s intValue]];
 }
 
 - (id)sleepFromScript:sender {

@@ -103,8 +103,8 @@ int slMakeCurrentContext();
 	mainRunLoop = [NSRunLoop currentRunLoop];
 
 	bundlePath = [[NSBundle mainBundle] resourcePath];
-	classPath = (char*)[[NSString stringWithFormat: @"%@/classes", bundlePath] cString];
-	pluginPath = (char*)[[NSString stringWithFormat: @"%@/plugins", bundlePath] cString];
+	classPath = (char*)[[NSString stringWithFormat: @"%@/classes", bundlePath] cStringUsingEncoding:NSUTF8StringEncoding];
+	pluginPath = (char*)[[NSString stringWithFormat: @"%@/plugins", bundlePath] cStringUsingEncoding:NSUTF8StringEncoding];
 
 	_engine = brEngineNew();
 
@@ -130,14 +130,14 @@ int slMakeCurrentContext();
 
 	brAddSearchPath(_engine, classPath);
 	brAddSearchPath(_engine, pluginPath);
-	brAddSearchPath(_engine, (char*)[bundlePath cString]);
-	brAddSearchPath(_engine, (char*)[NSHomeDirectory() cString]);
+	brAddSearchPath(_engine, (char*)[bundlePath cStringUsingEncoding:NSUTF8StringEncoding]);
+	brAddSearchPath(_engine, (char*)[NSHomeDirectory() cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	_steveData = (stSteveData*)brInitFrontendLanguages( _engine );
 }
 
 - (void)freeEngine {
-	[ displayView setEngine: NULL fullscreen: NO ];
+	[ displayView setEngine: NULL ];
 
 	while( [ displayView drawing ] );
 
@@ -148,7 +148,10 @@ int slMakeCurrentContext();
 	[interfaceController updateObjectSelection];
 }
 
-- (int)startSimulationWithText:(char*)buffer withFilename:(char*)name withSavedSimulationFile:(char*)saved fullscreen:(BOOL)full {
+- (int)startSimulationWithText:(char*)buffer 
+                  withFilename:(char*)name 
+       withSavedSimulationFile:(char*)saved 
+{
 	[_engineLock lock];
 
 	if(runState != BX_STOPPED) return -1;
@@ -157,22 +160,14 @@ int slMakeCurrentContext();
 
 	if(!name) name = "<untitled>";
 	else {
-		NSString *inputDir = [[NSString stringWithCString: name] stringByDeletingLastPathComponent];
+		NSString *inputDir = [[NSString stringWithCString: name encoding:NSUTF8StringEncoding] stringByDeletingLastPathComponent];
 
-		if(useSimDirForOutput) brEngineSetIOPath(_engine, (char*)[inputDir cString]);
+		if(useSimDirForOutput) brEngineSetIOPath(_engine, (char*)[inputDir cStringUsingEncoding:NSUTF8StringEncoding]);
 	}
 
-	[displayView setEngine: _engine fullscreen: full];
-
-	if(full) {
-		if(![displayView startFullScreen]) {
-			NSLog(@"error switching to fullscreen!\n");
-			return -1;
-		}
-	} 
+	[displayView setEngine: _engine];
 
 	if([self parseText: buffer withFilename: name withSavedSimulationFile: saved] < 0) {
-		if(full) [displayView stopFullScreen];
 		[_engineLock unlock];
 		return -1;
 	}
@@ -217,23 +212,14 @@ int slMakeCurrentContext();
 
 	_engineWillPause = NO;
 
-	if([displayView isFullScreen]) {
-		[displayView pauseFullScreen];
-	}
 }
 
 - (void)unpauseSimulation:sender {
-	if([displayView isFullScreen]) {
-		[displayView unpauseFullScreen];
-	}
-
 	runState = BX_RUN;
 	[_engineLock unlock];
 }
 
 - (void)stopSimulation {
-	if([displayView isFullScreen]) [displayView stopFullScreen];
-
 	if( runState == BX_PAUSE ) [self unpauseSimulation: self];
 
 	if(simNib) {
@@ -253,7 +239,7 @@ int slMakeCurrentContext();
 	[_threadLock lock];
 	[_threadLock unlock];
 
-	[displayView setEngine: NULL fullscreen: NO];
+	[displayView setEngine: NULL ];
 
 	runState = BX_STOPPED;
 }
@@ -309,10 +295,8 @@ int slMakeCurrentContext();
 			if(1) {
 				NSPoint mouse = [NSEvent mouseLocation];
 
-				if(![displayView isFullScreen]) {
 					mouse = [[displayView window] convertScreenToBase: mouse];
 					mouse = [[[displayView window] contentView] convertPoint: mouse toView: displayView];
-				}
 
 				brEngineSetMouseLocation(_engine, (int)mouse.x, (int)mouse.y);
 			}
@@ -320,17 +304,13 @@ int slMakeCurrentContext();
 			if((result = brEngineIterate(_engine)) != EC_OK) {
 				[_engineLock unlock];
 
-				if([displayView isFullScreen]) [displayView stopFullScreen];
-
 				if(result == EC_ERROR || result == EC_ERROR_HANDLED) [interfaceController runErrorWindow];
 
 				[interfaceController stopSimulation: self];
 			} else {
 				// if we are recording a movie, we must catch every frame 
 
-				if([displayView isFullScreen]) {
-					[displayView drawFullScreen];
-				} else if(displayMovie || brEngineGetDrawEveryFrame(_engine)) {
+        if(displayMovie || brEngineGetDrawEveryFrame(_engine)) {
 					[displayView lockFocus];
 					[displayView drawRect: nothing];
 					[displayView unlockFocus];
@@ -461,7 +441,7 @@ int slMakeCurrentContext();
 - (void)interfaceActionTag:(int)tag stringValue:(NSString*)s {
 	if( _engine ) {
 		[_engineLock lock];
-		brInterfaceCallback(_engine, tag, (char*)[s cString]);
+		brInterfaceCallback(_engine, tag, (char*)[s cStringUsingEncoding:NSUTF8StringEncoding]);
 		[_engineLock unlock];
 	}
 }
@@ -473,7 +453,7 @@ char *getLoadNameCallback() {
 
 	s = [(id)gInterfaceController loadNameForTypes: [NSArray arrayWithObjects: @"xml", @"tzxml", @"tzb", NULL] withAccView: NULL];
 
-	if(s) return slStrdup((char*)[s cString]);
+	if(s) return slStrdup((char*)[s cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	return NULL;
 }
@@ -483,7 +463,7 @@ char *getSaveNameCallback() {
 
 	s = [(id)gInterfaceController saveNameForType: @"tzxml" withAccView: NULL];
 
-	if(s) return slStrdup((char*)[s cString]);
+	if(s) return slStrdup((char*)[s cStringUsingEncoding:NSUTF8StringEncoding]);
 
 	return NULL;
 }
@@ -492,10 +472,10 @@ int dialogCallback(char *title, char *message, char *b1, char *b2) {
 	  NSString *ts, *ms, *b1s, *b2s;
 	  int result;
 
-	  ts = [NSString stringWithCString: title];
-	  ms = [NSString stringWithCString: message];
-	  b1s = [NSString stringWithCString: b1];
-	  b2s = [NSString stringWithCString: b2];
+	  ts = [NSString stringWithCString: title encoding:NSUTF8StringEncoding];
+	  ms = [NSString stringWithCString: message encoding:NSUTF8StringEncoding];
+	  b1s = [NSString stringWithCString: b1 encoding:NSUTF8StringEncoding];
+	  b2s = [NSString stringWithCString: b2 encoding:NSUTF8StringEncoding];
 
 	  result = NSRunAlertPanel(ts, ms, b1s, b2s, NULL);
 
@@ -510,12 +490,12 @@ int soundCallback() {
 }
 
 char *interfaceVersionCallback() {
-	return "cocoa/2.4";
+	return (char *)"cocoa/2.4";
 }
 
 int interfaceSetStringCallback(char *string, int tag) {
 	if(simNib)
-		return [simNib setString: [NSString stringWithCString: string] forObjectWithTag: tag];
+		return [simNib setString: [NSString stringWithCString: string encoding:NSUTF8StringEncoding] forObjectWithTag: tag];
 
 	return 0;
 }
@@ -531,7 +511,7 @@ int unpauseCallback() {
 }
 
 void setNibCallback(char *n) {
-	simNib = [[slBreveNibLoader alloc] initWithNib: [NSString stringWithCString: n] andEngine: mySelf];
+	simNib = [[slBreveNibLoader alloc] initWithNib: [NSString stringWithCString: n encoding:NSUTF8StringEncoding] andEngine: mySelf];
 }
 
 void *newWindowCallback(char *string, void *graph) {
@@ -541,7 +521,7 @@ void *newWindowCallback(char *string, void *graph) {
 
     [NSBundle loadNibNamed: @"slGraphWindow.nib" owner: windowController];
 
-    [[windowController window] setTitle: [NSString stringWithCString: string]];
+    [[windowController window] setTitle: [NSString stringWithCString: string encoding:NSUTF8StringEncoding]];
     [[windowController graphView] setGraph: graph];
 
     return windowController;

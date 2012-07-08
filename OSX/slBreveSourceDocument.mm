@@ -41,11 +41,11 @@
 
 - (IBAction)reformat:sender {
 	char *newtext;
-	const char *text = [[steveText string] cString];
+	const char *text = [[steveText string] cStringUsingEncoding:NSUTF8StringEncoding];
 
 	newtext = slFormatText((char*)text);
 
-	[steveText setString: [NSString stringWithCString: newtext]];
+	[steveText setString: [NSString stringWithCString: newtext encoding:NSUTF8StringEncoding]];
 }
 
 - (NSString *)windowNibName
@@ -67,12 +67,14 @@
 	[steveText setLineWrappingEnabled: NO];
 	[steveText setFont: [NSFont userFixedPitchFontOfSize: 10.0]];
 
-	[steveText setDocDictionary: [[[NSApplication sharedApplication] delegate] docDictionary]];
-	[[[NSApplication sharedApplication] delegate] registerDocument: self];
+  slBreve *breve = (slBreve *)[[NSApplication sharedApplication] delegate];
+  
+	[steveText setDocDictionary: [breve docDictionary]];
+	[breve registerDocument: self];
 }
 
 - (BOOL)writeToFile:(NSString *)fileName ofType:(NSString *)type {
-	return [[steveText string] writeToFile: fileName atomically: YES];
+	return [[steveText string] writeToFile: fileName atomically: YES encoding:NSUTF8StringEncoding error:nil];
 }
 
 - (BOOL)readFromFile:(NSString *)fileName ofType:(NSString *)docType {
@@ -143,7 +145,8 @@
                 printOperationWithView: steveText
                 printInfo:[self printInfo]];
 
-    [op setShowPanels:showPanels];
+  [op setShowsPrintPanel:showPanels];
+  [op setShowsProgressPanel:showPanels];
 
     // Run operation, which shows the Print panel if showPanels was YES
 

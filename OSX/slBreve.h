@@ -35,7 +35,6 @@
 #import "slMovieRecord.h"
 #import "slBrevePrefs.h"
 #import "slDemoMenu.h"
-#import "slFullScreen.h"
 #import "slBreveSourceDocument.h"
 
 enum {
@@ -64,8 +63,6 @@ enum {
 	IBOutlet id runSimMenuItem;
 	IBOutlet id loadSimMenuItem;
 	IBOutlet id loadSimText;
-
-	BOOL fullscreen;
 
 	NSDocument *currentDocument;
 	NSMutableArray *documents;
@@ -179,8 +176,8 @@ void updateMenu(brInstance *i);
 - (NSString*)saveNameForType:(NSString *)type withAccView:(NSView*)view;
 - (NSString*)loadNameForTypes:(NSArray*)types withAccView:(NSView*)view;
 
-int isTZfile(struct dirent *d);
-int isHTMLfile(struct dirent *d);
+int isTZfile( struct dirent *d);
+int isHTMLfile( struct dirent *d);
 
 - (IBAction)find:sender;
 - (IBAction)findNext:sender;

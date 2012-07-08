@@ -91,7 +91,7 @@ char *slStripSpaces(char *text);
     [[NSNotificationCenter defaultCenter] addObserver: self selector: @selector(setPopupMenu:) name: @"NSPopUpButtonWillPopUpNotification" object: thePopupMenu];
 }
 
-- (BOOL)validateMenuItem:(id <NSMenuItem>)menuItem {
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
 	if(currentMenu) {
 		[self updateContextualMenu];
 		currentMenu = NULL;
@@ -205,7 +205,7 @@ char *slStripSpaces(char *text);
 
     /* get the data as a c string, fill out an NSRange corresponding to the desired line... */
 
-    char *data = (char*)[[self string] cString];
+    char *data = (char*)[[self string] cStringUsingEncoding:NSUTF8StringEncoding];
 
     if(*data == 0) return 1;
 
@@ -636,11 +636,11 @@ char *slStripSpaces(char *text);
     [methodMenuArray removeAllObjects];
     [methodMenuArray addObject: [NSNumber numberWithInt: -1]];
 
-    text = (char*)[[self string] cString];
+    text = (char*)[[self string] cStringUsingEncoding:NSUTF8StringEncoding];
 
     slObjectParseSetBuffer( text );
 
-    while( type = slYylex() ) {
+    while( (type = slYylex()) ) {
         if(type != 1) {
 			char *objectText;
 
@@ -684,6 +684,9 @@ char *slStripSpaces(char *text) {
 }
 
 - (void)setSelectedRange:(NSRange)charRange affinity:(NSSelectionAffinity)affinity stillSelecting:(BOOL)flag {
+  if ([self textStorage] == nil) {
+    return;
+  }
     int line = 1;
     unsigned int n;
 
@@ -905,6 +908,7 @@ char *slStripSpaces(char *text) {
 
 - (void)dealloc {
 	[[NSNotificationCenter defaultCenter] removeObserver: self];
+  lineNumberBox = nil;
 
     [stringColor release];
     [typeColor release];

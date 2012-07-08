@@ -38,8 +38,8 @@
     [openPanel setCanChooseDirectories: YES];
     [openPanel setCanChooseFiles: NO];
 
-    if([openPanel runModalForTypes: NULL] == NSOKButton) {
-        name = [[openPanel filenames] objectAtIndex: 0];
+    if([openPanel runModal] == NSOKButton) {
+        name = [[[openPanel URLs] objectAtIndex: 0] path];
 
         [pathField setStringValue: name];
     }
@@ -77,7 +77,7 @@
 - (IBAction)update:sender {
     if(defaultPath) slFree(defaultPath);
 
-    defaultPath = strdup((char*)[[[pathField stringValue] stringByExpandingTildeInPath] cString]);
+    defaultPath = strdup((char*)[[[pathField stringValue] stringByExpandingTildeInPath] cStringUsingEncoding:NSUTF8StringEncoding]);
 
     showOpenOnLaunch = [[openOnLaunchBox selectedCell] tag];
     autoSimStart = [autoSimStartBox intValue];
@@ -190,7 +190,7 @@
 
     filePath = [defaults stringForKey: @"defaultPath"];
 
-    if(!filePath || [filePath isEqualToString: @""] || stat([filePath cString], &st)) 
+    if(!filePath || [filePath isEqualToString: @""] || stat([filePath cStringUsingEncoding:NSUTF8StringEncoding], &st)) 
         filePath = [NSString stringWithFormat: @"%@/Documents", NSHomeDirectory()]; 
 
     [pathField setStringValue: filePath];

@@ -85,7 +85,7 @@ typedef struct stSteveData stSteveData;
 
 /* start, pause, unpause, stop the simulation */
 
-- (int)startSimulationWithText:(char*)buffer withFilename:(char*)name withSavedSimulationFile:(char*)saved fullscreen:(BOOL)full;
+- (int)startSimulationWithText:(char*)buffer withFilename:(char*)name withSavedSimulationFile:(char*)saved ;
 - (void)pauseSimulation:sender;
 - (void)unpauseSimulation:sender;
 - (void)stopSimulation;

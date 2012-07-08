@@ -588,7 +588,7 @@ void replace_substring( std::string *inStr, char *sub, char *repl ) {
 void brAddSearchPath( brEngine *e, const char *path ) {
 	std::string newPath( path );
 
-	replace_substring( &newPath, "\\", "\\\\" );
+//	replace_substring( &newPath, "\\", "\\\\" );
 	slMessage( DEBUG_INFO, "adding search path %s\n", path );
 	e->_searchPaths.push_back( newPath );
 }

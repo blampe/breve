@@ -25,7 +25,7 @@
 
 #import "engine.h"
 
-@interface slObjectOutline : NSObject {
+@interface slObjectOutline : NSObject<NSComboBoxDataSource, NSOutlineViewDataSource> {
     NSOutlineView *theView;
 
     BOOL allowChanges;

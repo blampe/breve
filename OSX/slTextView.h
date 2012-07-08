@@ -24,38 +24,38 @@
 #import "util.h"
 
 @interface slTextView : NSTextView {
-    id findText;
-    id findCaseSwitch;
-    id findWindow;
-
-    id thisWindow;
-
-    id thePopupMenu;
-
-    id lineNumberBox;
-
+  id findText;
+  id findCaseSwitch;
+  id findWindow;
+  
+  id thisWindow;
+  
+  id thePopupMenu;
+  
+  id lineNumberBox;
+  
 	NSDictionary *docDictionary;
-
-    NSMutableArray *methodMenuArray;
-
-    unsigned int tabSpaceCount;
-
-    BOOL wholeFileNextColor;
-
-    NSColor *typeColor;
-    NSColor *numberColor;
-    NSColor *stringColor;
-    NSColor *commentColor;
-    NSColor *backgroundColor;
-    NSColor *textColor;
-
-    BOOL shouldDoSyntaxColoring;
-    BOOL shouldAutoIndent;
-    BOOL shouldUpdateLineNumber;
-    BOOL shouldMatchBraces;
-    BOOL shouldExtraIndent;
-    BOOL shouldUseSpaces;
-
+  
+  NSMutableArray *methodMenuArray;
+  
+  unsigned int tabSpaceCount;
+  
+  BOOL wholeFileNextColor;
+  
+  NSColor *typeColor;
+  NSColor *numberColor;
+  NSColor *stringColor;
+  NSColor *commentColor;
+  NSColor *backgroundColor;
+  NSColor *textColor;
+  
+  BOOL shouldDoSyntaxColoring;
+  BOOL shouldAutoIndent;
+  BOOL shouldUpdateLineNumber;
+  BOOL shouldMatchBraces;
+  BOOL shouldExtraIndent;
+  BOOL shouldUseSpaces;
+  
 	NSMenu *currentMenu;
 	NSArray *currentDocArray;
 	NSString *currentDocString;

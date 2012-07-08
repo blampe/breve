@@ -44,7 +44,7 @@
 - (IBAction)run:sender {
 	int n;
 
-	n = [engine runCommand: (char*)[[self stringValue] cString]];
+	n = [engine runCommand: (char*)[[self stringValue] cStringUsingEncoding:NSUTF8StringEncoding]];
 
 	if(![[array objectAtIndex: last] isEqualTo: @""]) {
 		[array addObject: @""];

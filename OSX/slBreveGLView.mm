@@ -44,60 +44,8 @@
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 }
 
-- (BOOL)startFullScreen {
-	if(![fullScreenView startFullScreenAtPoint: [self frame].origin]) {
-   	 	NSString *message = NSLocalizedStringFromTable(@"Fullscreen Error Message", @"General", @"");
-		NSString *title = NSLocalizedStringFromTable(@"Fullscreen Error Title", @"General", @"");
-
-		NSLog(@"error starting full screen mode!\n");
-		NSRunAlertPanel(title, message, nil, nil, nil);
-
-		return NO;
-	}
-
-	CGLSetCurrentContext([fullScreenView context]);
-
-	fullScreen = YES;
-	firstFullScreen = 1;
-	[NSApp setFullScreenView: self];
-
-	[self updateSize: self];
-
-	[self initGL];
-
-	return YES;
-}
-
 - (void)activateContext {
-	if(fullScreen) CGLSetCurrentContext([fullScreenView context]);
-	else [[self openGLContext] makeCurrentContext];
-}
-
-- (void)stopFullScreen {
-	[theController setWindowTitleMessage: NULL];
-	fullScreen = NO;
-	[NSApp setFullScreenView: NULL];
-	[fullScreenView stopFullScreen];
-
-	/* the camera settings got changed to the fullscreen size, we'll change them back*/
-
-	[self updateSize: self];
-}
-
-- (void)pauseFullScreen {
-	[NSApp setFullScreenView: NULL];
-	[theController setWindowTitleMessage: @"fullscreen simulation paused"];
-	[fullScreenView pauseFullScreen];
-}
-
-- (void)unpauseFullScreen {
-	[NSApp setFullScreenView: self];
-	[theController setWindowTitleMessage: NULL];
-	[fullScreenView unpauseFullScreen];
-}
-
-- (BOOL)fullScreen {
-	return fullScreen;
+	[[self openGLContext] makeCurrentContext];
 }
 
 - (id)initWithFrame:(NSRect)frameRect {
@@ -105,19 +53,17 @@
 	// of machines.  that's dumb.  we'll use our own values here and hope 
 	// for the best. 
 
-	NSOpenGLPixelFormatAttribute attribs[] = {
-		NSOpenGLPFAAccelerated,
-		NSOpenGLPFAWindow,
-		NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute)24,
-		NSOpenGLPFAAlphaSize, (NSOpenGLPixelFormatAttribute)8,
-		NSOpenGLPFAStencilSize, (NSOpenGLPixelFormatAttribute)8,
-		(NSOpenGLPixelFormatAttribute)0, (NSOpenGLPixelFormatAttribute)0
-	};
+  NSOpenGLPixelFormatAttribute attribs[] = {	   
+    NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute)8,
+    NSOpenGLPFAStencilSize, (NSOpenGLPixelFormatAttribute)8,
+    NSOpenGLPFAWindow,
+    NSOpenGLPFAAccelerated,
+    NSOpenGLPFAAllRenderers,
+    (NSOpenGLPixelFormatAttribute)0
+  };
 
 	NSOpenGLPixelFormat *format = [[[NSOpenGLPixelFormat alloc] initWithAttributes: attribs] autorelease];
 	
-	fullScreenView = [[slFullScreen alloc] init];
-
 	drawing = 0;
 	drawCrosshair = 0;
 
@@ -154,14 +100,9 @@
 
 	if(!viewEngine) return;
 
-	if(fullScreen) {
-		x = (int)[fullScreenView width];
-		y = (int)[fullScreenView height];
-	} else {
 		x = (int)bounds.size.width;
 		y = (int)bounds.size.height;
 		[[self openGLContext] makeCurrentContext];
-	}
 
 	camera->setBounds( x, y );
 
@@ -172,7 +113,13 @@
 	\brief Associate this view with a brEngine in which a simulation will be run.
 */
 
-- (void)setEngine:(brEngine*)e fullscreen:(BOOL)f {
+- (void)setEngine:(brEngine*)e {
+  if (viewEngine != NULL) {
+    brEngine *oldEngine = viewEngine;
+    brEngineLock(oldEngine);
+    viewEngine = NULL;
+    brEngineUnlock(oldEngine);
+  }
 	viewEngine = e;
 
 	if(!e) return;
@@ -187,7 +134,7 @@
 		return;
 	}
 
-	if(!f) [self initGL];
+	[self initGL];
 	[self updateSize: self];
 
 	[[self openGLContext] makeCurrentContext];
@@ -245,17 +192,16 @@
 */
 
 - (void)drawRect:(NSRect)r {
-	brEngineLock(viewEngine);
 
 	[[self openGLContext] makeCurrentContext];
 
 	drawing = 1;
 
 	if(viewEngine) {
-	   	if(!fullScreen) {
+    brEngineLock(viewEngine);
 			camera->renderScene( world, drawCrosshair );
 			if(theMovie) [theMovie addFrameFromRGBPixels: [self updateRGBPixels]];
-		}
+    brEngineUnlock(viewEngine);
 	} else {
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
@@ -265,29 +211,6 @@
 
 	drawing = 0;
 
-	brEngineUnlock(viewEngine);
-}
-
-- (void)drawFullScreen {
-	if(fullScreen && viewEngine) {
-		brEngineLock(viewEngine);
-		CGLSetCurrentContext([fullScreenView context]);
-
-		if(firstFullScreen) {
-			glClearColor(0, 0, 0, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-			camera->setRecompile();
-		}
-
-		camera->renderScene( world, drawCrosshair );
-		firstFullScreen = 0;
-		CGLFlushDrawable([fullScreenView context]);
-		brEngineUnlock(viewEngine);
-	}
-}
-
-- (BOOL)isFullScreen {
-	return fullScreen;
 }
 
 - (int)drawing {
@@ -307,20 +230,14 @@
 
 	if(!viewEngine) return;
 
-	if(!fullScreen) lastp = [self convertPoint:[theEvent locationInWindow] fromView:nil];
-	else {
-		lastp = [theEvent locationInWindow];
-	}
+	lastp = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 
 	mode = [motionSelector selectedColumn];
 
 	do {
 		theEvent = [[self window] nextEventMatchingMask:(NSLeftMouseDraggedMask | NSLeftMouseUpMask)];
 
-		if(!fullScreen) p = [self convertPoint:[theEvent locationInWindow] fromView:nil];
-		else {
-			p = [theEvent locationInWindow];
-		}
+		p = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 
 		d.x = (p.x - lastp.x);
 		d.y = -(p.y - lastp.y);
@@ -380,33 +297,28 @@
 	if([str length] != 1) return;
 	key = [str characterAtIndex: 0];
 
+  NSWindow *window = [self window];
+  if (([window styleMask] & NSFullScreenWindowMask) == NSFullScreenWindowMask) {
+    if (key == 0x1b) {
+      [window toggleFullScreen:self];
+    }
+  }
+  
 	if(!viewEngine) return;
-
-	if(fullScreen && key == '\t') {
-		[fullScreenView toggleCursor];
-		return;
-	}
-
-	if(fullScreen && key == 0x1b) {
-		/* are they hitting the escape key?  are they angry at us? */
-
-		[theController simulateRunClick];
-		return;
-	}
 
 	brEngineLock(viewEngine);
 	switch(key) {
 		case NSUpArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "up", 1);
+			brSpecialKeyCallback(viewEngine, (char *)"up", 1);
 			break;
 		case NSLeftArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "left", 1);
+			brSpecialKeyCallback(viewEngine, (char *)"left", 1);
 			break;
 		case NSDownArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "down", 1);
+			brSpecialKeyCallback(viewEngine, (char *)"down", 1);
 			break;
 		case NSRightArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "right", 1);
+			brSpecialKeyCallback(viewEngine, (char *)"right", 1);
 			break;
 		default:
 			brKeyCallback(viewEngine, key, 1);
@@ -428,16 +340,16 @@
 	brEngineLock(viewEngine);
 	switch(key) {
 		case NSUpArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "up", 0);
+			brSpecialKeyCallback(viewEngine, (char *)"up", 0);
 			break;
 		case NSLeftArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "left", 0);
+			brSpecialKeyCallback(viewEngine, (char *)"left", 0);
 			break;
 		case NSDownArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "down", 0);
+			brSpecialKeyCallback(viewEngine, (char *)"down", 0);
 			break;
 		case NSRightArrowFunctionKey:
-			brSpecialKeyCallback(viewEngine, "right", 0);
+			brSpecialKeyCallback(viewEngine, (char *)"right", 0);
 			break;
 		default:
 			brKeyCallback(viewEngine, key, 0);
@@ -460,7 +372,7 @@
 }
 
 - (int)snapshotToFile:(NSString*)filename {
-	NSBitmapImageRep *i = [self makeImageRep];
+	NSBitmapImageRep *i = [self newImageRep];
 	NSData *image;
 
 	image = [i TIFFRepresentationUsingCompression: NSTIFFCompressionNone factor: 0.0];
@@ -476,7 +388,7 @@
 	return 0;
 }
 
-- (NSBitmapImageRep*)makeImageRep {
+- (NSBitmapImageRep*)newImageRep {
 	NSBitmapImageRep *i;
 	NSRect bounds;
 	int x, y;
@@ -523,7 +435,9 @@
 		if(!strcmp(menuEntry->title, "")) {
 			[menu addItem: [NSMenuItem separatorItem]];
 		} else {
-			menuItem = [menu addItemWithTitle: [NSString stringWithCString: menuEntry->title] action: @selector(contextualMenu:) keyEquivalent: @""];
+			menuItem = [menu addItemWithTitle: [NSString stringWithCString: menuEntry->title encoding:NSUTF8StringEncoding] 
+                                 action: @selector(contextualMenu:) 
+                          keyEquivalent: @""];
 	
 			[menuItem setTag: n];
 	
@@ -536,12 +450,11 @@
 }
 
 - (void)dealloc {
-	[fullScreenView release];
 	[super dealloc];
 }
 
 - (void)print:(id)sender {
-    NSBitmapImageRep *r = [self makeImageRep];
+    NSBitmapImageRep *r = [self newImageRep];
     NSData *imageData;
     NSImage *image;
     NSRect b;

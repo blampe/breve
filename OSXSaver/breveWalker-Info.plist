@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>breveCreatures</string>
+	<string>breveWalker</string>
 	<key>CFBundleGetInfoString</key>
-	<string>breveCreatures version 2.0b2</string>
+	<string>breveWalker version 2.0b2</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.spiderland.breveCreatures</string>
+	<string>org.spiderland.breveWalker</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>breveCreatures</string>
+	<string>breveWalker</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
@@ -25,6 +25,6 @@
 	<key>CFBundleVersion</key>
 	<string>2.0b2</string>
 	<key>NSPrincipalClass</key>
-	<string>slBreveCreatures</string>
+	<string>slBreveWalker</string>
 </dict>
 </plist>

@@ -23,7 +23,8 @@
 @implementation slBreveSaver
 
 - (void)initGL {
-	char *simFile, *simName, *text;
+	char *simFile, *text;
+  const char *simName;
 	int result;
 		
 	glInited = YES;
@@ -37,7 +38,6 @@
 	} else {
 			simFile = strdup(simName);
 	}
-	
 	text = slUtilReadFile(simFile);
 
 	result = brLoadSimulation( viewEngine, text, simFile);
@@ -72,7 +72,7 @@
 
 	CGGetDisplaysWithPoint(point, 1, &displayID, &count);
 
-	NSLog(@"display: %d, %p\n", count, displayID);
+	NSLog(@"display: %d, %u\n", count, displayID);
 
 	defaultsName = [NSString stringWithFormat: @"org.spiderland.%s", [self getDefaultsName]];
 
@@ -141,17 +141,17 @@
 
 	path = [NSString stringWithFormat: @"%@/classes", inputDirectory];
 
-	brAddSearchPath( viewEngine, slStrdup((char*)[path cString]) ); 
+	brAddSearchPath( viewEngine, slStrdup((char*)[path fileSystemRepresentation]) ); 
 
 	/* set the output path to the resource dir, and add it to the search path */
 
-	brAddSearchPath( viewEngine, slStrdup((char*)[inputDirectory cString]) ); 
+	brAddSearchPath( viewEngine, slStrdup((char*)[inputDirectory fileSystemRepresentation]) ); 
 	
 	paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
 
 	if([paths count] > 0) { 
 		outputDirectory = [[[paths objectAtIndex: 0] stringByAppendingString: @"/Preferences/"] retain];
-		brEngineSetIOPath( viewEngine, (char*)[outputDirectory cString] );
+		brEngineSetIOPath( viewEngine, (char*)[outputDirectory fileSystemRepresentation] );
 	}
 		
 	if([defaults boolForKey: @"initialized"] != YES) [self saveDefaults];
@@ -314,7 +314,7 @@
 	
 	brInstance *controller = brEngineGetController( viewEngine );
 
-	if(controller) brMethodCallByName(controller, (char*)[method cString], &r);
+	if(controller) brMethodCallByName(controller, (char*)[method cStringUsingEncoding:NSUTF8StringEncoding], &r);
 }
 
 - (void)dealloc {
@@ -328,11 +328,11 @@
 
 /* this should be overriden by subclasses */
 
-- (char*)getSimName {
+- (const char*)getSimName {
 	return "Simulation.tz";
 }
 
-- (char*)getDefaultsName {
+- (const char*)getDefaultsName {
 	return "Simulation";
 }
 

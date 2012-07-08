@@ -32,7 +32,7 @@
 #import "slBreveEngine.h"
 
 
-@interface slCommandTextField : NSTextField {
+@interface slCommandTextField : NSTextField<NSTextFieldDelegate> {
 	id engine;
 	int position;
 	int last;

@@ -58,7 +58,8 @@
 #define MV_LOSSLESS_CODEC	'SVQ3'
 #define MV_RAW_CODEC	'raw '
 
-- initWithPath:(NSString *)path bounds:(NSRect)bounds timeScale:(int)scale qualityLevel:(int)quality {	
+- initWithPath:(NSString *)path bounds:(NSRect)bounds timeScale:(int)scale qualityLevel:(int)quality {
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
     int e;
     PixMapHandle pixMapH;
     FSSpec fs;
@@ -169,6 +170,10 @@
     theName = [[path lastPathComponent] retain];
 
     return self;
+#else
+  [self release];
+  return nil;
+#endif
 }
 
 - (NSString*)name {
@@ -192,6 +197,7 @@
 }
 
 - (void)queueFrameFromRGBPixels:(unsigned char*)ptr {
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
     int length;
     NSData *data;
 
@@ -200,6 +206,7 @@
     data = [NSData dataWithBytes: ptr length: length];
 
     [theFrameArray addObject: data];
+#endif
 }
 
 - (int)getQueueSize {
@@ -235,6 +242,7 @@
 */
 
 - (int)addFrameFromRGBPixels:(unsigned char*)ptr {
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
     PixMapHandle pmh;
     unsigned char *pmhPixels;
     int result;
@@ -270,9 +278,13 @@
     UnlockPixels(pmh);
 
     return result;
+#else
+  return 0;
+#endif
 }
 
 - (int)addFrameFromPixMapHandle:(PixMapHandle)pixMapH {
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
     ImageDescriptionHandle imageDesc = NULL;
     OSErr err;
 
@@ -292,10 +304,14 @@
     }
 
     return err;
+#else 
+  return 0;
+#endif
 }
 
 - (int)closeMovie {
     int r = 0;
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
     OSErr err;
     short resID = movieInDataForkResID;
 
@@ -326,7 +342,7 @@
             r = -1;
         }
     }
-
+#endif
     return r;
 }
 
@@ -334,10 +350,12 @@
     [theFrameArray removeAllObjects];
     [theFrameArray release];
 
+#if (MAC_OS_X_VERSION_MIN_REQUIRED < 1070) && !defined(__LP64__)
     DisposeMovie(theMovie);
     DisposeGWorld(theGWorld);
 
     ExitMovies();
+#endif
 
     [theName release];
     [super dealloc];
@@ -354,7 +372,7 @@
     // this FSSpec code will fail if the file doesn't already exist,
 	// so create the file.
 
-    if(!(fp = fopen([self cString], "w"))) {
+    if(!(fp = fopen([self cStringUsingEncoding:NSUTF8StringEncoding], "w"))) {
         NSLog(@"Error creating file\n");
         return -1;
     }

@@ -62,8 +62,8 @@
 
 - (void)startBreveSimulation;
 
-- (char*)getSimName;
-- (char*)getDefaultsName;
+- (const char*)getSimName;
+- (const char*)getDefaultsName;
 
 - (NSString*)getNibName;
 

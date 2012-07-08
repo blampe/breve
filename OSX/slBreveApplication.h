@@ -31,10 +31,9 @@
 #import "slBreve.h"
 
 @interface slBreveApplication : NSApplication {
-    id fullScreenView;
+
 }
 
-- (void)setFullScreenView:(id)f;
 
 @end
 

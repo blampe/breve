@@ -24,39 +24,34 @@
 #import <OpenGL/glu.h>
 
 #import "slBreve.h"
-#import "slFullScreen.h"
 
 #import "kernel.h"
 
 @interface slBreveGLView : NSOpenGLView
 {
 	id printView;
-
-    brEngine *viewEngine;
+  
+  brEngine *viewEngine;
 	slCamera *camera;
 	slWorld *world;
-
-    id motionSelector;
-    id theMovie;
-
-    unsigned char *pixelBuffer;
-    unsigned char *tempPixelBuffer;
-
-    id theController;
-    slFullScreen *fullScreenView;
-
-    int drawCrosshair;
-    int drawing;
-    BOOL contextEnabled;
-
-    id selectionMenu;
-
-    BOOL fullScreen;
-    BOOL firstFullScreen;
-
-    NSLock *drawLock;
-
-    BOOL noDraw;
+  
+  id motionSelector;
+  id theMovie;
+  
+  unsigned char *pixelBuffer;
+  unsigned char *tempPixelBuffer;
+  
+  id theController;
+  
+  int drawCrosshair;
+  int drawing;
+  BOOL contextEnabled;
+  
+  id selectionMenu;
+  
+  NSLock *drawLock;
+  
+  BOOL noDraw;
 }
 
 - (void)initGL;
@@ -65,7 +60,7 @@
 
 - (void)updateSize:sender;
 
-- (void)setEngine:(brEngine*)e fullscreen:(BOOL)f;
+- (void)setEngine:(brEngine*)e;
 
 - (int)drawing;
 
@@ -79,18 +74,9 @@
 - (void)setContextMenuEnabled:(BOOL)c;
 - (void)updateContextualMenu:(id)menu withInstance:(brInstance*)i;
 
-- (BOOL)startFullScreen;
-- (void)stopFullScreen;
-
-- (void)pauseFullScreen;
-- (void)unpauseFullScreen;
-
-- (BOOL)isFullScreen;
-- (void)drawFullScreen;
-
 - (void)activateContext;
 
-- (NSBitmapImageRep*)makeImageRep;
+- (NSBitmapImageRep*)newImageRep;
 
 
 @end

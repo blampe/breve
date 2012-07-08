@@ -28,10 +28,10 @@
 	
 	if(!viewEngine) return;
 	
-	brInstance *controller = brEngineGetController(viewEngine);
 	
 	/*
 	
+   brInstance *controller = brEngineGetController(viewEngine);
 	arg.type = AT_VECTOR;
 	BRVECTOR(&arg).x = [defaults floatForKey: @"cloudRed"];
 	BRVECTOR(&arg).y = [defaults floatForKey: @"cloudGreen"];
@@ -60,12 +60,12 @@
 	 
 }
 
-- (char*)getSimName {
+- (const char*)getSimName {
     return "WalkerSaver.tz";
 }   
 
-- (char*)getDefaultsName {
-	return "breveWalker";
+- (const char*)getDefaultsName {
+	return "breveCreatures.xml";
 }
 
 
@@ -82,7 +82,7 @@
 }
 
 - (NSString*)getNibName {
-    return @"breveWalker.nib";
+    return @"breveCreatures.xml";
 }   
 
 @end

@@ -191,7 +191,7 @@
 	
 	args[0] = &iarg;
 	
-	BRSTRING(&iarg) = (char*)[image cString];
+	BRSTRING(&iarg) = (const char*)[image cStringUsingEncoding:NSUTF8StringEncoding];
 	iarg.type = AT_STRING;
 
 	brMethodCallByNameWithArgs(viewEngine->controller, "load-image", args, 1, &e);
@@ -219,11 +219,11 @@
 	[self updateImageMenu: self];
 }
 
-- (char*)getSimName {
-    return "PainterSaver.tz";
+- (const char*)getSimName {
+    return "Painter.tz";
 }   
 
-- (char*)getDefaultsName {
+- (const char*)getDefaultsName {
 	return "brevePainter";
 }
 

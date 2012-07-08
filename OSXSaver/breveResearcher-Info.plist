@@ -7,21 +7,23 @@
 	<key>CFBundleExecutable</key>
 	<string>breveResearcher</string>
 	<key>CFBundleGetInfoString</key>
-	<string></string>
+	<string>breveResearcher version 2.0b2</string>
 	<key>CFBundleIconFile</key>
-	<string></string>
+	<string>AppIcon.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.spiderland.breveResearcher</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>breveResearcher</string>
 	<key>CFBundlePackageType</key>
-	<string>APPL</string>
+	<string>BNDL</string>
 	<key>CFBundleShortVersionString</key>
-	<string></string>
+	<string>2.0b2</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1.2</string>
+	<string>2.0b2</string>
 	<key>NSPrincipalClass</key>
 	<string>slBreveResearcher</string>
 </dict>
