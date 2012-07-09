@@ -15,6 +15,7 @@ int brLoadSimulation( brEngine *engine, const char *code, const char *file ) {
 
 int brLoadFile( brEngine *engine, const char *code, const char *file ) {
 	char *extension = slFileExtension( file );
+	int result = EC_ERROR;
 
 	for( unsigned int n = 0; n < engine->objectTypes.size(); n++ ) {
 		brObjectType *type = engine->objectTypes[ n ];
@@ -22,17 +23,20 @@ int brLoadFile( brEngine *engine, const char *code, const char *file ) {
 		if( type->load && type->canLoad && type->canLoad( type->userData, extension ) ) {
 			int r = type->load( engine, type->userData, file, code );
 
-			if( r != EC_OK ) 
-				return EC_ERROR;
+			if( r == EC_OK ) 
+				result = EC_OK;
 
-			return EC_OK;
+			break;
 		}		
 
 	}
 
-	slMessage( DEBUG_ALL, "Could not locate breve language frontend which understands \"%s\" files\n", extension );
+	if (result != EC_OK) {
+		slMessage( DEBUG_ALL, "Could not locate breve language frontend which understands \"%s\" files\n", extension );
+	}
+	free(extension);
 
-	return EC_ERROR;
+	return result;
 }
 
 int brLoadSavedSimulation( brEngine *engine, const char *simcode, const char *simfile, const char *xmlfile ) {

@@ -178,7 +178,9 @@ stStringExp::stStringExp( char *theString, stMethod *m, stObject *o, const char 
 
 	theString[baseSize] = 0;
 
-	string = slStrdup( theString );
+	char *goodString = slStrdup( theString );
+	string = goodString;
+	slFree(goodString);
 
 	type = ET_STRING;
 }

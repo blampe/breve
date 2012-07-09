@@ -327,7 +327,7 @@ int stLoadFiles( stSteveData *sdata, brEngine *engine, const char *code, const c
 
 int stLoadSavedSimulation( stSteveData *sdata, brEngine *engine, const char *code, const char *file, const char *xmlfile ) {
 	char *xmlpath = brFindFile( engine, xmlfile, NULL );
-
+	int result = EC_ERROR;
 	if ( !xmlpath ) {
 		slMessage( DEBUG_ALL, "Cannot locate archived XML simulation file \"%s\"\n", xmlfile );
 		return EC_ERROR;
@@ -376,6 +376,7 @@ int stParseFile( stSteveData *sdata, brEngine *engine, const char *filename ) {
 
 	if ( !fileString ) {
 		slMessage( DEBUG_ALL, "error reading file %s\n", path );
+		slFree( path );
 		return EC_ERROR;
 	}
 
@@ -516,19 +517,23 @@ int stPreprocess( stSteveData *s, brEngine *engine, const char *line ) {
 			}
 
 			if ( include || use ) {
-				char *filetext = slUtilReadFile( brFindFile( engine, filename, NULL ) );
+				char *foundFile = brFindFile( engine, filename, NULL );
+				char *filetext = slUtilReadFile( foundFile );
+				slFree( foundFile );
 
 				if( brLoadFile( engine, filetext, filename ) != EC_OK ) {
 					yyfile = oldYyfile;
 					lineno = oldLineno;
 					stParseError( engine, EE_FILE_NOT_FOUND, "Error including file \"%s\"", filename );
 					delete[] filename;
+					slFree(filetext);
 					return -1;
 				}
 
 				yyfile = oldYyfile;
 
 				lineno = oldLineno;
+				slFree(filetext);
 			} else {
 				brAddSearchPath( engine, filename );
 			}
