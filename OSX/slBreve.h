@@ -67,8 +67,6 @@ enum {
 	IBOutlet id loadSimText;
 
 	slBreveSourceDocument *_activeDocument;
-	NSMutableArray *documents;
-	
 
 	IBOutlet id displayView;
 	
@@ -184,5 +182,7 @@ int isHTMLfile( struct dirent *d);
 - (void)updateAllEditorPreferences;
 
 - (int)updateLog:sender;
+
+- (id) displayView;
 
 @end

@@ -57,11 +57,11 @@
 }
 
 - (void)windowWillEnterFullScreen:(NSNotification *)notification {
-  NSLog(@"%s", __PRETTY_FUNCTION__);
+	[[(slBreve *)[self delegate] displayView] setFullScreen:YES];
 }
 
 - (void)windowWillExitFullScreen:(NSNotification *)notification {
-  NSLog(@"%s", __PRETTY_FUNCTION__);
+	[[(slBreve *)[self delegate] displayView] setFullScreen:NO];
 }
 
 @end

@@ -52,7 +52,12 @@
   NSLock *drawLock;
   
   BOOL noDraw;
+  
+  NSTimer *_mouseHideTimer;
+  BOOL _fullScreen;
 }
+
+@property (assign, nonatomic) BOOL fullScreen;
 
 - (void)initGL;
 

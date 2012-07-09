@@ -88,8 +88,6 @@ static NSRecursiveLock *gLogLock;
 	NSLog(@ " version = %@\n", [ NSString stringWithFormat: @"version %@", _versionString ]  );
 
 	_engineWillPause = NO;
-	
-	documents = [[NSMutableArray arrayWithCapacity: 20] retain];
         
 	/* we have a C function here that needs access to a class variable   */
 	/* so we're going to cheat and make a local copy of it.  please dont */
@@ -140,6 +138,7 @@ static NSRecursiveLock *gLogLock;
 	}
 
 	[runWindow setFrameAutosaveName: @"runWindow"];
+  [runWindow setAcceptsMouseMovedEvents:YES];
 
 	[simMenu setAutoenablesItems: NO];
 
@@ -620,6 +619,10 @@ void slPrintLog( const char *text ) {
 	return 1;
 }
 
+- (NSArray *) documents {
+  return [[NSDocumentController sharedDocumentController] documents];
+}
+
 - (void)runErrorWindow {
 	NSRect bounds;
 	NSPoint origin;
@@ -644,6 +647,7 @@ void slPrintLog( const char *text ) {
 		simpleFilename = "(untitled)";
 	}
 
+  NSArray *documents = [self documents];
 	for(n=0;n<[documents count];n++) {
 		slBreveSourceDocument *doc = [documents objectAtIndex: n];
 
@@ -901,9 +905,14 @@ void updateMenu(brInstance *i) {
 - (void)updateAllEditorPreferences {
 	unsigned int n;
 
+  NSArray *documents = [self documents];
 	for(n=0;n<[documents count];n++) {
 		[preferences updateTextView: [[documents objectAtIndex: n] text]];
 	}
+}
+
+- (id) displayView {
+  return displayView;
 }
 
 @end
