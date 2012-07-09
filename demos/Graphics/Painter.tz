@@ -33,7 +33,7 @@ Control : myController {
 
 		if (self get-argument-count) == 2: {
 			file = (self get-argument at-index 1).
-		} else file = "images/jon.png".
+		} else file = "images/jon.jpg".
 
 		image = (new Image load from file).
 
