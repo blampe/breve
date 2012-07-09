@@ -473,6 +473,11 @@ void slCamera::moveWithMouseMovement( double dx, double dy ) {
 	with the rotate modifier key pressed, or with the rotate tool is
 	sineelected.
 */
+void slCamera::rotate( double dx, double dy ) {
+	_ry -= dx;
+	_rx -= dy;
+	update();
+}
 
 void slCamera::rotateWithMouseMovement( double dx, double dy ) {
 	if ( _rx > M_PI / 2.0 && _rx < 3.0 / 2.0 * M_PI ) dy *= -1;
@@ -491,6 +496,10 @@ void slCamera::rotateWithMouseMovement( double dx, double dy ) {
 	with the zoom modifier key pressed, or with the zoom tool is
 	selected.
 */
+void slCamera::setZoom( double zoom ) {
+	_zoom = zoom;
+	update();
+}
 
 void slCamera::zoomWithMouseMovement( double dx, double dy ) {
 	if ( 0.1 * dy < _zoom ) {

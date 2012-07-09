@@ -120,8 +120,10 @@ class slCamera {
 	
 		void update();
 
+		void rotate( double, double );
 		void rotateWithMouseMovement( double, double );
 		void moveWithMouseMovement( double, double );
+		void setZoom( double );
 		void zoomWithMouseMovement( double, double );
 
 		void setShadowCatcher( slStationary *, slVector * );

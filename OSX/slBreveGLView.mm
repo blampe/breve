@@ -25,6 +25,13 @@
 #import "gldraw.h"
 #import "image.h"
 
+enum {
+  CursorPointer = 0,
+  CursorRotate,
+  CursorZoom,
+  CursorMove
+};
+
 @implementation slBreveGLView
 
 /*
@@ -232,7 +239,7 @@
 
 	lastp = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 
-	mode = [motionSelector selectedColumn];
+	mode = [_cursorControl selectedSegment];
 
 	do {
 		theEvent = [[self window] nextEventMatchingMask:(NSLeftMouseDraggedMask | NSLeftMouseUpMask)];
@@ -245,37 +252,39 @@
 		lastp = p;
 
 		switch(mode) {
-			case 0: // rotation
-				drawCrosshair = 1;
-				camera->rotateWithMouseMovement( d.x, d.y );
-				break;
-
-			case 1: // zoom
-				drawCrosshair = 1;
-				camera->zoomWithMouseMovement( d.x, d.y );
-				break;
-
-			case 2: // motion 
-				drawCrosshair = 1;
-				camera->moveWithMouseMovement( d.x, d.y );
-				break;
-			case 3: // select
+			case CursorPointer: // select
 				if(firstTime) {
 					[theController doSelectionAt: p];
 					firstTime = NO;
 					drawCrosshair = 0;
 				} else {
 					unsigned int x, y;
-
+          
 					[drawLock lock];
 					camera->getBounds( &x, &y );
 					brDragCallback(viewEngine, (int)p.x, (int)(y - p.y));
 					[drawLock unlock];
 				}
-
+        
 				[self setNeedsDisplay: YES];
 				break;
-			default:
+
+			case CursorZoom: // zoom
+				drawCrosshair = 1;
+				camera->zoomWithMouseMovement( d.x, d.y );
+				break;
+
+			case CursorMove: // motion 
+				drawCrosshair = 1;
+				camera->moveWithMouseMovement( d.x, d.y );
+				break;
+        
+			case CursorRotate: // rotation
+				drawCrosshair = 1;
+				camera->rotateWithMouseMovement( d.x, d.y );
+				break;
+			
+      default:
 				break;
 		}
 		
@@ -358,6 +367,30 @@
 	brEngineUnlock(viewEngine);
 }
 
+- (void)magnifyWithEvent:(NSEvent *)event {
+  if (!viewEngine) return;
+  double newZoom = camera->_zoom + ([event magnification] * 100);
+  if (newZoom > 10) {
+    camera->setZoom(newZoom);
+  }
+}
+
+- (void)rotateWithEvent:(NSEvent *)event {
+  if (!viewEngine) return;
+  double newY = camera->_ry + [event rotation] * 0.1;
+  camera->_ry = newY;
+  camera->update();
+}
+
+- (void)scrollWheel:(NSEvent *)theEvent {
+  if (!viewEngine) return;
+  double newX = camera->_rx + [theEvent scrollingDeltaY] * 0.005;
+  if (newX < 6 && newX > 3.1) {
+    camera->_rx = newX;
+    camera->update();
+  }
+}
+
 - (unsigned char*)updateRGBPixels {
 	NSRect bounds = [self bounds];
 
@@ -371,11 +404,18 @@
 	return pixelBuffer;
 }
 
-- (int)snapshotToFile:(NSString*)filename {
+- (int)snapshotToFile:(NSString*)filename 
+             fileType:(NSBitmapImageFileType)fileType
+{
 	NSBitmapImageRep *i = [self newImageRep];
 	NSData *image;
 
-	image = [i TIFFRepresentationUsingCompression: NSTIFFCompressionNone factor: 0.0];
+  if (fileType == NSTIFFFileType) {
+    image = [i TIFFRepresentationUsingCompression: NSTIFFCompressionNone factor: 0.0];
+  }
+  else {
+    image = [i representationUsingType:fileType properties:nil];
+  }
 
 	if(!image) {
 		[i release];
@@ -494,6 +534,92 @@
     [printView print: sender];
     [r release];
     [image release];
+}
+
+-(void)resetCursorRects {
+  [super resetCursorRects];
+  NSCursor *cursor = nil;
+  NSString *cursorImageName = nil;
+  switch ([_cursorControl selectedSegment]) {
+    case CursorPointer: 
+      cursor = [NSCursor arrowCursor];
+      break;
+    case CursorZoom:
+      cursorImageName = @"cursor-zoom.png";
+      break;
+    case CursorMove:
+      cursor = [NSCursor openHandCursor];
+      break;
+    case CursorRotate:
+      cursorImageName = @"cursor-rotate.tiff";
+      break;
+  }
+
+  if (cursorImageName != nil) {
+    NSImage *cursorImage = [NSImage imageNamed:cursorImageName];
+    cursor = [[[NSCursor alloc] initWithImage:cursorImage 
+                                      hotSpot:NSZeroPoint] autorelease];
+    [cursorImage release];
+  }
+
+  if (cursor != nil) {
+    [self addCursorRect:[self bounds]
+                 cursor:cursor];
+  }
+}
+
+
+- (IBAction) cursorModeToggled:(id)sender {
+  if ([sender isKindOfClass:[NSMenuItem class]] == YES) {
+    NSMenuItem *menuItem = (NSMenuItem *)sender;
+    [_cursorControl setSelected:YES forSegment:menuItem.tag];
+  }
+  [[self window] invalidateCursorRectsForView:self];
+}
+
+- (IBAction) zoomToggled:(id)sender {
+  NSSegmentedControl *segment = (NSSegmentedControl *)sender;
+  int selectedSegment = [segment selectedSegment];
+  if (selectedSegment == 1) {
+    [self zoomIn:self];
+  }
+  else {
+    [self zoomOut:self];
+  }
+  
+  [segment setSelected:NO forSegment:selectedSegment];
+}
+
+- (IBAction) rotateToggled:(id)sender {
+  NSSegmentedControl *segment = (NSSegmentedControl *)sender;
+  if ([segment selectedSegment] == 1) {
+    [self rotateLeft:self];
+  }
+  else {
+    [self rotateRight:self];
+  }
+  
+  [segment setSelected:NO forSegment:[segment selectedSegment]];
+}
+
+- (IBAction) zoomIn:(id)sender {
+  if(!viewEngine) return;
+  camera->setZoom(camera->_zoom / 1.5);
+}
+
+- (IBAction) zoomOut:(id)sender {
+  if(!viewEngine) return;
+  camera->setZoom(camera->_zoom * 1.5);
+}
+
+- (IBAction) rotateLeft:(id)sender {
+  if(!viewEngine) return;
+  camera->rotate(-30 , 0);
+}
+
+- (IBAction) rotateRight:(id)sender {
+  if(!viewEngine) return;
+  camera->rotate(30 , 0);
 }
 
 @end

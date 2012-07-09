@@ -60,7 +60,7 @@
     [textView setBackgroundColor: [backgroundColor color]];
     [textView setTextColor: [textColor color]];
 
-    [textView setShouldAutoIndent: [autoIndent intValue]];
+   [textView setShouldAutoIndent: [autoIndent intValue]];
     [textView setShouldUpdateLineNumber: [updateLineBox intValue]];
     [textView setShouldUseSpaces: [useSpaces intValue]];
     [textView setShouldExtraIndent: [extraIndent intValue]];

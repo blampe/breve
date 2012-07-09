@@ -30,26 +30,52 @@
 #import <Cocoa/Cocoa.h>
 
 #import "slBreve.h"
-#import "slTextView.h"
 #import "format.h"
 
-@interface slBreveSourceDocument : NSDocument
-{
-    IBOutlet id steveText;
-    IBOutlet id sourceWindow;
+@class JSTTextView;
+@class slSplitView;
 
+@interface slBreveSourceDocument : NSDocument {
+  NSWindow *_sourceWindow;
+  JSTTextView *_steveText;
+  NSTextView *_outputText;
+  slSplitView *_splitView;
+  
 	BOOL inited;
 	NSString *loadText;
+
+  NSToolbarItem *_runButton;
+  NSToolbarItem *_stopButton;
+  
+  NSPopUpButton *_methodsPopup;
+  NSMutableArray *_methodMenuArray;
+  int _runState;
 }
+
+@property (retain) IBOutlet NSWindow *sourceWindow;
+@property (retain) IBOutlet JSTTextView *steveText;
+@property (retain) IBOutlet NSTextView *outputText;
+@property (retain) IBOutlet slSplitView *splitView;
+@property (retain) IBOutlet NSPopUpButton *methodsPopup;
+@property (retain) IBOutlet NSToolbarItem *runButton;
+@property (retain) IBOutlet NSToolbarItem *stopButton;
+@property (assign, nonatomic) int runState;
 
 - (void)setString:(NSString*)s;
 
-- (IBAction)find:sender;
-- (IBAction)findNext:sender;
-- (IBAction)findPrevious:sender;
-- (IBAction)findSelection:sender;
-- (IBAction)scrollToSelection:sender;
-- (IBAction)reformat:sender;
+- (IBAction)findSelection:(id)sender;
+- (IBAction)scrollToSelection:(id)sender;
+- (IBAction)reformat:(id)sender;
+
+- (IBAction) toggleSimulation:(id)sender;
+- (IBAction) stopSimulation:(id)sender;
+
+- (IBAction)saveLog:(id)sender;
+- (IBAction)clearLog:(id)sender;
+- (IBAction)checkSyntax:(id)sender;
+
+- (IBAction)commentLines:(id)sender;
+- (IBAction)uncommentLines:(id)sender;
 
 - (NSString*)documentText;
 

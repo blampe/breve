@@ -26,19 +26,16 @@
 		4802DC1E05616137008198B9 /* slMovieRecord.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20A80397BEC801980AE4 /* slMovieRecord.h */; };
 		4802DC1F05616137008198B9 /* slObjectOutline.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20AA0397BEC801980AE4 /* slObjectOutline.h */; };
 		4802DC2005616137008198B9 /* slObjectOutlineItem.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20AC0397BEC801980AE4 /* slObjectOutlineItem.h */; };
-		4802DC2205616137008198B9 /* slTextView.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20B10397BEC801980AE4 /* slTextView.h */; };
 		4802DC2305616137008198B9 /* slBreve.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20C00397BFC001980AE4 /* slBreve.h */; };
 		4802DC2405616137008198B9 /* slBreveApplication.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20C20397BFC001980AE4 /* slBreveApplication.h */; };
 		4802DC2505616137008198B9 /* slBreveEngine.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20C40397BFC001980AE4 /* slBreveEngine.h */; };
 		4802DC2605616137008198B9 /* slBreveGLView.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20C60397BFC001980AE4 /* slBreveGLView.h */; };
 		4802DC2905616137008198B9 /* slBrevePrefs.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20D10397BFC001980AE4 /* slBrevePrefs.h */; };
-		4802DC2A05616137008198B9 /* slCommandTextField.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20D30397BFC001980AE4 /* slCommandTextField.h */; };
 		4802DC2B05616137008198B9 /* slDemoMenu.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20D50397BFC001980AE4 /* slDemoMenu.h */; };
 		4802DC2D05616137008198B9 /* slGraphWindowController.h in Headers */ = {isa = PBXBuildFile; fileRef = 48D1C0BC04632D760093F8AA /* slGraphWindowController.h */; };
 		4802DC2E05616137008198B9 /* slBreveNibLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = F5BD20CA0397BFC001980AE4 /* slBreveNibLoader.h */; };
 		4802DC2F05616137008198B9 /* slGraphWindowView.h in Headers */ = {isa = PBXBuildFile; fileRef = 48D1C0D4046331F80093F8AA /* slGraphWindowView.h */; };
 		4802DC3105616137008198B9 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 2A37F4B6FDCFA73011CA2CEA /* MainMenu.nib */; };
-		4802DC3205616137008198B9 /* slBreveSourceDocument.nib in Resources */ = {isa = PBXBuildFile; fileRef = 2A37F4B4FDCFA73011CA2CEA /* slBreveSourceDocument.nib */; };
 		4802DC3405616137008198B9 /* app_icon.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F5BD21F60397C43E01980AE4 /* app_icon.tiff */; };
 		4802DC3505616137008198B9 /* Camera.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F5BD21F80397C43E01980AE4 /* Camera.tiff */; };
 		4802DC3605616137008198B9 /* move.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F5BD21F90397C43E01980AE4 /* move.tiff */; };
@@ -55,7 +52,6 @@
 		4802DC4105616137008198B9 /* Errors.strings in Resources */ = {isa = PBXBuildFile; fileRef = F569DDB203980C9101B2CBA0 /* Errors.strings */; };
 		4802DC4205616137008198B9 /* General.strings in Resources */ = {isa = PBXBuildFile; fileRef = F569DDB403980C9101B2CBA0 /* General.strings */; };
 		4802DC4305616137008198B9 /* classes in Resources */ = {isa = PBXBuildFile; fileRef = F5F64877039868A20154B402 /* classes */; };
-		4802DC4405616137008198B9 /* slGLWindow.nib in Resources */ = {isa = PBXBuildFile; fileRef = 481D2181042A2D2100FFA442 /* slGLWindow.nib */; };
 		4802DC4905616137008198B9 /* breve.scriptSuite in Resources */ = {isa = PBXBuildFile; fileRef = 485C2C350559830F005859E4 /* breve.scriptSuite */; };
 		4802DC4A05616137008198B9 /* breve.scriptTerminology in Resources */ = {isa = PBXBuildFile; fileRef = 482D1689055989F800230BBF /* breve.scriptTerminology */; };
 		4802DC4C05616137008198B9 /* slBreveSourceDocument.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2A37F4ACFDCFA73011CA2CEA /* slBreveSourceDocument.mm */; settings = {ATTRIBUTES = (); }; };
@@ -65,14 +61,12 @@
 		4802DC5005616137008198B9 /* slObjectOutline.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20AB0397BEC801980AE4 /* slObjectOutline.mm */; };
 		4802DC5105616137008198B9 /* slObjectOutlineItem.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20AD0397BEC801980AE4 /* slObjectOutlineItem.mm */; };
 		4802DC5205616137008198B9 /* slQuickparser.l in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20AE0397BEC801980AE4 /* slQuickparser.l */; };
-		4802DC5405616137008198B9 /* slTextView.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20B20397BEC801980AE4 /* slTextView.mm */; };
 		4802DC5505616137008198B9 /* slBreve.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20C10397BFC001980AE4 /* slBreve.mm */; };
 		4802DC5605616137008198B9 /* slBreveApplication.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20C30397BFC001980AE4 /* slBreveApplication.mm */; };
 		4802DC5705616137008198B9 /* slBreveEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20C50397BFC001980AE4 /* slBreveEngine.mm */; };
 		4802DC5805616137008198B9 /* slBreveGLView.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20C70397BFC001980AE4 /* slBreveGLView.mm */; };
 		4802DC5905616137008198B9 /* slBreveNibLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20CB0397BFC001980AE4 /* slBreveNibLoader.mm */; };
 		4802DC5C05616137008198B9 /* slBrevePrefs.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20D20397BFC001980AE4 /* slBrevePrefs.mm */; };
-		4802DC5D05616137008198B9 /* slCommandTextField.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20D40397BFC001980AE4 /* slCommandTextField.mm */; };
 		4802DC5E05616137008198B9 /* slDemoMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5BD20D60397BFC001980AE4 /* slDemoMenu.mm */; };
 		4802DC6005616137008198B9 /* slGraphWindowController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 48D1C0BD04632D760093F8AA /* slGraphWindowController.mm */; };
 		4802DC6105616137008198B9 /* slGraphWindowView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 48D1C0D5046331F80093F8AA /* slGraphWindowView.mm */; };
@@ -86,8 +80,41 @@
 		48ECC165071C13C100596F93 /* Digitizer.tz in CopyFiles */ = {isa = PBXBuildFile; fileRef = 48ECC163071C13C100596F93 /* Digitizer.tz */; };
 		48ECC170071C13F400596F93 /* Instrument.tz in CopyFiles */ = {isa = PBXBuildFile; fileRef = 48ECC16E071C13F400596F93 /* Instrument.tz */; };
 		48F0A4F309CCEE1900B52C28 /* libdl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48F0A4F209CCEE1900B52C28 /* libdl.dylib */; };
+		F10E6F6915A9DE11000313F9 /* TB_zoomIn.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F10E6F6315A9DBC3000313F9 /* TB_zoomIn.pdf */; };
+		F10E6F6A15A9DE16000313F9 /* TB_grab.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F10E6F6215A9DBC3000313F9 /* TB_grab.pdf */; };
+		F10E6F6B15A9DE1A000313F9 /* TB_zoomOut.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F10E6F6415A9DBC3000313F9 /* TB_zoomOut.pdf */; };
+		F10E6FAA15A9E7DD000313F9 /* slBreveSourceDocument.xib in Resources */ = {isa = PBXBuildFile; fileRef = F10E6F6015A94EC1000313F9 /* slBreveSourceDocument.xib */; };
 		F151C78915A8EAAD00B88E13 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C78715A8EAAD00B88E13 /* libjpeg.a */; };
 		F151C78A15A8EAAD00B88E13 /* libpng12.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C78815A8EAAD00B88E13 /* libpng12.a */; };
+		F151C7AA15A9342D00B88E13 /* TETextUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = F151C7A015A9342D00B88E13 /* TETextUtils.h */; };
+		F151C7AB15A9342D00B88E13 /* TETextUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = F151C7A115A9342D00B88E13 /* TETextUtils.m */; };
+		F151C7AC15A9342D00B88E13 /* JSTTextView.h in Headers */ = {isa = PBXBuildFile; fileRef = F151C7A215A9342D00B88E13 /* JSTTextView.h */; };
+		F151C7AD15A9342D00B88E13 /* JSTTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = F151C7A315A9342D00B88E13 /* JSTTextView.m */; };
+		F151C7AE15A9342D00B88E13 /* MarkerLineNumberView.h in Headers */ = {isa = PBXBuildFile; fileRef = F151C7A415A9342D00B88E13 /* MarkerLineNumberView.h */; };
+		F151C7AF15A9342D00B88E13 /* MarkerLineNumberView.m in Sources */ = {isa = PBXBuildFile; fileRef = F151C7A515A9342D00B88E13 /* MarkerLineNumberView.m */; };
+		F151C7B015A9342D00B88E13 /* NoodleLineNumberMarker.h in Headers */ = {isa = PBXBuildFile; fileRef = F151C7A615A9342D00B88E13 /* NoodleLineNumberMarker.h */; };
+		F151C7B115A9342D00B88E13 /* NoodleLineNumberMarker.m in Sources */ = {isa = PBXBuildFile; fileRef = F151C7A715A9342D00B88E13 /* NoodleLineNumberMarker.m */; };
+		F151C7B215A9342D00B88E13 /* NoodleLineNumberView.h in Headers */ = {isa = PBXBuildFile; fileRef = F151C7A815A9342D00B88E13 /* NoodleLineNumberView.h */; };
+		F151C7B315A9342D00B88E13 /* NoodleLineNumberView.m in Sources */ = {isa = PBXBuildFile; fileRef = F151C7A915A9342D00B88E13 /* NoodleLineNumberView.m */; };
+		F151C7BA15A9377000B88E13 /* DVTLibraryPlayAudio.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F151C7B615A9377000B88E13 /* DVTLibraryPlayAudio.tiff */; };
+		F151C7BB15A9377000B88E13 /* DVTLibraryPlayAudioPressed.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F151C7B715A9377000B88E13 /* DVTLibraryPlayAudioPressed.tiff */; };
+		F151C7BC15A9377000B88E13 /* DVTLibraryStopAudio.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F151C7B815A9377000B88E13 /* DVTLibraryStopAudio.tiff */; };
+		F151C7BD15A9377000B88E13 /* DVTLibraryStopAudioPressed.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F151C7B915A9377000B88E13 /* DVTLibraryStopAudioPressed.tiff */; };
+		F152584015AA121A000F105A /* InspectorMoreInfo.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F152583F15AA121A000F105A /* InspectorMoreInfo.pdf */; };
+		F152584315AA15DC000F105A /* TB_contentOnly.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F152584215AA15DC000F105A /* TB_contentOnly.pdf */; };
+		F152584715AA21A4000F105A /* InspectorRotateL.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F152584515AA21A4000F105A /* InspectorRotateL.pdf */; };
+		F152584915AA2227000F105A /* TB_zoom.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F152584815AA2227000F105A /* TB_zoom.pdf */; };
+		F152584C15AA2CC5000F105A /* DVTLibraryPauseAudio.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F152584A15AA2CC5000F105A /* DVTLibraryPauseAudio.tiff */; };
+		F152584D15AA2CC5000F105A /* DVTLibraryPauseAudioPressed.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F152584B15AA2CC5000F105A /* DVTLibraryPauseAudioPressed.tiff */; };
+		F152584F15AA2E9C000F105A /* toolbarButtonHistoryImage.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F152584E15AA2E9C000F105A /* toolbarButtonHistoryImage.tiff */; };
+		F152585215AA2F23000F105A /* DVTLibraryContinueAudio.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F152585015AA2F23000F105A /* DVTLibraryContinueAudio.tiff */; };
+		F152585315AA2F23000F105A /* DVTLibraryContinueAudioPressed.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F152585115AA2F23000F105A /* DVTLibraryContinueAudioPressed.tiff */; };
+		F152585915AA390B000F105A /* cursor-rotate.tiff in Resources */ = {isa = PBXBuildFile; fileRef = F152585815AA390A000F105A /* cursor-rotate.tiff */; };
+		F152585B15AA3A6B000F105A /* cursor-zoom.png in Resources */ = {isa = PBXBuildFile; fileRef = F152585A15AA3A6B000F105A /* cursor-zoom.png */; };
+		F172A96F15A9F66D0073DF2C /* TB_rotate_right.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F172A96D15A9F66D0073DF2C /* TB_rotate_right.pdf */; };
+		F172A97015A9F66D0073DF2C /* TB_rotate.pdf in Resources */ = {isa = PBXBuildFile; fileRef = F172A96E15A9F66D0073DF2C /* TB_rotate.pdf */; };
+		F1BA600F15AA6C5600B346D9 /* slSplitView.m in Sources */ = {isa = PBXBuildFile; fileRef = F1BA600E15AA696000B346D9 /* slSplitView.m */; };
+		F1BA601115AA6F7100B346D9 /* sourceSplitDivider.png in Resources */ = {isa = PBXBuildFile; fileRef = F1BA601015AA6F7100B346D9 /* sourceSplitDivider.png */; };
 		F1E08AE115A8D62200249239 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1E08AE015A8D62200249239 /* libexpat.dylib */; };
 		F1E08AE315A8D62600249239 /* libpython.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1E08AE215A8D62600249239 /* libpython.dylib */; };
 		F1E08AE515A8D62A00249239 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F1E08AE415A8D62A00249239 /* libz.dylib */; };
@@ -116,11 +143,9 @@
 		2A37F4ACFDCFA73011CA2CEA /* slBreveSourceDocument.mm */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreveSourceDocument.mm; sourceTree = "<group>"; };
 		2A37F4AEFDCFA73011CA2CEA /* slBreveSourceDocument.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = slBreveSourceDocument.h; sourceTree = SOURCE_ROOT; };
 		2A37F4B0FDCFA73011CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = SOURCE_ROOT; };
-		2A37F4B5FDCFA73011CA2CEA /* slBreveSourceDocument.nib */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = slBreveSourceDocument.nib; path = English.lproj/slBreveSourceDocument.nib; sourceTree = "<group>"; };
 		2A37F4B7FDCFA73011CA2CEA /* MainMenu.nib */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = MainMenu.nib; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
 		4802DC7905616137008198B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4802DC7A05616137008198B9 /* breve.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = breve.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		481D2182042A2D2100FFA442 /* slGraphWindow.nib */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = slGraphWindow.nib; path = English.lproj/slGraphWindow.nib; sourceTree = "<group>"; };
 		482D168A055989F800230BBF /* English */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = English; path = English.lproj/breve.scriptTerminology; sourceTree = "<group>"; };
 		485C2C350559830F005859E4 /* breve.scriptSuite */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = breve.scriptSuite; sourceTree = "<group>"; };
 		48620C9107944552009195E5 /* libbreve.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbreve.a; path = ../lib/libbreve.a; sourceTree = SOURCE_ROOT; };
@@ -134,8 +159,42 @@
 		48ECC163071C13C100596F93 /* Digitizer.tz */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = Digitizer.tz; path = ../plugins/slDigitizerPlugin/Digitizer.tz; sourceTree = SOURCE_ROOT; };
 		48ECC16E071C13F400596F93 /* Instrument.tz */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = Instrument.tz; path = ../plugins/slQTMusicPlugin/Instrument.tz; sourceTree = SOURCE_ROOT; };
 		48F0A4F209CCEE1900B52C28 /* libdl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libdl.dylib; path = /usr/lib/libdl.dylib; sourceTree = "<absolute>"; };
+		F10E6F6015A94EC1000313F9 /* slBreveSourceDocument.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = slBreveSourceDocument.xib; sourceTree = "<group>"; };
+		F10E6F6215A9DBC3000313F9 /* TB_grab.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = TB_grab.pdf; sourceTree = "<group>"; };
+		F10E6F6315A9DBC3000313F9 /* TB_zoomIn.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = TB_zoomIn.pdf; sourceTree = "<group>"; };
+		F10E6F6415A9DBC3000313F9 /* TB_zoomOut.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = TB_zoomOut.pdf; sourceTree = "<group>"; };
 		F151C78715A8EAAD00B88E13 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /usr/local/lib/libjpeg.a; sourceTree = "<absolute>"; };
 		F151C78815A8EAAD00B88E13 /* libpng12.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng12.a; path = /usr/local/lib/libpng12.a; sourceTree = "<absolute>"; };
+		F151C7A015A9342D00B88E13 /* TETextUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TETextUtils.h; sourceTree = "<group>"; };
+		F151C7A115A9342D00B88E13 /* TETextUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TETextUtils.m; sourceTree = "<group>"; };
+		F151C7A215A9342D00B88E13 /* JSTTextView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSTTextView.h; sourceTree = "<group>"; };
+		F151C7A315A9342D00B88E13 /* JSTTextView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JSTTextView.m; sourceTree = "<group>"; };
+		F151C7A415A9342D00B88E13 /* MarkerLineNumberView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MarkerLineNumberView.h; sourceTree = "<group>"; };
+		F151C7A515A9342D00B88E13 /* MarkerLineNumberView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MarkerLineNumberView.m; sourceTree = "<group>"; };
+		F151C7A615A9342D00B88E13 /* NoodleLineNumberMarker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NoodleLineNumberMarker.h; sourceTree = "<group>"; };
+		F151C7A715A9342D00B88E13 /* NoodleLineNumberMarker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NoodleLineNumberMarker.m; sourceTree = "<group>"; };
+		F151C7A815A9342D00B88E13 /* NoodleLineNumberView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NoodleLineNumberView.h; sourceTree = "<group>"; };
+		F151C7A915A9342D00B88E13 /* NoodleLineNumberView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NoodleLineNumberView.m; sourceTree = "<group>"; };
+		F151C7B615A9377000B88E13 /* DVTLibraryPlayAudio.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryPlayAudio.tiff; sourceTree = "<group>"; };
+		F151C7B715A9377000B88E13 /* DVTLibraryPlayAudioPressed.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryPlayAudioPressed.tiff; sourceTree = "<group>"; };
+		F151C7B815A9377000B88E13 /* DVTLibraryStopAudio.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryStopAudio.tiff; sourceTree = "<group>"; };
+		F151C7B915A9377000B88E13 /* DVTLibraryStopAudioPressed.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryStopAudioPressed.tiff; sourceTree = "<group>"; };
+		F152583F15AA121A000F105A /* InspectorMoreInfo.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = InspectorMoreInfo.pdf; sourceTree = "<group>"; };
+		F152584215AA15DC000F105A /* TB_contentOnly.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = TB_contentOnly.pdf; sourceTree = "<group>"; };
+		F152584515AA21A4000F105A /* InspectorRotateL.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = InspectorRotateL.pdf; sourceTree = "<group>"; };
+		F152584815AA2227000F105A /* TB_zoom.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = TB_zoom.pdf; sourceTree = "<group>"; };
+		F152584A15AA2CC5000F105A /* DVTLibraryPauseAudio.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryPauseAudio.tiff; sourceTree = "<group>"; };
+		F152584B15AA2CC5000F105A /* DVTLibraryPauseAudioPressed.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryPauseAudioPressed.tiff; sourceTree = "<group>"; };
+		F152584E15AA2E9C000F105A /* toolbarButtonHistoryImage.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = toolbarButtonHistoryImage.tiff; sourceTree = "<group>"; };
+		F152585015AA2F23000F105A /* DVTLibraryContinueAudio.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryContinueAudio.tiff; sourceTree = "<group>"; };
+		F152585115AA2F23000F105A /* DVTLibraryContinueAudioPressed.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = DVTLibraryContinueAudioPressed.tiff; sourceTree = "<group>"; };
+		F152585815AA390A000F105A /* cursor-rotate.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; path = "cursor-rotate.tiff"; sourceTree = "<group>"; };
+		F152585A15AA3A6B000F105A /* cursor-zoom.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cursor-zoom.png"; sourceTree = "<group>"; };
+		F172A96D15A9F66D0073DF2C /* TB_rotate_right.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = TB_rotate_right.pdf; sourceTree = "<group>"; };
+		F172A96E15A9F66D0073DF2C /* TB_rotate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = TB_rotate.pdf; sourceTree = "<group>"; };
+		F1BA600D15AA696000B346D9 /* slSplitView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slSplitView.h; sourceTree = "<group>"; };
+		F1BA600E15AA696000B346D9 /* slSplitView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = slSplitView.m; sourceTree = "<group>"; };
+		F1BA601015AA6F7100B346D9 /* sourceSplitDivider.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sourceSplitDivider.png; sourceTree = "<group>"; };
 		F1E08AE015A8D62200249239 /* libexpat.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libexpat.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib/libexpat.dylib; sourceTree = SYSTEM_DEVELOPER_DIR; };
 		F1E08AE215A8D62600249239 /* libpython.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpython.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib/libpython.dylib; sourceTree = SYSTEM_DEVELOPER_DIR; };
 		F1E08AE415A8D62A00249239 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/usr/lib/libz.dylib; sourceTree = SYSTEM_DEVELOPER_DIR; };
@@ -155,8 +214,6 @@
 		F5BD20AC0397BEC801980AE4 /* slObjectOutlineItem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = slObjectOutlineItem.h; path = ../OSX/slObjectOutlineItem.h; sourceTree = SOURCE_ROOT; };
 		F5BD20AD0397BEC801980AE4 /* slObjectOutlineItem.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slObjectOutlineItem.mm; sourceTree = SOURCE_ROOT; };
 		F5BD20AE0397BEC801980AE4 /* slQuickparser.l */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.lex; name = slQuickparser.l; path = ../OSX/slQuickparser.l; sourceTree = SOURCE_ROOT; };
-		F5BD20B10397BEC801980AE4 /* slTextView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = slTextView.h; path = ../OSX/slTextView.h; sourceTree = SOURCE_ROOT; };
-		F5BD20B20397BEC801980AE4 /* slTextView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slTextView.mm; sourceTree = "<group>"; };
 		F5BD20C00397BFC001980AE4 /* slBreve.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = slBreve.h; path = ../OSX/slBreve.h; sourceTree = SOURCE_ROOT; };
 		F5BD20C10397BFC001980AE4 /* slBreve.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreve.mm; sourceTree = "<group>"; };
 		F5BD20C20397BFC001980AE4 /* slBreveApplication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = slBreveApplication.h; path = ../OSX/slBreveApplication.h; sourceTree = SOURCE_ROOT; };
@@ -169,8 +226,6 @@
 		F5BD20CB0397BFC001980AE4 /* slBreveNibLoader.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreveNibLoader.mm; sourceTree = "<group>"; };
 		F5BD20D10397BFC001980AE4 /* slBrevePrefs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = slBrevePrefs.h; path = ../OSX/slBrevePrefs.h; sourceTree = SOURCE_ROOT; };
 		F5BD20D20397BFC001980AE4 /* slBrevePrefs.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slBrevePrefs.mm; sourceTree = "<group>"; };
-		F5BD20D30397BFC001980AE4 /* slCommandTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = slCommandTextField.h; path = ../OSX/slCommandTextField.h; sourceTree = SOURCE_ROOT; };
-		F5BD20D40397BFC001980AE4 /* slCommandTextField.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slCommandTextField.mm; sourceTree = "<group>"; };
 		F5BD20D50397BFC001980AE4 /* slDemoMenu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = slDemoMenu.h; path = ../OSX/slDemoMenu.h; sourceTree = SOURCE_ROOT; };
 		F5BD20D60397BFC001980AE4 /* slDemoMenu.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = slDemoMenu.mm; sourceTree = "<group>"; };
 		F5BD20F20397BFE301980AE4 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = /System/Library/Frameworks/GLUT.framework; sourceTree = "<absolute>"; };
@@ -264,6 +319,7 @@
 		2A37F4ABFDCFA73011CA2CEA /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				F151C79E15A9341200B88E13 /* UIWidgets */,
 				2A37F4B0FDCFA73011CA2CEA /* main.m */,
 				F5BD20C00397BFC001980AE4 /* slBreve.h */,
 				F5BD20C10397BFC001980AE4 /* slBreve.mm */,
@@ -279,8 +335,8 @@
 				F5BD20D20397BFC001980AE4 /* slBrevePrefs.mm */,
 				2A37F4AEFDCFA73011CA2CEA /* slBreveSourceDocument.h */,
 				2A37F4ACFDCFA73011CA2CEA /* slBreveSourceDocument.mm */,
-				F5BD20D30397BFC001980AE4 /* slCommandTextField.h */,
-				F5BD20D40397BFC001980AE4 /* slCommandTextField.mm */,
+				F1BA600D15AA696000B346D9 /* slSplitView.h */,
+				F1BA600E15AA696000B346D9 /* slSplitView.m */,
 				F5BD20D50397BFC001980AE4 /* slDemoMenu.h */,
 				F5BD20D60397BFC001980AE4 /* slDemoMenu.mm */,
 				48D1C0BC04632D760093F8AA /* slGraphWindowController.h */,
@@ -296,8 +352,6 @@
 				F5BD20AC0397BEC801980AE4 /* slObjectOutlineItem.h */,
 				F5BD20AD0397BEC801980AE4 /* slObjectOutlineItem.mm */,
 				F5BD20AE0397BEC801980AE4 /* slQuickparser.l */,
-				F5BD20B10397BEC801980AE4 /* slTextView.h */,
-				F5BD20B20397BEC801980AE4 /* slTextView.mm */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -308,9 +362,8 @@
 				48CE1CFB08155B1F0030CBB8 /* DocumentIcons.icns */,
 				F5BD22640397C69401980AE4 /* AppIcon.icns */,
 				F569DDB00398039F01B2CBA0 /* Template.tz */,
-				481D2181042A2D2100FFA442 /* slGLWindow.nib */,
+				F10E6F6015A94EC1000313F9 /* slBreveSourceDocument.xib */,
 				2A37F4B6FDCFA73011CA2CEA /* MainMenu.nib */,
-				2A37F4B4FDCFA73011CA2CEA /* slBreveSourceDocument.nib */,
 				F5BD21F60397C43E01980AE4 /* app_icon.tiff */,
 				F5BD21F80397C43E01980AE4 /* Camera.tiff */,
 				F5BD21F90397C43E01980AE4 /* move.tiff */,
@@ -320,6 +373,27 @@
 				F5BD21FC0397C43E01980AE4 /* pointer.tiff */,
 				F5BD21FE0397C43E01980AE4 /* stop.tiff */,
 				F5BD21FF0397C43E01980AE4 /* zoom.tiff */,
+				F1BA601015AA6F7100B346D9 /* sourceSplitDivider.png */,
+				F152585A15AA3A6B000F105A /* cursor-zoom.png */,
+				F152585815AA390A000F105A /* cursor-rotate.tiff */,
+				F152584E15AA2E9C000F105A /* toolbarButtonHistoryImage.tiff */,
+				F151C7B615A9377000B88E13 /* DVTLibraryPlayAudio.tiff */,
+				F151C7B715A9377000B88E13 /* DVTLibraryPlayAudioPressed.tiff */,
+				F152584A15AA2CC5000F105A /* DVTLibraryPauseAudio.tiff */,
+				F152584B15AA2CC5000F105A /* DVTLibraryPauseAudioPressed.tiff */,
+				F151C7B815A9377000B88E13 /* DVTLibraryStopAudio.tiff */,
+				F151C7B915A9377000B88E13 /* DVTLibraryStopAudioPressed.tiff */,
+				F152585015AA2F23000F105A /* DVTLibraryContinueAudio.tiff */,
+				F152585115AA2F23000F105A /* DVTLibraryContinueAudioPressed.tiff */,
+				F152584215AA15DC000F105A /* TB_contentOnly.pdf */,
+				F10E6F6215A9DBC3000313F9 /* TB_grab.pdf */,
+				F10E6F6315A9DBC3000313F9 /* TB_zoomIn.pdf */,
+				F10E6F6415A9DBC3000313F9 /* TB_zoomOut.pdf */,
+				F172A96D15A9F66D0073DF2C /* TB_rotate_right.pdf */,
+				F172A96E15A9F66D0073DF2C /* TB_rotate.pdf */,
+				F152584815AA2227000F105A /* TB_zoom.pdf */,
+				F152584515AA21A4000F105A /* InspectorRotateL.pdf */,
+				F152583F15AA121A000F105A /* InspectorMoreInfo.pdf */,
 				F5BD220A0397C57D01980AE4 /* docs */,
 				F5BD223E0397C59E01980AE4 /* demos */,
 				F5F64877039868A20154B402 /* classes */,
@@ -348,6 +422,23 @@
 			name = Plugins;
 			sourceTree = "<group>";
 		};
+		F151C79E15A9341200B88E13 /* UIWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				F151C7A015A9342D00B88E13 /* TETextUtils.h */,
+				F151C7A115A9342D00B88E13 /* TETextUtils.m */,
+				F151C7A215A9342D00B88E13 /* JSTTextView.h */,
+				F151C7A315A9342D00B88E13 /* JSTTextView.m */,
+				F151C7A415A9342D00B88E13 /* MarkerLineNumberView.h */,
+				F151C7A515A9342D00B88E13 /* MarkerLineNumberView.m */,
+				F151C7A615A9342D00B88E13 /* NoodleLineNumberMarker.h */,
+				F151C7A715A9342D00B88E13 /* NoodleLineNumberMarker.m */,
+				F151C7A815A9342D00B88E13 /* NoodleLineNumberView.h */,
+				F151C7A915A9342D00B88E13 /* NoodleLineNumberView.m */,
+			);
+			path = UIWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -360,17 +451,20 @@
 				4802DC1E05616137008198B9 /* slMovieRecord.h in Headers */,
 				4802DC1F05616137008198B9 /* slObjectOutline.h in Headers */,
 				4802DC2005616137008198B9 /* slObjectOutlineItem.h in Headers */,
-				4802DC2205616137008198B9 /* slTextView.h in Headers */,
 				4802DC2305616137008198B9 /* slBreve.h in Headers */,
 				4802DC2405616137008198B9 /* slBreveApplication.h in Headers */,
 				4802DC2505616137008198B9 /* slBreveEngine.h in Headers */,
 				4802DC2605616137008198B9 /* slBreveGLView.h in Headers */,
 				4802DC2905616137008198B9 /* slBrevePrefs.h in Headers */,
-				4802DC2A05616137008198B9 /* slCommandTextField.h in Headers */,
 				4802DC2B05616137008198B9 /* slDemoMenu.h in Headers */,
 				4802DC2D05616137008198B9 /* slGraphWindowController.h in Headers */,
 				4802DC2E05616137008198B9 /* slBreveNibLoader.h in Headers */,
 				4802DC2F05616137008198B9 /* slGraphWindowView.h in Headers */,
+				F151C7AA15A9342D00B88E13 /* TETextUtils.h in Headers */,
+				F151C7AC15A9342D00B88E13 /* JSTTextView.h in Headers */,
+				F151C7AE15A9342D00B88E13 /* MarkerLineNumberView.h in Headers */,
+				F151C7B015A9342D00B88E13 /* NoodleLineNumberMarker.h in Headers */,
+				F151C7B215A9342D00B88E13 /* NoodleLineNumberView.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,6 +497,9 @@
 /* Begin PBXProject section */
 		2A37F4A9FDCFA73011CA2CEA /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				ORGANIZATIONNAME = breve;
+			};
 			buildConfigurationList = 48C9358C094B452400B48959 /* Build configuration list for PBXProject "breve" */;
 			compatibilityVersion = "Xcode 2.4";
 			developmentRegion = English;
@@ -426,7 +523,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				4802DC3105616137008198B9 /* MainMenu.nib in Resources */,
-				4802DC3205616137008198B9 /* slBreveSourceDocument.nib in Resources */,
 				4802DC3405616137008198B9 /* app_icon.tiff in Resources */,
 				4802DC3505616137008198B9 /* Camera.tiff in Resources */,
 				4802DC3605616137008198B9 /* move.tiff in Resources */,
@@ -444,9 +540,30 @@
 				4802DC4105616137008198B9 /* Errors.strings in Resources */,
 				4802DC4205616137008198B9 /* General.strings in Resources */,
 				4802DC4305616137008198B9 /* classes in Resources */,
-				4802DC4405616137008198B9 /* slGLWindow.nib in Resources */,
 				4802DC4905616137008198B9 /* breve.scriptSuite in Resources */,
 				4802DC4A05616137008198B9 /* breve.scriptTerminology in Resources */,
+				F151C7BA15A9377000B88E13 /* DVTLibraryPlayAudio.tiff in Resources */,
+				F151C7BB15A9377000B88E13 /* DVTLibraryPlayAudioPressed.tiff in Resources */,
+				F151C7BC15A9377000B88E13 /* DVTLibraryStopAudio.tiff in Resources */,
+				F151C7BD15A9377000B88E13 /* DVTLibraryStopAudioPressed.tiff in Resources */,
+				F10E6F6915A9DE11000313F9 /* TB_zoomIn.pdf in Resources */,
+				F10E6F6A15A9DE16000313F9 /* TB_grab.pdf in Resources */,
+				F10E6F6B15A9DE1A000313F9 /* TB_zoomOut.pdf in Resources */,
+				F10E6FAA15A9E7DD000313F9 /* slBreveSourceDocument.xib in Resources */,
+				F172A96F15A9F66D0073DF2C /* TB_rotate_right.pdf in Resources */,
+				F172A97015A9F66D0073DF2C /* TB_rotate.pdf in Resources */,
+				F152584015AA121A000F105A /* InspectorMoreInfo.pdf in Resources */,
+				F152584315AA15DC000F105A /* TB_contentOnly.pdf in Resources */,
+				F152584715AA21A4000F105A /* InspectorRotateL.pdf in Resources */,
+				F152584915AA2227000F105A /* TB_zoom.pdf in Resources */,
+				F152584C15AA2CC5000F105A /* DVTLibraryPauseAudio.tiff in Resources */,
+				F152584D15AA2CC5000F105A /* DVTLibraryPauseAudioPressed.tiff in Resources */,
+				F152584F15AA2E9C000F105A /* toolbarButtonHistoryImage.tiff in Resources */,
+				F152585215AA2F23000F105A /* DVTLibraryContinueAudio.tiff in Resources */,
+				F152585315AA2F23000F105A /* DVTLibraryContinueAudioPressed.tiff in Resources */,
+				F152585915AA390B000F105A /* cursor-rotate.tiff in Resources */,
+				F152585B15AA3A6B000F105A /* cursor-zoom.png in Resources */,
+				F1BA601115AA6F7100B346D9 /* sourceSplitDivider.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -480,45 +597,33 @@
 				4802DC5005616137008198B9 /* slObjectOutline.mm in Sources */,
 				4802DC5105616137008198B9 /* slObjectOutlineItem.mm in Sources */,
 				4802DC5205616137008198B9 /* slQuickparser.l in Sources */,
-				4802DC5405616137008198B9 /* slTextView.mm in Sources */,
 				4802DC5505616137008198B9 /* slBreve.mm in Sources */,
 				4802DC5605616137008198B9 /* slBreveApplication.mm in Sources */,
 				4802DC5705616137008198B9 /* slBreveEngine.mm in Sources */,
 				4802DC5805616137008198B9 /* slBreveGLView.mm in Sources */,
 				4802DC5905616137008198B9 /* slBreveNibLoader.mm in Sources */,
 				4802DC5C05616137008198B9 /* slBrevePrefs.mm in Sources */,
-				4802DC5D05616137008198B9 /* slCommandTextField.mm in Sources */,
 				4802DC5E05616137008198B9 /* slDemoMenu.mm in Sources */,
 				4802DC6005616137008198B9 /* slGraphWindowController.mm in Sources */,
 				4802DC6105616137008198B9 /* slGraphWindowView.mm in Sources */,
+				F151C7AB15A9342D00B88E13 /* TETextUtils.m in Sources */,
+				F151C7AD15A9342D00B88E13 /* JSTTextView.m in Sources */,
+				F151C7AF15A9342D00B88E13 /* MarkerLineNumberView.m in Sources */,
+				F151C7B115A9342D00B88E13 /* NoodleLineNumberMarker.m in Sources */,
+				F151C7B315A9342D00B88E13 /* NoodleLineNumberView.m in Sources */,
+				F1BA600F15AA6C5600B346D9 /* slSplitView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
-		2A37F4B4FDCFA73011CA2CEA /* slBreveSourceDocument.nib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				2A37F4B5FDCFA73011CA2CEA /* slBreveSourceDocument.nib */,
-			);
-			name = slBreveSourceDocument.nib;
-			sourceTree = "<group>";
-		};
 		2A37F4B6FDCFA73011CA2CEA /* MainMenu.nib */ = {
 			isa = PBXVariantGroup;
 			children = (
 				2A37F4B7FDCFA73011CA2CEA /* MainMenu.nib */,
 			);
 			name = MainMenu.nib;
-			sourceTree = "<group>";
-		};
-		481D2181042A2D2100FFA442 /* slGLWindow.nib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				481D2182042A2D2100FFA442 /* slGraphWindow.nib */,
-			);
-			name = slGLWindow.nib;
 			sourceTree = "<group>";
 		};
 		482D1689055989F800230BBF /* breve.scriptTerminology */ = {

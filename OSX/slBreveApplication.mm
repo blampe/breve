@@ -45,14 +45,23 @@
 	return NULL;
 }
 
-- (void)setFullscreen:(NSString*)s {
-	NSLog(@"application setting fullscreen\n");
-	[(slBreve *)[self delegate] setFullScreen: [s intValue]];
-}
-
 - (id)sleepFromScript:sender {
 	sleep(30);
 	return NULL;
+}
+
+- (NSApplicationPresentationOptions)window:(NSWindow *)window
+      willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions
+{
+  return proposedOptions | NSApplicationPresentationAutoHideToolbar;
+}
+
+- (void)windowWillEnterFullScreen:(NSNotification *)notification {
+  NSLog(@"%s", __PRETTY_FUNCTION__);
+}
+
+- (void)windowWillExitFullScreen:(NSNotification *)notification {
+  NSLog(@"%s", __PRETTY_FUNCTION__);
 }
 
 @end

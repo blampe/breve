@@ -199,7 +199,7 @@ int slMakeCurrentContext();
 
 	controller = brEngineGetController( _engine);
 
-	if(filename) slFree( name );
+	if(name) slFree( name );
 
 	return result;
 }
@@ -346,7 +346,9 @@ int slMakeCurrentContext();
 
 	[self freeEngine];
 
-	[_engineLock unlock];
+  if ([_engineLock tryLock]) {
+    [_engineLock unlock];
+  }
 	[_threadLock unlock];
 
 	[pool release];

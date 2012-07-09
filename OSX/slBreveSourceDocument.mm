@@ -27,25 +27,74 @@
 //
 
 #import "slBreveSourceDocument.h"
+#import "slBreve.h"
+#import "slBreveEngine.h"
+#import "slSplitView.h"
+#import "JSTTextView.h"
+
+extern char *slObjectParseText;
+extern int slObjectParseLine;
+
+extern "C" {
+	void slObjectParseSetBuffer(char *b);
+	int slYylex();
+}
+
+
+char *sl_StripSpaces(char *text) {
+	char *out;
+	char last = 0;
+	int index = 0, doubleSpace = 0;
+  
+	out = (char*)malloc( strlen( text ) + 1 );
+  
+	while( *text ) {
+		if(*text == ' ' && last == ' ') doubleSpace = 1;
+		else doubleSpace = 0;
+    
+		if(*text != '\n' && !doubleSpace) out[index++] = *text;
+    
+		last = *text;
+    
+		text++;
+	}
+  
+	out[ index ] = 0;
+  
+	return out;
+}
 
 @implementation slBreveSourceDocument
 
-- (id)init
-{
-    [super init];
+@synthesize steveText = _steveText;
+@synthesize sourceWindow = _sourceWindow;
+@synthesize methodsPopup = _methodsPopup;
+@synthesize outputText = _outputText;
+@synthesize splitView = _splitView;
+@synthesize runButton = _runButton;
+@synthesize stopButton = _stopButton;
+@synthesize runState = _runState;
 
-    if (self) loadText = NULL;
-
-    return self;
+- (id)init {
+  self = [super init];
+  if (self != nil) {
+    loadText = nil;
+  }
+  return self;
 }
 
-- (IBAction)reformat:sender {
+- (void) dealloc {
+  [_methodMenuArray release];
+  [super dealloc];
+}
+
+- (IBAction)reformat:(id)sender {
 	char *newtext;
-	const char *text = [[steveText string] cStringUsingEncoding:NSUTF8StringEncoding];
+	const char *text = [[_steveText string] cStringUsingEncoding:NSUTF8StringEncoding];
 
 	newtext = slFormatText((char*)text);
 
-	[steveText setString: [NSString stringWithCString: newtext encoding:NSUTF8StringEncoding]];
+	[_steveText setString: [NSString stringWithCString: newtext encoding:NSUTF8StringEncoding]];
 }
 
 - (NSString *)windowNibName
@@ -58,23 +107,61 @@
     [super windowControllerDidLoadNib:aController];
 
 	if(loadText) {
-		[steveText setString: loadText];
+		[_steveText setString: loadText];
 		[loadText release];
 		loadText = NULL;
 	}
 
-	[steveText setAllowsUndo: YES];
-	[steveText setLineWrappingEnabled: NO];
-	[steveText setFont: [NSFont userFixedPitchFontOfSize: 10.0]];
+	[_steveText setAllowsUndo: YES];
+//	[_steveText setLineWrappingEnabled: NO];
+	[_steveText setFont: [NSFont userFixedPitchFontOfSize: 10.0]];
 
-  slBreve *breve = (slBreve *)[[NSApplication sharedApplication] delegate];
+//	[_steveText setDocDictionary: [breve docDictionary]];
+//  [_splitView setCollapsiblePopupSelection:2];
+}
+
+- (void) setRunState:(int)runState {
+  if (runState == _runState) {
+    return;
+  }
   
-	[steveText setDocDictionary: [breve docDictionary]];
-	[breve registerDocument: self];
+  _runState = runState;
+
+  NSString *runImageName = nil;
+  NSString *runLabel = nil;
+  BOOL stopButtonEnabled = NO;
+  BOOL showOutputLog = NO;
+  
+  if (runState == BX_RUN) {
+    stopButtonEnabled = YES;
+    runImageName = @"DVTLibraryPauseAudio.tiff";
+    runLabel = @"Pause";
+    showOutputLog = YES;
+  }
+  else if (runState == BX_PAUSE) {
+    stopButtonEnabled = YES;
+    runImageName = @"DVTLibraryContinueAudio.tiff";
+    runLabel = @"Run";
+    showOutputLog = YES;
+  }
+  else if (runState == BX_STOPPED) {
+    runImageName = @"DVTLibraryPlayAudio.tiff";
+    runLabel = @"Run";
+  }
+
+  [_stopButton setEnabled:stopButtonEnabled];
+  [_runButton setLabel:runLabel];
+
+  NSImage *image = [NSImage imageNamed:runImageName];
+  [_runButton setImage:image];
+  
+//  if (showOutputLog == YES && [_splitView collapsibleSubviewCollapsed] == YES) {
+//    [_splitView toggleCollapse:self];
+//  }
 }
 
 - (BOOL)writeToFile:(NSString *)fileName ofType:(NSString *)type {
-	return [[steveText string] writeToFile: fileName atomically: YES encoding:NSUTF8StringEncoding error:nil];
+	return [[_steveText string] writeToFile: fileName atomically: YES encoding:NSUTF8StringEncoding error:nil];
 }
 
 - (BOOL)readFromFile:(NSString *)fileName ofType:(NSString *)docType {
@@ -85,7 +172,7 @@
 	if(!inited) {
 		loadText = [[NSString stringWithString: s] retain];
 	} else {
-		[steveText setString: s];
+		[_steveText setString: s];
 	}
 
 	[s release];
@@ -94,44 +181,41 @@
 }
 
 - (void)setString:(NSString*)s {
-	[steveText setString: s];
+	[_steveText setString: s];
 }
 
-- (void)close {
-	[[[NSApplication sharedApplication] delegate] unregisterDocument: self];
-	[super close];
+- (IBAction)findSelection:(id)sender {
+//    [_steveText findSelection: sender];
 }
 
-- (IBAction)find:sender {
-    [steveText find: sender];
+- (IBAction)scrollToSelection:(id)sender {
+//    [_steveText scrollToSelection: sender];
 }
 
-- (IBAction)findNext:sender {
-    [steveText findNext: sender];
+- (IBAction) toggleSimulation:(id)sender {
+  slBreve *breve = (slBreve *)[[NSApplication sharedApplication] delegate];
+  [breve setActiveDocument:self];
+  [breve toggleSimulation:self];
 }
 
-- (IBAction)findPrevious:sender {
-    [steveText findPrevious: sender];
+- (IBAction) stopSimulation:(id)sender {
+  slBreve *breve = (slBreve *)[[NSApplication sharedApplication] delegate];
+  if (breve.activeDocument == self) {
+    [breve stopSimulation:self];
+  }
 }
 
-- (IBAction)findSelection:sender {
-    [steveText findSelection: sender];
-}
-
-- (IBAction)scrollToSelection:sender {
-    [steveText scrollToSelection: sender];
-}
 
 - (NSString*)documentText {
-	return [steveText string];
+	return [_steveText string];
 }
 
 - (id)text {
-	return steveText;
+	return _steveText;
 }
 
 - (id)window {
-	return sourceWindow;
+	return _sourceWindow;
 }
 
 - (void)textView:(NSTextView *)textView doubleClickedOnCell:(id <NSTextAttachmentCell>)cell inRect:(NSRect)cellFrame atIndex:(unsigned)charIndex {
@@ -142,7 +226,7 @@
     // Construct the print operation and setup Print panel
 
     NSPrintOperation *op = [NSPrintOperation
-                printOperationWithView: steveText
+                printOperationWithView: _steveText
                 printInfo:[self printInfo]];
 
   [op setShowsPrintPanel:showPanels];
@@ -156,4 +240,122 @@
                 contextInfo:NULL];
 }
 
+- (void) awakeFromNib {
+  _methodMenuArray = [[NSMutableArray alloc] initWithCapacity:100];
+  [[NSNotificationCenter defaultCenter] addObserver: self 
+                                           selector: @selector(setPopupMenu:) 
+                                               name: NSPopUpButtonWillPopUpNotification
+                                             object: _methodsPopup];
+}
+
+- (IBAction)goToMethod:(id)sender {
+  int line;
+  
+  line = [[_methodMenuArray objectAtIndex: [sender indexOfSelectedItem]] intValue];
+  
+  [_steveText goToLine: line];
+  [[self window] makeFirstResponder: _steveText];
+}
+
+- (void)setPopupMenu:(NSNotification*)note {
+  NSNumber *number;
+  NSString *title;
+  char *text;
+  int type;
+  
+  [_methodsPopup removeAllItems];
+  [_methodsPopup addItemWithTitle: @"Go to method..."];
+  
+  [_methodMenuArray removeAllObjects];
+  [_methodMenuArray addObject: [NSNumber numberWithInt: -1]];
+  
+  text = (char*)[[_steveText string] cStringUsingEncoding:NSUTF8StringEncoding];
+  
+  slObjectParseSetBuffer( text );
+  
+  while( (type = slYylex()) ) {
+    if(type != 1) {
+			char *objectText;
+      
+			objectText = sl_StripSpaces(slObjectParseText);
+      
+      title = [NSString stringWithFormat: @"%s (line %d)", objectText, slObjectParseLine];
+      
+			free(objectText);
+      
+      [_methodsPopup addItemWithTitle: title]; 
+      
+      number = [NSNumber numberWithInt: slObjectParseLine];
+      [_methodMenuArray addObject: number];
+    }
+  }
+  
+  [_methodsPopup synchronizeTitleAndSelectedItem];
+}
+
+- (IBAction)saveLog:(id)sender {
+  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+  [dateFormatter setDateFormat:@"yyyy-MM-dd 'at' h.mm.ss a"];
+  
+  NSString *defaultName = [NSString stringWithFormat:@"%@ Log %@", [self displayName], [dateFormatter stringFromDate:[NSDate date]]];
+
+  slBreve *breve = (slBreve *)[[NSApplication sharedApplication] delegate];
+	NSString *logFile = [breve saveNameForType: @"txt" 
+                                defaultValue:defaultName
+                                 withAccView: NULL];
+  if (logFile == nil) {
+    return;
+  }
+  
+	[[self.outputText string] writeToFile:logFile
+                             atomically:YES 
+                               encoding:NSUTF8StringEncoding 
+                                  error:nil];
+}
+
+- (IBAction)clearLog:(id)sender {
+  [self.outputText setString:@""];
+}
+
+- (IBAction)checkSyntax:(id)sender {
+	NSString *file;
+	char *buffer = NULL;
+	char *name = NULL;
+  
+	buffer = slStrdup((char*)[[self documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
+  
+	file = [[self fileURL] path];
+	if(!file) file = [self displayName];
+  
+	name = (char*)[file cStringUsingEncoding:NSUTF8StringEncoding];
+  /*
+	if([breveEngine checkSyntax: buffer withFilename: name]) {
+		[self runErrorWindow];
+	} else {
+		NSString *title = NSLocalizedStringFromTable(@"Syntax Check Passed Title", @"General", @"");
+		NSString *message = NSLocalizedStringFromTable(@"Syntax Check Passed Message", @"General", @"");
+    
+		NSRunAlertPanel(title, message, nil, nil, nil);
+	}
+  
+	[breveEngine freeEngine];
+   */
+}
+
+- (IBAction)commentLines:(id)sender {
+	id document = [[NSDocumentController sharedDocumentController] currentDocument];
+	[[document text] commentSelection: self];
+}
+
+- (IBAction)uncommentLines:(id)sender {
+	id document = [[NSDocumentController sharedDocumentController] currentDocument];
+	[[document text] uncommentSelection: self];
+}
+
+#pragma mark -
+#pragma mark
+- (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMin ofSubviewAt:(NSInteger)dividerIndex
+{
+  return [splitView bounds].size.height - 250;
+}
 @end

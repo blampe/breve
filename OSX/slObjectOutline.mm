@@ -81,7 +81,7 @@
     /* it is possible that item is NULL, indicating that they want */
     /* child of the root index */
 
-    if(item) return [item childAtIndex: index];
+    if(item) return [(slObjectOutlineItem *)item childAtIndex: index];
     else return [root childAtIndex: index];
 }
 

@@ -34,6 +34,7 @@
 
 #import "slBreve.h"
 #import "util.h"
+#import "slBreveSourceDocument.h"
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -41,6 +42,8 @@
 extern BOOL _engineWillPause;
 
 @implementation slBreve
+
+@synthesize activeDocument = _activeDocument;
 
 extern char *gErrorNames[];
 
@@ -93,7 +96,6 @@ static NSRecursiveLock *gLogLock;
 	/* tell my former computer science professors, it would crush them.  */
 
 	[[NSNotificationCenter defaultCenter] addObserver: displayView selector: @selector(updateSize:) name: nil object: displayView];
-	[[NSNotificationCenter defaultCenter] addObserver: self selector: @selector(simPopupSetItems:) name: @"NSPopUpButtonWillPopUpNotification" object: simPopup];
 
 	slSetMessageCallbackFunction( slPrintLog );
 
@@ -215,69 +217,47 @@ static NSRecursiveLock *gLogLock;
 	[preferences savePrefs];
 }
 
-- (IBAction)checkSyntax:sender {
-	NSString *file;
-	char *buffer = NULL;
-	char *name = NULL;
 
-	if(!currentDocument) return;
-
-	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
-
-	file = [[currentDocument fileURL] path];
-	if(!file) file = [currentDocument displayName];
-
-	name = (char*)[file cStringUsingEncoding:NSUTF8StringEncoding];
-
-	if([breveEngine checkSyntax: buffer withFilename: name]) {
-		[self runErrorWindow];
-	} else {
-		NSString *title = NSLocalizedStringFromTable(@"Syntax Check Passed Title", @"General", @"");
-		NSString *message = NSLocalizedStringFromTable(@"Syntax Check Passed Message", @"General", @"");
-
-		NSRunAlertPanel(title, message, nil, nil, nil);
-	}
-
-	[breveEngine freeEngine];
+- (void) setActiveDocument:(slBreveSourceDocument *)activeDocument {
+  if (activeDocument == _activeDocument) {
+    return;
+  }
+  
+  if (_activeDocument != nil) {
+  	int mode = [breveEngine getRunState];
+    if (mode != BX_STOPPED) {
+      [self stopSimulation:self];
+    }
+    [_activeDocument release];
+    _activeDocument = nil;
+  }
+  
+  if (activeDocument == nil) {
+    [runWindow setTitle:@"breve"];
+  }
+  else {
+    _activeDocument = [activeDocument retain];
+    [runWindow setTitle:[NSString stringWithFormat:@"breve — %@", [_activeDocument displayName]]];
+  }
 }
 
 - (void)simulateRunClick {
-	[runButton performClick: self];
-}
-
-- (IBAction)toggleFullScreen:sender {
-	int state = ![sender state];
-
-	[self setFullScreen: state];
-}
-
-- (void)setFullScreen:(BOOL)s {
-  NSInteger state;
-  if (s) {
-    state = NSOnState;
-  }
-  else {
-    state = NSOffState;
-  }
-  [fullScreenMenuItem setState:state];
-  [runWindow toggleFullScreen:self];
+  [self startSimulationFromMenu:self];
 }
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem {
-  if (menuItem == fullScreenMenuItem) {
-    if (([runWindow styleMask] & NSFullScreenWindowMask) == NSFullScreenWindowMask) {
-      [menuItem setTitle:@"Exit Full Screen"];
+  if (menuItem == runSimMenuItem) {
+  	int mode = [breveEngine getRunState];
+    if (mode == BX_RUN) {
+      [runSimMenuItem setTitle: @"Stop Simulation"];
     }
     else {
-      [menuItem setTitle:@"Enter Full Screen"];
+      [runSimMenuItem setTitle: @"Start Simulation"];
     }
-    if ([runWindow isKeyWindow] == NO) {
-      return NO;
-    }
-    return YES;
   }
   return YES;
 }
+
 
 - (IBAction)startSimulationWithArchivedFile:sender {
 	NSString *saved;
@@ -286,7 +266,7 @@ static NSRecursiveLock *gLogLock;
 	char *buffer = NULL;
 	char *name = NULL;
 
-	[loadSimText setStringValue: [NSString stringWithFormat: @"Select a file containing an archived simulation of the currently selected simulation file (%@)", [currentDocument displayName]]];
+	[loadSimText setStringValue: [NSString stringWithFormat: @"Select a file containing an archived simulation of the currently selected simulation file (%@)", [_activeDocument displayName]]];
 
 	saved = [self loadNameForTypes: [NSArray arrayWithObjects: @"xml", @"brevexml", @"tzxml", NULL] withAccView: archiveOpenAccView];
 
@@ -294,26 +274,25 @@ static NSRecursiveLock *gLogLock;
 
 	csaved = (char*)[saved cStringUsingEncoding:NSUTF8StringEncoding];
 
-	if(!currentDocument) return;
+	if(!_activeDocument) return;
 
 
-	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
+	buffer = slStrdup((char*)[[(slBreveSourceDocument*)_activeDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
 
-	file = [[currentDocument fileURL] path];
-	if(!file) file = [currentDocument displayName];
+	file = [[_activeDocument fileURL] path];
+	if(!file) file = [_activeDocument displayName];
 
 	name = slStrdup((char*)[file cStringUsingEncoding:NSUTF8StringEncoding]);
 
-	[self clearLog: self];
+	[self.activeDocument clearLog: self];
 
 	chdir([preferences defaultPath]);
 	[breveEngine setOutputPath: [preferences defaultPath] useSimDir: [preferences shouldUseSimDirForOutput]];
 
 	if([breveEngine startSimulationWithText: buffer withFilename: name withSavedSimulationFile: csaved]) {
 		[self runErrorWindow];
-		[self clearSimulationMenu];
 		[breveEngine freeEngine];
-		[runButton setState: NSOffState];
+    [self.activeDocument setRunState:BX_STOPPED];
 
 		slFree(buffer);
 		slFree(name);
@@ -325,7 +304,7 @@ static NSRecursiveLock *gLogLock;
 	[saveMovieMenuItem setEnabled: YES];
 	[savePictureMenuItem setEnabled: YES];
 	[self updateObjectSelection];
-	[stopButton setEnabled: YES];
+  [self.activeDocument setRunState:BX_RUN];
 	[syntaxMenuItem setEnabled: NO];
 
 	[runWindow makeFirstResponder: displayView];
@@ -335,30 +314,38 @@ static NSRecursiveLock *gLogLock;
 }
 
 - (IBAction)startSimulationFromMenu:sender {
+  if (_activeDocument == nil) {
+    return;
+  }
+
 	int mode = [breveEngine getRunState];
 
 	[runWindow makeKeyAndOrderFront: self];
 
 	if(mode == BX_STOPPED) {
 		[self startSimulation];
-		[runSimMenuItem setTitle: @"Stop Simulation"];
-		[runButton setState: NSOnState];
+		//[runButton setState: NSOnState];
 	} else if(mode == BX_RUN) {
 		[self stopSimulation: sender];
-		[runSimMenuItem setTitle: @"Start Simulation"];
-		[runButton setState: NSOffState];
+		//[runButton setState: NSOffState];
 	}
 }
 
 - (IBAction)toggleSimulation:sender {
-	int mode;
+	int mode = [breveEngine getRunState];
 
-	mode = [breveEngine getRunState];
-
-	if(mode == BX_STOPPED) [self startSimulation];
-	if(mode == BX_RUN) [breveEngine pauseSimulation: self];
-	if(mode == BX_PAUSE) [breveEngine unpauseSimulation: self];
-
+	if(mode == BX_STOPPED) {
+    [self startSimulation];
+    [runWindow makeKeyAndOrderFront:self];
+  }
+	else if(mode == BX_RUN) {
+    [breveEngine pauseSimulation: self];
+  }
+	else if(mode == BX_PAUSE) {
+    [breveEngine unpauseSimulation: self];
+  }
+  
+  [_activeDocument setRunState:[breveEngine getRunState]];
 }
 
 - (void)startSimulation {
@@ -373,29 +360,27 @@ static NSRecursiveLock *gLogLock;
 
 	if(mode != BX_STOPPED) return;
 
-	if(!currentDocument) {
-		[runButton setState: NSOffState];
+	if(!_activeDocument) {
 		return;
 	}
 
-	buffer = slStrdup((char*)[[(slBreveSourceDocument*)currentDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
+	buffer = slStrdup((char*)[[(slBreveSourceDocument*)_activeDocument documentText] cStringUsingEncoding:NSUTF8StringEncoding]);
 
-	file = [[currentDocument fileURL] path];
-	if(!file) file = [currentDocument displayName];
+	file = [[_activeDocument fileURL] path];
+	if(!file) file = [_activeDocument displayName];
 
 	name = slStrdup((char*)[file cStringUsingEncoding:NSUTF8StringEncoding]);
 
-	[self clearLog: self];
+	[self.activeDocument clearLog: self];
 
 	chdir([preferences defaultPath]);
 	[breveEngine setOutputPath: [preferences defaultPath] useSimDir:  [preferences shouldUseSimDirForOutput]];
 
 	if([breveEngine startSimulationWithText: buffer withFilename: name withSavedSimulationFile: NULL ]) {
 		[self runErrorWindow];
-		[self clearSimulationMenu];
 		[breveEngine freeEngine];
-		[runButton setState: NSOffState];
-
+    [_activeDocument setRunState:BX_STOPPED];
+    
 		slFree(buffer);
 		slFree(name);
 
@@ -405,7 +390,7 @@ static NSRecursiveLock *gLogLock;
 	[saveMovieMenuItem setEnabled: YES];
 	[savePictureMenuItem setEnabled: YES];
 	[self updateObjectSelection];
-	[stopButton setEnabled: YES];
+  [_activeDocument setRunState:BX_RUN];
 	[syntaxMenuItem setEnabled: NO];
 	[runCommandButton setEnabled: YES];
 
@@ -439,11 +424,9 @@ static NSRecursiveLock *gLogLock;
 
 	[breveEngine stopSimulation];
 
-	[self clearSimulationMenu];
+  [self clearSimulationMenu];
 
-	[runButton setState: NSOffState];
-	[runButton setEnabled: YES];
-	[stopButton setEnabled: NO];
+  [self.activeDocument setRunState:BX_STOPPED];
 	[syntaxMenuItem setEnabled: YES];
 }
 
@@ -554,13 +537,7 @@ static NSRecursiveLock *gLogLock;
 	d = [[[NSDocumentController sharedDocumentController] 
 		openDocumentWithContentsOfFile: templateFile display: YES] retain];
 
-	[d setFileName: NULL];
-}
-
-- (IBAction)saveLog:sender {
-	NSString *logFile = [self saveNameForType: @"txt" withAccView: NULL];
-
-	if(logFile) [[logText string] writeToFile:logFile atomically:YES encoding:NSUTF8StringEncoding error:nil];
+	[d setFileURL:nil];
 }
 
 - (IBAction)snapshot:sender {
@@ -573,48 +550,55 @@ static NSRecursiveLock *gLogLock;
 
 	if(mode == BX_RUN) [breveEngine lock];
 
-	result = [self saveNameForType: @"tiff" withAccView: NULL];
+  NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+  [dateFormatter setDateFormat:@"yyyy-MM-dd 'at' h.mm.ss a"];
 
-	if(result) [displayView snapshotToFile: result];
+  NSString *defaultName = [NSString stringWithFormat:@"breve Snapshot %@", [dateFormatter stringFromDate:[NSDate date]]];
+
+	result = [self saveNameForType:@"png"
+                    defaultValue:defaultName
+                     withAccView:NULL];
+
+	if(result) [displayView snapshotToFile:result
+                                fileType:NSPNGFileType];
 
 	if(mode == BX_RUN) [breveEngine unlock];
+  
+  if ([sender isKindOfClass:[NSSegmentedControl class]] == YES) {
+    NSSegmentedControl *segmentedControl = (NSSegmentedControl *)sender;
+    [segmentedControl setSelected:NO
+                       forSegment:[segmentedControl selectedSegment]];
+  }
 }
-
 
 - (void)clearSimulationMenu {
 	int n, items = [(NSMenu*)simMenu numberOfItems];
-
+  
 	/* once an item is removed, apparently the others shift down to */
 	/* take it's place, so the index we want to remove is ALWAYS 0 */
-
-	for(n=0;n<items;n++) [simMenu removeItemAtIndex: 0];
+  
+	for(n=4;n<items;n++) [simMenu removeItemAtIndex: 4];
 }
 
 - (void)setSimulationMenuEnabled:(BOOL)state {
 	int n, items = [(NSMenu*)simMenu numberOfItems];
 	id item;
-
+  
 	for(n=0;n<items;n++) {
 		item = [simMenu itemAtIndex: n];
 		[item setEnabled: state];
 	}
 }
 
-- (IBAction)clearLog:sender {
-	[logText setString: @""];
-}
 
 void slPrintLog( const char *text ) {
 	// print-log occurs in its own thread, so we have to have an 
 	// autorelease pool in place.
 
-	static NSAutoreleasePool *pool = NULL;
-
-	if( !pool ) 
-		pool = [ [NSAutoreleasePool alloc] init ];
-
 	[ gLogLock lock];
-	[ gLogString appendString: [NSString stringWithCString: text encoding:NSUTF8StringEncoding] ];
+  NSString *logString = [[NSString alloc] initWithCString:text encoding:NSUTF8StringEncoding];
+	[ gLogString appendString: logString ];
+  [logString release];
 	[ gLogLock unlock ];
 }
 
@@ -624,10 +608,11 @@ void slPrintLog( const char *text ) {
 	if([gLogString length] == 0) return 0;
 
 	[logLock lock];
-	// [logText setSelectable: NO];
 
-	[logText moveToEndOfDocument: self];
-	[logText insertText: gLogString];
+  slBreveSourceDocument *sourceDocument = (slBreveSourceDocument *)_activeDocument;
+  [sourceDocument.outputText moveToEndOfDocument:self];
+  [sourceDocument.outputText insertText:gLogString];
+  
 	[gLogString setString: @""];
 
 	[logLock unlock];
@@ -745,7 +730,12 @@ void slPrintLog( const char *text ) {
 	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: @"mailto:jklein@spiderland.org"]];
 }
 
-int isTZfile(struct dirent *d) {
+#if (MAC_OS_X_VERSION_MAX_ALLOWED > 1070)
+int isTZfile(const struct dirent *d)
+#else
+int isTZfile(struct dirent *d)
+#endif
+{
 	const char *filename = d->d_name;
 	int m;
 
@@ -758,7 +748,12 @@ int isTZfile(struct dirent *d) {
 	return !strcmp(&filename[m - 3], ".tz");
 }
 
-int isHTMLfile( struct dirent *d) {
+#if (MAC_OS_X_VERSION_MAX_ALLOWED > 1070)
+int isHTMLfile( const struct dirent *d)
+#else
+int isHTMLfile( struct dirent *d)
+#endif
+{
 	const char *filename = d->d_name;
 	int m;
 
@@ -775,7 +770,7 @@ void updateMenu(brInstance *i) {
 
 	if(!i->engine || i != brEngineGetController(i->engine)) return;
 
-	[gSelf clearSimulationMenu];
+  [gSelf clearSimulationMenu];
 
 	for(n=0;n< i->_menus.size(); n++ ) {
 		brMenuEntry *entry = i->_menus[ n ];
@@ -793,17 +788,28 @@ void updateMenu(brInstance *i) {
 	}
 }
 
-- (NSString*)saveNameForType:(NSString *)type withAccView:(NSView*)view {
+- (NSString*)saveNameForType:(NSString *)type 
+                defaultValue:(NSString *)defaultValue
+                 withAccView:(NSView*)view 
+{
 	NSSavePanel *savePanel;
-
+  
 	savePanel = [NSSavePanel savePanel];
 	[savePanel setAllowedFileTypes: [NSArray arrayWithObject:type]];
-
+  if (defaultValue != nil) {
+    [savePanel setNameFieldStringValue:defaultValue];
+  }
 	[savePanel setAccessoryView: view];
-
+  
 	if([savePanel runModal] == NSFileHandlingPanelCancelButton) return NULL;
-
+  
 	return [[savePanel URL] path];
+}
+
+- (NSString*)saveNameForType:(NSString *)type withAccView:(NSView*)view {
+  return [self saveNameForType:type
+                  defaultValue:nil
+                   withAccView:view];
 }
 
 - (NSString*)loadNameForTypes:(NSArray*)types withAccView:(NSView*)view {
@@ -836,29 +842,6 @@ void updateMenu(brInstance *i) {
 	return newSize;
 }
 
-- (void)setWindowTitleMessage:(NSString*)s {
-	if(!s) [runWindow setTitle: [NSString stringWithFormat: @"breve"]];
-	else [runWindow setTitle: [NSString stringWithFormat: @"breve (%@)", s]];
-}
-
-- (IBAction)find:sender {
-	id document = [[NSDocumentController sharedDocumentController] currentDocument];
-
-	[document find: sender];
-}
-
-- (IBAction)findNext:sender {
-	id document = [[NSDocumentController sharedDocumentController] currentDocument];
-
-	[document findNext: sender];
-}
-
-- (IBAction)findPrevious:sender {
-	id document = [[NSDocumentController sharedDocumentController] currentDocument];
-
-	[document findPrevious: sender];
-}
-
 - (IBAction)findSelection:sender {
 	id document = [[NSDocumentController sharedDocumentController] currentDocument];
 
@@ -869,61 +852,6 @@ void updateMenu(brInstance *i) {
 	id document = [[NSDocumentController sharedDocumentController] currentDocument];
 
 	[document scrollToSelection: sender];
-}
-
-- (IBAction)commentLines:sender {
-	id document = [[NSDocumentController sharedDocumentController] currentDocument];
-	[[document text] commentSelection: self];
-}
-
-- (IBAction)uncommentLines:sender {
-	id document = [[NSDocumentController sharedDocumentController] currentDocument];
-	[[document text] uncommentSelection: self];
-}
-
-- (IBAction)reformat:sender {
-	id document = [[NSDocumentController sharedDocumentController] currentDocument];
-	[document reformat: self];
-}
-
-- (void)simPopupSetItems:(NSNotification*)note {
-	unsigned int n;
-	unsigned int selected;
-
-	selected  = [simPopup indexOfSelectedItem];
-
-	[simPopup removeAllItems];
-
-	for(n=0;n<[documents count];n++) {
-		NSString *display = [[documents objectAtIndex: n] displayName];
-		NSString *file = [[[documents objectAtIndex: n] fileURL] path];
-		NSString *title;
-
-		if(display && file) title = [NSString stringWithFormat: @"%@ (%@)", display, file];
-		else title = display;
-	
-		[simPopup addItemWithTitle: title];
-	}
-
-	if([documents count] > 0) {
-		if(selected >= [documents count]) selected = 0;
-
-		[simPopup selectItemAtIndex: selected];
-		[runSimMenuItem setAction: @selector(startSimulationFromMenu:)];
-		[loadSimMenuItem setAction: @selector(startSimulationWithArchivedFile:)];
-	} else {
-		[runSimMenuItem setAction: NULL];
-		[loadSimMenuItem setAction: NULL];
-		[simPopup addItemWithTitle: @"Choose Simulation..."];
-	}
-}
-
-- (IBAction)setSimulationPopup:sender {
-	if([documents count] < 1) return;
-
-	currentDocument = [documents objectAtIndex: [simPopup indexOfSelectedItem]];
-
-	if(currentDocument) [runButton setEnabled: YES];
 }
 
 - (NSMutableDictionary*)parseDocsIndex {
@@ -968,31 +896,6 @@ void updateMenu(brInstance *i) {
 
 - (NSDictionary*)docDictionary {
 	return docDictionary;
-}
-
-- (void)registerDocument:(NSDocument*)d {
-	currentDocument = d;
-
-	[documents addObject: d];
-
-	[self simPopupSetItems: NULL];
-	[simPopup selectItemAtIndex: [documents count] - 1];
-	[runButton setEnabled: YES];
-
-	[self updateAllEditorPreferences];
-}
-
-- (void)unregisterDocument:(NSDocument*)d {
-	[documents removeObject: d];
-
-	[self simPopupSetItems: NULL];
-
-	if(currentDocument == d) {
-		[simPopup selectItemAtIndex: 0];
-	}
-
-	if([documents count] > 0) currentDocument = [documents objectAtIndex: 0];
-	else currentDocument = NULL;
 }
 
 - (void)updateAllEditorPreferences {

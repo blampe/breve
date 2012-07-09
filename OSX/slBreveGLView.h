@@ -35,7 +35,7 @@
 	slCamera *camera;
 	slWorld *world;
   
-  id motionSelector;
+  IBOutlet NSSegmentedControl *_cursorControl;
   id theMovie;
   
   unsigned char *pixelBuffer;
@@ -69,7 +69,8 @@
 - (void)mouseDown:(NSEvent*)theEvent;
 
 - (unsigned char*)updateRGBPixels;
-- (int)snapshotToFile:(NSString*)filename;
+- (int)snapshotToFile:(NSString*)filename 
+             fileType:(NSBitmapImageFileType)fileType;
 
 - (void)setContextMenuEnabled:(BOOL)c;
 - (void)updateContextualMenu:(id)menu withInstance:(brInstance*)i;
@@ -78,5 +79,12 @@
 
 - (NSBitmapImageRep*)newImageRep;
 
+- (IBAction) cursorModeToggled:(id)sender;
+- (IBAction) zoomToggled:(id)sender;
+- (IBAction) rotateToggled:(id)sender;
+- (IBAction) zoomIn:(id)sender;
+- (IBAction) zoomOut:(id)sender;
+- (IBAction) rotateLeft:(id)sender;
+- (IBAction) rotateRight:(id)sender;
 
 @end

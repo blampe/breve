@@ -28,52 +28,57 @@
 
 @implementation slObjectOutlineItem;
 
-- (id)initWithEval:(brEval*)e name:(NSString*)n withVar:(stVar*)stv withOffset:(int)off instance:(stInstance*)i {
-  int c;
-  
-	mEval = new brEval;
-  
-  theEvalList = NULL;
-  theIndex = 0;
-  
-	isArray = NO;
-  
-	brEvalCopy( e, mEval );
-  
-  if(!n) name = [[NSString stringWithString:@"(null)"] retain];
-  else name = n;
-	
-  if(stv && stv->type->_type == AT_ARRAY) {
-    isArray = YES;
-    arrayType = stv->type->_arrayType;
-  } 
-  
-	offset = off;
-  
-  instance = i;
-  
-  if( [self getExpandable] && mEval->type() == AT_INSTANCE) {
-    stInstance *evalInstance;
-    
-		evalInstance = (stInstance*)BRINSTANCE( mEval )->userData;
-		[self setEvalObject: evalInstance->type];
-  } else if([self getExpandable] && mEval->type() == AT_LIST) {
-    childCount = BRLIST( mEval )->_vector.size();
-  } else if([self getExpandable] && isArray) {
-    childCount = stv->type->_arrayCount;
-  } else {
-    childCount = 0;
-    childObjects = NULL;
+- (id) init {
+  self = [super init];
+  if (self != nil) {
+    childObjects = (id*)malloc(sizeof(id));
+    childObjects[0] = nil;
+    childCapacity = 1;
   }
-  
-	// childObjects will be expected to be allocated later on...
-  
-	if(childCount < 1) childCount = 1;
-  
-	childObjects = (id*)malloc(sizeof(id) * childCount);
-  
-	for(c=0;c<childCount;c++) {
-    childObjects[c] = nil;
+  return self;
+}
+
+- (id)initWithEval:(brEval*)e name:(NSString*)n withVar:(stVar*)stv withOffset:(int)off instance:(stInstance*)i {
+  self = [self init];
+  if (self != nil) {
+    mEval = new brEval;
+    
+    theEvalList = NULL;
+    theIndex = 0;
+    
+    isArray = NO;
+    
+    brEvalCopy( e, mEval );
+    
+    if(!n) name = [[NSString stringWithString:@"(null)"] retain];
+    else name = n;
+    
+    if(stv && stv->type->_type == AT_ARRAY) {
+      isArray = YES;
+      arrayType = stv->type->_arrayType;
+    } 
+    
+    offset = off;
+    
+    instance = i;
+    
+    if( [self getExpandable] && mEval->type() == AT_INSTANCE) {
+      stInstance *evalInstance;
+      
+      evalInstance = (stInstance*)BRINSTANCE( mEval )->userData;
+      [self setEvalObject: evalInstance->type];
+    } else if([self getExpandable] && mEval->type() == AT_LIST) {
+      childCount = BRLIST( mEval )->_vector.size();
+    } else if([self getExpandable] && isArray) {
+      childCount = stv->type->_arrayCount;
+    } else {
+      childCount = 0;
+    }
+    
+    // childObjects will be expected to be allocated later on...
+    if (childCount > 0) {
+      [self updateChildCount:childCount];
+    }
   }
   
   return self;
@@ -104,10 +109,13 @@
     }
 	}
   
-	childObjects = (id*)realloc(childObjects, sizeof(id) * newChildCount);
-  
-	for(n=childCount;n<newChildCount;n++) {
-    childObjects[n] = nil;
+  if (newChildCount > childCapacity) {
+    childObjects = (id*)realloc(childObjects, sizeof(id) * newChildCount);
+    
+    for(n=childCapacity;n<newChildCount;n++) {
+      childObjects[n] = nil;
+    }
+    childCapacity = newChildCount;
   }
   
 	childCount = newChildCount;
@@ -313,7 +321,7 @@
   int n;
   
   if(childObjects) {
-    for(n=0;n<childCount;n++) {
+    for(n=0;n<childCapacity;n++) {
       if(childObjects[n]) {
         [childObjects[n] release];
         childObjects[n] = nil;

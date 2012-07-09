@@ -37,6 +37,7 @@
 	struct stObject *object;
 
     int childCount;
+  int childCapacity;
 
     BOOL isArray;
     int arrayType;

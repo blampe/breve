@@ -35,7 +35,9 @@
 #import "slMovieRecord.h"
 #import "slBrevePrefs.h"
 #import "slDemoMenu.h"
-#import "slBreveSourceDocument.h"
+
+
+@class slBreveSourceDocument;
 
 enum {
 	BS_STOP,
@@ -64,7 +66,7 @@ enum {
 	IBOutlet id loadSimMenuItem;
 	IBOutlet id loadSimText;
 
-	NSDocument *currentDocument;
+	slBreveSourceDocument *_activeDocument;
 	NSMutableArray *documents;
 	
 
@@ -74,20 +76,13 @@ enum {
 	IBOutlet id docsMenu;
 	IBOutlet id simMenu;
 
-	IBOutlet id runButton;
-	IBOutlet id stopButton;
-
-	IBOutlet id simPopup;
-
-	IBOutlet id fullScreenMenuItem;
 	IBOutlet id saveMovieMenuItem;
 	IBOutlet id savePictureMenuItem;
 	IBOutlet id syntaxMenuItem;
 
 	IBOutlet id _versionField;
 
-	IBOutlet id logText;
-	
+
 	IBOutlet id variableOutlineView;
 
 	IBOutlet id archiveOpenAccView;
@@ -112,6 +107,8 @@ enum {
 	NSString *_versionString;
 }
 
+@property (retain, nonatomic) slBreveSourceDocument *activeDocument;
+
 - (void)simulateRunClick;
 
 - (IBAction)toggleMovieRecord:sender;
@@ -119,10 +116,6 @@ enum {
 - (IBAction)startSimulationFromMenu:sender;
 - (IBAction)stopSimulation:sender;
 - (IBAction)showAboutBox:sender;
-- (IBAction)checkSyntax:sender;
-
-- (IBAction)toggleFullScreen:sender;
-- (void)setFullScreen:(BOOL)s;
 
 - (brInstance*)getSelectedInstance;
 
@@ -130,9 +123,6 @@ enum {
 
 - (void)applicationWillFinishLaunching:(NSNotification*)n;
 
-- (IBAction)clearLog:sender;
-
-- (IBAction)saveLog:sender;
 
 - (IBAction)snapshot:sender;
 
@@ -145,15 +135,11 @@ enum {
 - (IBAction)demoMenu:sender;
 - (IBAction)docsMenu:sender;
 
-- (IBAction)simMenu:sender;
 - (IBAction)contextualMenu:sender;
 
 - (void)doSelectionAt:(NSPoint)p;
 
 - (void)doMenuCallbackForInstance:(brInstance*)i item:(int)n;
-
-- (void)clearSimulationMenu;
-- (void)setSimulationMenuEnabled:(BOOL)state;
 
 - (IBAction)openBreveHomepage:sender;
 - (IBAction)openEmailMessage:sender;
@@ -171,30 +157,29 @@ enum {
 
 void updateMenu(brInstance *i);
 
-- (void)setWindowTitleMessage:(NSString*)s;
+- (NSString*)saveNameForType:(NSString *)type 
+                defaultValue:(NSString *)defaultValue
+                 withAccView:(NSView*)view;
 
 - (NSString*)saveNameForType:(NSString *)type withAccView:(NSView*)view;
 - (NSString*)loadNameForTypes:(NSArray*)types withAccView:(NSView*)view;
 
+#if (MAC_OS_X_VERSION_MAX_ALLOWED > 1070)
+int isTZfile( const struct dirent *d);
+int isHTMLfile( const struct dirent *d);
+#else
 int isTZfile( struct dirent *d);
 int isHTMLfile( struct dirent *d);
+#endif
 
-- (IBAction)find:sender;
-- (IBAction)findNext:sender;
-- (IBAction)findPrevious:sender;
+- (void) setSimulationMenuEnabled:(BOOL)enabled;
+- (void) clearSimulationMenu;
+
 - (IBAction)findSelection:sender;
 - (IBAction)scrollToSelection:sender;
-- (IBAction)commentLines:sender;
-- (IBAction)uncommentLines:sender;
-- (IBAction)reformat:sender;
-
-- (IBAction)setSimulationPopup:sender;
 
 - (NSMutableDictionary*)parseDocsIndex;
 - (NSDictionary*)docDictionary;
-
-- (void)registerDocument:(NSDocument*)d;
-- (void)unregisterDocument:(NSDocument*)d;
 
 - (void)updateAllEditorPreferences;
 
