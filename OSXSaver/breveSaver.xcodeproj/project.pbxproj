@@ -79,7 +79,6 @@
 		48D907F406BFC56B00FF529F /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8B3C06B5543800740D0A /* OpenGL.framework */; };
 		48D907F606BFC56C00FF529F /* ScreenSaver.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8B1106B5541200740D0A /* ScreenSaver.framework */; };
 		48D90A3206BFD21D00FF529F /* classes in Resources */ = {isa = PBXBuildFile; fileRef = 4818575605CABFE300C48BE6 /* classes */; };
-		48D90A3406BFD24700FF529F /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		48D90A3D06BFD26900FF529F /* brevePainter.nib in Resources */ = {isa = PBXBuildFile; fileRef = 48D90A3B06BFD26900FF529F /* brevePainter.nib */; };
 		F151C77C15A8EA9100B88E13 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77A15A8EA9100B88E13 /* libjpeg.a */; };
 		F151C77D15A8EA9100B88E13 /* libpng12.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77B15A8EA9100B88E13 /* libpng12.a */; };
@@ -176,7 +175,7 @@
 		F151C77A15A8EA9100B88E13 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /usr/local/lib/libjpeg.a; sourceTree = "<absolute>"; };
 		F151C77B15A8EA9100B88E13 /* libpng12.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng12.a; path = /usr/local/lib/libpng12.a; sourceTree = "<absolute>"; };
 		F181871D15A89263008A71FF /* breveWalker.saver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = breveWalker.saver; sourceTree = BUILT_PRODUCTS_DIR; };
-		F181871E15A89263008A71FF /* breveCreatures-info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "breveCreatures-info.plist"; path = "/Users/swhite/Downloads/breve_2.5.1_source/OSXSaver/breveCreatures-info.plist"; sourceTree = "<absolute>"; };
+		F181871E15A89263008A71FF /* breveCreatures-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "breveCreatures-Info.plist"; sourceTree = "<group>"; };
 		F181871F15A8929E008A71FF /* SuperWalker.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = SuperWalker.tz; path = "../demos/Physics-Examples/SuperWalker.tz"; sourceTree = "<group>"; };
 		F181872115A892C5008A71FF /* slBreveWalker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slBreveWalker.h; sourceTree = "<group>"; };
 		F181872215A892C5008A71FF /* slBreveWalker.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreveWalker.mm; sourceTree = "<group>"; };
@@ -337,7 +336,7 @@
 				4818574E05CABEEB00C48BE6 /* breveWalker-Info.plist */,
 				48B9BDBD05EA6004002C7A42 /* breveResearcher-Info.plist */,
 				489DE21806B5587400740D0A /* brevePainter-Info.plist */,
-				F181871E15A89263008A71FF /* breveCreatures-info.plist */,
+				F181871E15A89263008A71FF /* breveCreatures-Info.plist */,
 			);
 			name = breveSaver;
 			sourceTree = "<group>";
@@ -623,7 +622,6 @@
 				489DE2B106B5598B00740D0A /* Digitizer.tz in Resources */,
 				489DE2B906B559C100740D0A /* Painter.tz in Resources */,
 				48D90A3206BFD21D00FF529F /* classes in Resources */,
-				48D90A3406BFD24700FF529F /* InfoPlist.strings in Resources */,
 				48D90A3D06BFD26900FF529F /* brevePainter.nib in Resources */,
 				48ADBD1D06CA66E80059C23C /* brevePainter-Info.plist in Resources */,
 			);
@@ -1118,6 +1116,7 @@
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_ENABLE_OBJC_GC = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1127,20 +1126,17 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = /usr/local/include;
 				INFOPLIST_FILE = "brevePainter-Info.plist";
-				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
+				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Screen Savers";
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OPTIMIZATION_CFLAGS = "-O0";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
 					"-bundle",
-					"-read_only_relocs",
-					suppress,
-					/usr/local/lib/libdl.a,
 				);
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = brevePainter;
@@ -1158,6 +1154,7 @@
 				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
 				COPY_PHASE_STRIP = YES;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_ENABLE_OBJC_GC = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
@@ -1165,20 +1162,17 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = /usr/local/include;
 				INFOPLIST_FILE = "brevePainter-Info.plist";
-				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
+				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Screen Savers";
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OPTIMIZATION_CFLAGS = "-O4";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
 					"-bundle",
-					"-read_only_relocs",
-					suppress,
-					/usr/local/lib/libdl.a,
 				);
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = brevePainter;
@@ -1194,6 +1188,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
+				GCC_ENABLE_OBJC_GC = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				GCC_VERSION = com.apple.compilers.llvmgcc42;
@@ -1201,19 +1196,16 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = /usr/local/include;
 				INFOPLIST_FILE = "brevePainter-Info.plist";
-				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Bundles";
+				INSTALL_PATH = "$(USER_LIBRARY_DIR)/Screen Savers";
 				LIBRARY_SEARCH_PATHS = (
 					../lib,
 					/usr/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
 					"-bundle",
-					"-read_only_relocs",
-					suppress,
-					/usr/local/lib/libdl.a,
 				);
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = brevePainter;

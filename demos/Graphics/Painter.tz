@@ -21,20 +21,23 @@ Control : myController {
 		blur (double).
 		file (string).
 		vel, acc, radius (double).
+    thePainters (list).
 
 	+ to init:
-		brush (object).
-
 		self disable-text.
-
-		vel = 1.0 + random[9].
-		acc = random[1000].
-		radius = 1.0 + random[5].
 
 		if (self get-argument-count) == 2: {
 			file = (self get-argument at-index 1).
 		} else file = "images/jon.jpg".
 
+		self load-file with-string file.
+
+
+	+ to load-file with-string file (string):
+		brush (object).
+		vel = 1.0 + random[9].
+		acc = random[1000].
+		radius = 1.0 + random[5].
 		image = (new Image load from file).
 
 		blur = .992.
@@ -52,10 +55,14 @@ Control : myController {
 		shape = new Sphere init-with radius radius.
 
 		brush = (new Image load from "images/brush.png").
-		200 new Painters set-bitmap-image to brush.
+    if | thePainters | == 0:
+      thePainters = 200 new Painters.
+    thePainters set-bitmap-image to brush.
+    thePainters update.
 
 		zoom = (image get-width) + 10.
 
+		self clear-screen.
 		self offset-camera by (0, 0, zoom).
 		self set-z-clip to zoom + 100.
 
@@ -91,15 +98,16 @@ Mobile : Painter (aka Painters) {
 		vel, acc (double).
 
 	+ to init:
-		self set-shape to (controller get-shape).
+		self set-color to (0, 0, 0).
+    self update.
+		self reset.
+    
+  + to update:
+    self set-shape to (controller get-shape).
 		image = (controller get-image).
 
 		w = (image get-width).
 		h = (image get-height).
-
-		self set-color to (0, 0, 0).
-
-		self reset.
 
 	+ to reset:
 		vel = (controller get-vel).

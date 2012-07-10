@@ -5,10 +5,10 @@
 #import "slBreveSaver.h"
 
 @interface slBrevePainter : slBreveSaver {
-    IBOutlet NSPopUpButton *filePopup;
-    IBOutlet NSTextField *customString;
-    IBOutlet NSButtonCell *zoomCheck;
-
+  IBOutlet NSPopUpButton *filePopup;
+  IBOutlet NSTextField *customString;
+  IBOutlet NSButtonCell *zoomCheck;
+  
 	int custom;
 	NSString *selection;
 	id customItem;

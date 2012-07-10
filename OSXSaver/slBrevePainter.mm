@@ -20,28 +20,32 @@
 
 #import "slBrevePainter.h"
 #import <unistd.h>
+#import "breveObjectAPI.h"
 
 @implementation slBrevePainter
 
-- initWithFrame:(NSRect)frame isPreview:(BOOL)p {
-	id s;
-	
-	s = [super initWithFrame: frame isPreview: p];
+- (id)initWithFrame:(NSRect)frame isPreview:(BOOL)isPreview {
+	self = [super initWithFrame: frame isPreview: isPreview];
+  if (self != nil) {
+    [self setupImageMenu];
+    
+    timer = [NSTimer timerWithTimeInterval: 60 
+                                    target: self
+                                  selector: @selector(updateImageMenu:) 
+                                  userInfo: NULL
+                                   repeats: YES];
+    
+    [[NSRunLoop currentRunLoop] addTimer: timer forMode: NSDefaultRunLoopMode];
+  }
 
-	[self setupImageMenu];
-
-	timer = [NSTimer timerWithTimeInterval: 60 target: self selector: @selector(updateImageMenu:) userInfo: NULL repeats: YES];
-
-	[[NSRunLoop currentRunLoop] addTimer: timer forMode: NSDefaultRunLoopMode];
-
-	return s;
+	return self;
 }
 
 - (void)setupImageMenu {
 	NSString *slidePath = @"/System/Library/Screen Savers";
-	NSArray *slideSavers = [[NSFileManager defaultManager] directoryContentsAtPath: slidePath];
+  NSArray *slideSavers = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:slidePath error:nil];
 	NSMenuItem *item;
-	int n;
+	NSUInteger n;
 	
 	[filePopup removeAllItems];
 	[filePopup setAutoenablesItems: NO];
@@ -103,16 +107,16 @@
 }
 
 - (void)setZoom:(int)v {
-	brEval e;
-	brEval iarg;
-	brEval *args[1];
-	
 	if(!viewEngine->controller) return;
 	
-	args[0] = &iarg;
-	
-	BRINT(&iarg) = v;
-	iarg.type = AT_INT;
+  const brEval *args[2];
+  brEval eval[2];
+  brEval e;
+  
+  eval[0].set( v );
+  args[0] = &eval[0];
+  args[1] = &eval[1];
+
 	brMethodCallByNameWithArgs(viewEngine->controller, "set-zoom-enabled", args, 1, &e);
 }
 
@@ -156,15 +160,14 @@
 }
 
 - (id)getImagesInDirectory:(NSString*)dir inArray:(NSMutableArray*)images {
-	NSMutableArray *i;
 	NSArray *files;
 	NSFileManager *manager = [NSFileManager defaultManager];
-	int n;
+	NSUInteger n;
 	BOOL isDir;
 	
 	if(!images) images = [NSMutableArray arrayWithCapacity: 100];
 	
-	files = [manager directoryContentsAtPath: dir];
+	files = [manager contentsOfDirectoryAtPath:dir error:nil];
 
 	for(n=0;n<[files count];n++) {
 		NSString *file = [files objectAtIndex: n];
@@ -183,18 +186,18 @@
 }
 
 - (void)setImage:(NSString*)image {
-	brEval e;
-	brEval iarg;
-	brEval *args[1];
-	
 	if(!viewEngine->controller) return;
-	
-	args[0] = &iarg;
-	
-	BRSTRING(&iarg) = (const char*)[image cStringUsingEncoding:NSUTF8StringEncoding];
-	iarg.type = AT_STRING;
 
-	brMethodCallByNameWithArgs(viewEngine->controller, "load-image", args, 1, &e);
+  const brEval *args[2];
+  brEval eval[2];
+  brEval result;
+  
+  char *myFile = (char *)[image cStringUsingEncoding:NSUTF8StringEncoding];
+  eval[0].set(myFile);
+  args[0] = &eval[0];
+  args[1] = &eval[1];
+  
+	brMethodCallByNameWithArgs(viewEngine->controller, "load-file", args, 1, &result);
 }
 
 - (IBAction)runOpenSheet:sender {
@@ -228,7 +231,7 @@
 }
 
 - (NSString*)getNibName {
-    return @"brevePainter.nib";
+  return @"brevePainter.nib";
 }   
 
 @end
