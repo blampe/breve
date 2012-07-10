@@ -202,7 +202,13 @@ char *sl_StripSpaces(char *text) {
   slBreve *breve = (slBreve *)[[NSApplication sharedApplication] delegate];
   if (breve.activeDocument == self) {
     [breve stopSimulation:self];
+    [breve setActiveDocument:nil];
   }
+}
+
+- (void) close {
+  [super close];
+  [self stopSimulation:self];
 }
 
 
