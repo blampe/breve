@@ -152,8 +152,10 @@
 	images = [self getImagesInDirectory: selection inArray: NULL];
 
 	if([images count] > 0) {
-		[self setImage: [images objectAtIndex: random() % [images count]]];
-		return;
+    NSUInteger random = arc4random() % [images count] + 1;
+		[self setImage: [images objectAtIndex: random]];
+    arc4random_stir();
+    return;
 	}
 
 	[self setImage: @"default.png"];
