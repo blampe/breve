@@ -47,7 +47,7 @@
 }
 
 
-- (char*)getDefaultsName {
+- (const char*)getDefaultsName {
 	return "breveSwarm";
 }
 
@@ -79,7 +79,7 @@
     [super startBreveSimulation];
 }
 
-- (char*)getSimName {
+- (const char*)getSimName {
     return "SwarmSaver.tz";
 }
 
