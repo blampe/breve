@@ -1,3 +1,6 @@
+#ifndef _STEVE_H
+#define _STEVE_H
+
 #define STINSTANCE(x)	((stInstance *)(BRPOINTER(x)))
 
 #include "util.h"
@@ -20,3 +23,5 @@
 #include "evalListCopyGC.h"
 
 #include "steveparse.h"
+
+#endif 

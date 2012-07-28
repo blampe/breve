@@ -43,7 +43,7 @@ void breveInitStatisticsFunctions(brNamespace *n);
 void breveInitQGAMEFunctions(brNamespace *);
 void breveInitDrawFunctions(brNamespace *);
 
-DLLEXPORT int brNewBreveCall(brNamespace *, char *, int (*)(brEval *, brEval *, brInstance *), int, ...);
+DLLEXPORT int brNewBreveCall(brNamespace *, const char *, int (*)(brEval *, brEval *, brInstance *), int, ...);
 DLLEXPORT FILE *slGetLogFilePointer(brInstance *);
 #ifdef __cplusplus
 }

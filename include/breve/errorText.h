@@ -29,7 +29,7 @@
 	= I wish.
 */
 
-char *gErrorNames[] = {
+const char *gErrorNames[] = {
     "No Error",
     "Parse Error",
     "Syntax Error",
@@ -64,7 +64,7 @@ char *gErrorNames[] = {
     NULL
 };
 
-char *gErrorMessages[] = {
+const char *gErrorMessages[] = {
     "No error occurred.",
     "A \"parse error\" is a very general error indicating that the parser encountered unexpected input.\n\nThe error can sometimes be hard to track down, as it does not always appear on the line specified by this error message--it is possible that the error occurs on a preceding line but is not discovered until the line specified.  Check for missing punctuation, misspellings and missing keywords in method calls.",
     "A \"syntax error\" indicates that a specific syntax error was encountered while parsing the simulation.\n\nThe error description above should describe the problem and how it can be fixed.",

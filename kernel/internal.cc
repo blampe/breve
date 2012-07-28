@@ -66,7 +66,7 @@
 	There are many examples of this in the steveFunctions*.c files.
 */
 
-int brNewBreveCall( brNamespace *n, char *name, int( *f )( brEval *a, brEval *r, brInstance *i ), int rtype, ... ) {
+int brNewBreveCall( brNamespace *n, const char *name, int( *f )( brEval *a, brEval *r, brInstance *i ), int rtype, ... ) {
 	brInternalFunction *c;
 	va_list ap;
 	int value;
