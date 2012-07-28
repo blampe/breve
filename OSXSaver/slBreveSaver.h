@@ -40,7 +40,7 @@
 
 	BOOL nofx; /* hahahaha! */
 
-	id configWindow;
+	IBOutlet NSWindow *configWindow;
 	id drawClouds;
 	id saveBest;
 	id cloudColor;

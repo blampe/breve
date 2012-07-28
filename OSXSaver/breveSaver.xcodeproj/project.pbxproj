@@ -16,7 +16,6 @@
 		4818572E05CABEEB00C48BE6 /* slBreveCreatures.h in Headers */ = {isa = PBXBuildFile; fileRef = F5175CBD0169B97E010BE436 /* slBreveCreatures.h */; };
 		4818572F05CABEEB00C48BE6 /* slBreveSaver.h in Headers */ = {isa = PBXBuildFile; fileRef = F5D8673B01169F20010BE436 /* slBreveSaver.h */; };
 		4818573105CABEEB00C48BE6 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
-		4818573205CABEEB00C48BE6 /* WalkerSaver.tz in Resources */ = {isa = PBXBuildFile; fileRef = F50BB16F012BFE5C010BE436 /* WalkerSaver.tz */; };
 		4818573805CABEEB00C48BE6 /* slBreveCreatures.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5175CBE0169B97E010BE436 /* slBreveCreatures.mm */; };
 		4818573905CABEEB00C48BE6 /* slBreveSaver.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5D8673C01169F20010BE436 /* slBreveSaver.mm */; };
 		4818578C05CABFE300C48BE6 /* classes in Resources */ = {isa = PBXBuildFile; fileRef = 4818575605CABFE300C48BE6 /* classes */; };
@@ -91,6 +90,40 @@
 		F12CC32D15AC961A00D54539 /* libpython.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BB26B20B2285DF006FA9E9 /* libpython.dylib */; };
 		F12CC32E15AC961A00D54539 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F181873115A89D1A008A71FF /* libexpat.dylib */; };
 		F12CC32F15AC961A00D54539 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BAB06B554A200740D0A /* libz.dylib */; };
+		F13FF79915C378D1006E67C6 /* slBreveCreatures.h in Headers */ = {isa = PBXBuildFile; fileRef = F5175CBD0169B97E010BE436 /* slBreveCreatures.h */; };
+		F13FF79A15C378D1006E67C6 /* slBreveSaver.h in Headers */ = {isa = PBXBuildFile; fileRef = F5D8673B01169F20010BE436 /* slBreveSaver.h */; };
+		F13FF79E15C378D1006E67C6 /* classes in Resources */ = {isa = PBXBuildFile; fileRef = 4818575605CABFE300C48BE6 /* classes */; };
+		F13FF79F15C378D1006E67C6 /* simulation.gif in Resources */ = {isa = PBXBuildFile; fileRef = 4868E6F6091423CC0045591F /* simulation.gif */; };
+		F13FF7A015C378D1006E67C6 /* app_icon.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 4868E6FC091423F80045591F /* app_icon.tiff */; };
+		F13FF7A515C378D1006E67C6 /* slBreveSaver.mm in Sources */ = {isa = PBXBuildFile; fileRef = F5D8673C01169F20010BE436 /* slBreveSaver.mm */; };
+		F13FF7A815C378D1006E67C6 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77A15A8EA9100B88E13 /* libjpeg.a */; };
+		F13FF7A915C378D1006E67C6 /* libpng12.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77B15A8EA9100B88E13 /* libpng12.a */; };
+		F13FF7AA15C378D1006E67C6 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F181873115A89D1A008A71FF /* libexpat.dylib */; };
+		F13FF7AB15C378D1006E67C6 /* libgsl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F1E307A315A7F0C800716F5A /* libgsl.a */; };
+		F13FF7AC15C378D1006E67C6 /* libgslcblas.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F1E307A415A7F0C800716F5A /* libgslcblas.a */; };
+		F13FF7AD15C378D1006E67C6 /* libode.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F1E307A515A7F0C800716F5A /* libode.a */; };
+		F13FF7AE15C378D1006E67C6 /* ScreenSaver.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8B1106B5541200740D0A /* ScreenSaver.framework */; };
+		F13FF7AF15C378D1006E67C6 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8B3B06B5543800740D0A /* GLUT.framework */; };
+		F13FF7B015C378D1006E67C6 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8B3C06B5543800740D0A /* OpenGL.framework */; };
+		F13FF7B115C378D1006E67C6 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BAB06B554A200740D0A /* libz.dylib */; };
+		F13FF7B215C378D1006E67C6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BBA06B554D600740D0A /* AudioToolbox.framework */; };
+		F13FF7B315C378D1006E67C6 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BBB06B554D600740D0A /* System.framework */; };
+		F13FF7B415C378D1006E67C6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BFA06B5551B00740D0A /* CoreAudio.framework */; };
+		F13FF7B515C378D1006E67C6 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BFB06B5551B00740D0A /* CoreFoundation.framework */; };
+		F13FF7B615C378D1006E67C6 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8C3D06B5553600740D0A /* Foundation.framework */; };
+		F13FF7B715C378D1006E67C6 /* libbreve.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4842D87207F9A72700140407 /* libbreve.a */; };
+		F13FF7B815C378D1006E67C6 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8CB706B5554900740D0A /* AppKit.framework */; };
+		F13FF7B915C378D1006E67C6 /* libpython.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 48BB26B20B2285DF006FA9E9 /* libpython.dylib */; };
+		F13FF7C415C37958006E67C6 /* slBreveSuperDuperWalker.h in Headers */ = {isa = PBXBuildFile; fileRef = F13FF7C215C37958006E67C6 /* slBreveSuperDuperWalker.h */; };
+		F13FF7C515C37958006E67C6 /* slBreveSuperDuperWalker.mm in Sources */ = {isa = PBXBuildFile; fileRef = F13FF7C315C37958006E67C6 /* slBreveSuperDuperWalker.mm */; };
+		F13FF7C815C37963006E67C6 /* breveSuperDuperWalker.nib in Resources */ = {isa = PBXBuildFile; fileRef = F13FF7C615C37963006E67C6 /* breveSuperDuperWalker.nib */; };
+		F13FF7CB15C38B5A006E67C6 /* slBreveSuperDuperWalker.mm in Sources */ = {isa = PBXBuildFile; fileRef = F13FF7C315C37958006E67C6 /* slBreveSuperDuperWalker.mm */; };
+		F13FF7CC15C38B6D006E67C6 /* breveSuperDuperWalker.nib in Resources */ = {isa = PBXBuildFile; fileRef = F13FF7C615C37963006E67C6 /* breveSuperDuperWalker.nib */; };
+		F13FF7CD15C38B6D006E67C6 /* SuperDuperWalker.tz in Resources */ = {isa = PBXBuildFile; fileRef = F13FF7C915C37972006E67C6 /* SuperDuperWalker.tz */; };
+		F13FF7CE15C38B78006E67C6 /* slBreveSuperDuperWalker.h in Headers */ = {isa = PBXBuildFile; fileRef = F13FF7C215C37958006E67C6 /* slBreveSuperDuperWalker.h */; };
+		F14FDA2715B6768A0058C097 /* Walker.tz in Resources */ = {isa = PBXBuildFile; fileRef = F14FDA2415B6768A0058C097 /* Walker.tz */; };
+		F14FDA2915B6768A0058C097 /* WalkerLib.tz in Resources */ = {isa = PBXBuildFile; fileRef = F14FDA2615B6768A0058C097 /* WalkerLib.tz */; };
+		F14FDA2E15B6779D0058C097 /* Creatures2.tz in Resources */ = {isa = PBXBuildFile; fileRef = F14FDA2C15B676F50058C097 /* Creatures2.tz */; };
 		F151C77C15A8EA9100B88E13 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77A15A8EA9100B88E13 /* libjpeg.a */; };
 		F151C77D15A8EA9100B88E13 /* libpng12.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77B15A8EA9100B88E13 /* libpng12.a */; };
 		F151C77F15A8EA9800B88E13 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77A15A8EA9100B88E13 /* libjpeg.a */; };
@@ -102,6 +135,7 @@
 		F151C78D15A8F87800B88E13 /* ScreenSaver.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8B1106B5541200740D0A /* ScreenSaver.framework */; };
 		F151C78E15A8F87B00B88E13 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BBB06B554D600740D0A /* System.framework */; };
 		F151C78F15A8F88400B88E13 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 489D8BAB06B554A200740D0A /* libz.dylib */; };
+		F163629315BBB0CA00657E5A /* SuperWalker.tz in Resources */ = {isa = PBXBuildFile; fileRef = F163629215BBB0CA00657E5A /* SuperWalker.tz */; };
 		F18186FB15A89263008A71FF /* slBreveCreatures.h in Headers */ = {isa = PBXBuildFile; fileRef = F5175CBD0169B97E010BE436 /* slBreveCreatures.h */; };
 		F18186FC15A89263008A71FF /* slBreveSaver.h in Headers */ = {isa = PBXBuildFile; fileRef = F5D8673B01169F20010BE436 /* slBreveSaver.h */; };
 		F181870015A89263008A71FF /* breveWalker.nib in Resources */ = {isa = PBXBuildFile; fileRef = F510412F012D110B010BE436 /* breveWalker.nib */; };
@@ -127,7 +161,6 @@
 		F181872815A89324008A71FF /* breveCreatures.nib in Resources */ = {isa = PBXBuildFile; fileRef = F181872515A89314008A71FF /* breveCreatures.nib */; };
 		F181872A15A89369008A71FF /* slBreveWalker.h in Headers */ = {isa = PBXBuildFile; fileRef = F181872115A892C5008A71FF /* slBreveWalker.h */; };
 		F181872B15A8936D008A71FF /* slBreveWalker.mm in Sources */ = {isa = PBXBuildFile; fileRef = F181872215A892C5008A71FF /* slBreveWalker.mm */; };
-		F181873015A89520008A71FF /* SuperWalker.tz in Resources */ = {isa = PBXBuildFile; fileRef = F181871F15A8929E008A71FF /* SuperWalker.tz */; };
 		F181873215A89D1A008A71FF /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F181873115A89D1A008A71FF /* libexpat.dylib */; };
 		F181873315A89D20008A71FF /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F181873115A89D1A008A71FF /* libexpat.dylib */; };
 		F181873415A89D20008A71FF /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F181873115A89D1A008A71FF /* libexpat.dylib */; };
@@ -171,11 +204,20 @@
 		48B9BE2E05EA60B4002C7A42 /* slBreveResearcher.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreveResearcher.mm; sourceTree = "<group>"; };
 		48BB26B20B2285DF006FA9E9 /* libpython.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpython.dylib; path = /usr/lib/libpython.dylib; sourceTree = "<absolute>"; };
 		48D90A3C06BFD26900FF529F /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/brevePainter.nib; sourceTree = "<group>"; };
+		F13FF7BF15C378D1006E67C6 /* breveSuperDuperWalker.saver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = breveSuperDuperWalker.saver; sourceTree = BUILT_PRODUCTS_DIR; };
+		F13FF7C015C378D1006E67C6 /* breveSuperDuperWalker-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "breveSuperDuperWalker-Info.plist"; path = "/Users/swhite/Projects/breve/OSXSaver/breveSuperDuperWalker-Info.plist"; sourceTree = "<absolute>"; };
+		F13FF7C215C37958006E67C6 /* slBreveSuperDuperWalker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slBreveSuperDuperWalker.h; sourceTree = "<group>"; };
+		F13FF7C315C37958006E67C6 /* slBreveSuperDuperWalker.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreveSuperDuperWalker.mm; sourceTree = "<group>"; };
+		F13FF7C715C37963006E67C6 /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/breveSuperDuperWalker.nib; sourceTree = "<group>"; };
+		F13FF7C915C37972006E67C6 /* SuperDuperWalker.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SuperDuperWalker.tz; sourceTree = "<group>"; };
+		F14FDA2415B6768A0058C097 /* Walker.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Walker.tz; sourceTree = "<group>"; };
+		F14FDA2615B6768A0058C097 /* WalkerLib.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = WalkerLib.tz; sourceTree = "<group>"; };
+		F14FDA2C15B676F50058C097 /* Creatures2.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Creatures2.tz; sourceTree = "<group>"; };
 		F151C77A15A8EA9100B88E13 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /usr/local/lib/libjpeg.a; sourceTree = "<absolute>"; };
 		F151C77B15A8EA9100B88E13 /* libpng12.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng12.a; path = /usr/local/lib/libpng12.a; sourceTree = "<absolute>"; };
+		F163629215BBB0CA00657E5A /* SuperWalker.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SuperWalker.tz; sourceTree = "<group>"; };
 		F181871D15A89263008A71FF /* breveWalker.saver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = breveWalker.saver; sourceTree = BUILT_PRODUCTS_DIR; };
 		F181871E15A89263008A71FF /* breveCreatures-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "breveCreatures-Info.plist"; sourceTree = "<group>"; };
-		F181871F15A8929E008A71FF /* SuperWalker.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = SuperWalker.tz; path = "../demos/Physics-Examples/SuperWalker.tz"; sourceTree = "<group>"; };
 		F181872115A892C5008A71FF /* slBreveWalker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slBreveWalker.h; sourceTree = "<group>"; };
 		F181872215A892C5008A71FF /* slBreveWalker.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreveWalker.mm; sourceTree = "<group>"; };
 		F181872615A89314008A71FF /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/breveCreatures.nib; sourceTree = "<group>"; };
@@ -183,7 +225,6 @@
 		F1E307A315A7F0C800716F5A /* libgsl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgsl.a; path = /usr/local/lib/libgsl.a; sourceTree = "<absolute>"; };
 		F1E307A415A7F0C800716F5A /* libgslcblas.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgslcblas.a; path = /usr/local/lib/libgslcblas.a; sourceTree = "<absolute>"; };
 		F1E307A515A7F0C800716F5A /* libode.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libode.a; path = /usr/local/lib/libode.a; sourceTree = "<absolute>"; };
-		F50BB16F012BFE5C010BE436 /* WalkerSaver.tz */ = {isa = PBXFileReference; lastKnownFileType = text; path = WalkerSaver.tz; sourceTree = SOURCE_ROOT; };
 		F5104130012D110B010BE436 /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/breveWalker.nib; sourceTree = "<group>"; };
 		F5175CB20169B8F6010BE436 /* SwarmSaver.tz */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwarmSaver.tz; sourceTree = "<group>"; };
 		F5175CB90169B958010BE436 /* slBreveSwarm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = slBreveSwarm.h; sourceTree = "<group>"; };
@@ -296,6 +337,31 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F13FF7A715C378D1006E67C6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F13FF7A815C378D1006E67C6 /* libjpeg.a in Frameworks */,
+				F13FF7A915C378D1006E67C6 /* libpng12.a in Frameworks */,
+				F13FF7AA15C378D1006E67C6 /* libexpat.dylib in Frameworks */,
+				F13FF7AB15C378D1006E67C6 /* libgsl.a in Frameworks */,
+				F13FF7AC15C378D1006E67C6 /* libgslcblas.a in Frameworks */,
+				F13FF7AD15C378D1006E67C6 /* libode.a in Frameworks */,
+				F13FF7AE15C378D1006E67C6 /* ScreenSaver.framework in Frameworks */,
+				F13FF7AF15C378D1006E67C6 /* GLUT.framework in Frameworks */,
+				F13FF7B015C378D1006E67C6 /* OpenGL.framework in Frameworks */,
+				F13FF7B115C378D1006E67C6 /* libz.dylib in Frameworks */,
+				F13FF7B215C378D1006E67C6 /* AudioToolbox.framework in Frameworks */,
+				F13FF7B315C378D1006E67C6 /* System.framework in Frameworks */,
+				F13FF7B415C378D1006E67C6 /* CoreAudio.framework in Frameworks */,
+				F13FF7B515C378D1006E67C6 /* CoreFoundation.framework in Frameworks */,
+				F13FF7B615C378D1006E67C6 /* Foundation.framework in Frameworks */,
+				F13FF7B715C378D1006E67C6 /* libbreve.a in Frameworks */,
+				F13FF7B815C378D1006E67C6 /* AppKit.framework in Frameworks */,
+				F13FF7B915C378D1006E67C6 /* libpython.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F181870715A89263008A71FF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -336,6 +402,7 @@
 				48B9BDBD05EA6004002C7A42 /* breveResearcher-Info.plist */,
 				489DE21806B5587400740D0A /* brevePainter-Info.plist */,
 				F181871E15A89263008A71FF /* breveCreatures-Info.plist */,
+				F13FF7C015C378D1006E67C6 /* breveSuperDuperWalker-Info.plist */,
 			);
 			name = breveSaver;
 			sourceTree = "<group>";
@@ -343,8 +410,8 @@
 		089C167CFE841241C02AAC07 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				F181871F15A8929E008A71FF /* SuperWalker.tz */,
 				489DE2B006B5598B00740D0A /* Digitizer.tz */,
+				F14FDA2C15B676F50058C097 /* Creatures2.tz */,
 				489DE2B806B559C100740D0A /* Painter.tz */,
 				4818575605CABFE300C48BE6 /* classes */,
 				089C167DFE841241C02AAC07 /* InfoPlist.strings */,
@@ -352,8 +419,12 @@
 				F5175CD00169E1A5010BE436 /* breveSwarm.nib */,
 				F510412F012D110B010BE436 /* breveWalker.nib */,
 				F181872515A89314008A71FF /* breveCreatures.nib */,
+				F13FF7C615C37963006E67C6 /* breveSuperDuperWalker.nib */,
 				F5175CB20169B8F6010BE436 /* SwarmSaver.tz */,
-				F50BB16F012BFE5C010BE436 /* WalkerSaver.tz */,
+				F163629215BBB0CA00657E5A /* SuperWalker.tz */,
+				F14FDA2415B6768A0058C097 /* Walker.tz */,
+				F14FDA2615B6768A0058C097 /* WalkerLib.tz */,
+				F13FF7C915C37972006E67C6 /* SuperDuperWalker.tz */,
 				4868E6F6091423CC0045591F /* simulation.gif */,
 				4868E6FC091423F80045591F /* app_icon.tiff */,
 			);
@@ -363,6 +434,8 @@
 		08FB77AFFE84173DC02AAC07 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				F13FF7C215C37958006E67C6 /* slBreveSuperDuperWalker.h */,
+				F13FF7C315C37958006E67C6 /* slBreveSuperDuperWalker.mm */,
 				F181872115A892C5008A71FF /* slBreveWalker.h */,
 				F181872215A892C5008A71FF /* slBreveWalker.mm */,
 				F5175CBD0169B97E010BE436 /* slBreveCreatures.h */,
@@ -387,6 +460,7 @@
 				48B9BDBC05EA6004002C7A42 /* breveResearcher.saver */,
 				489DE21706B5587300740D0A /* brevePainter.saver */,
 				F181871D15A89263008A71FF /* breveWalker.saver */,
+				F13FF7BF15C378D1006E67C6 /* breveSuperDuperWalker.saver */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -425,6 +499,7 @@
 			files = (
 				4818570A05CABEEB00C48BE6 /* slBreveSwarm.h in Headers */,
 				4818570B05CABEEB00C48BE6 /* slBreveSaver.h in Headers */,
+				F13FF7C415C37958006E67C6 /* slBreveSuperDuperWalker.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -452,6 +527,16 @@
 			files = (
 				48B9BEFB05EA641F002C7A42 /* slBreveSaver.h in Headers */,
 				48B9BF0505EA6422002C7A42 /* slBreveResearcher.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F13FF79815C378D1006E67C6 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F13FF7CE15C38B78006E67C6 /* slBreveSuperDuperWalker.h in Headers */,
+				F13FF79915C378D1006E67C6 /* slBreveCreatures.h in Headers */,
+				F13FF79A15C378D1006E67C6 /* slBreveSaver.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,6 +627,26 @@
 			productReference = 48B9BDBC05EA6004002C7A42 /* breveResearcher.saver */;
 			productType = "com.apple.product-type.bundle";
 		};
+		F13FF79715C378D1006E67C6 /* breveSuperDuperWalker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F13FF7BB15C378D1006E67C6 /* Build configuration list for PBXNativeTarget "breveSuperDuperWalker" */;
+			buildPhases = (
+				F13FF79815C378D1006E67C6 /* Headers */,
+				F13FF79C15C378D1006E67C6 /* Resources */,
+				F13FF7A415C378D1006E67C6 /* Sources */,
+				F13FF7A715C378D1006E67C6 /* Frameworks */,
+				F13FF7BA15C378D1006E67C6 /* Rez */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = breveSuperDuperWalker;
+			productInstallPath = "$(HOME)/Library/Screen Savers";
+			productName = breveWalker;
+			productReference = F13FF7BF15C378D1006E67C6 /* breveSuperDuperWalker.saver */;
+			productType = "com.apple.product-type.bundle";
+		};
 		F18186F915A89263008A71FF /* breveWalker */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F181871915A89263008A71FF /* Build configuration list for PBXNativeTarget "breveWalker" */;
@@ -584,6 +689,7 @@
 				48B9BDBB05EA6004002C7A42 /* breveResearcher */,
 				489DE21606B5587300740D0A /* brevePainter */,
 				F18186F915A89263008A71FF /* breveWalker */,
+				F13FF79715C378D1006E67C6 /* breveSuperDuperWalker */,
 			);
 		};
 /* End PBXProject section */
@@ -595,6 +701,7 @@
 			files = (
 				4818570F05CABEEB00C48BE6 /* SwarmSaver.tz in Resources */,
 				4818571005CABEEB00C48BE6 /* breveSwarm.nib in Resources */,
+				F13FF7C815C37963006E67C6 /* breveSuperDuperWalker.nib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -603,11 +710,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				4818573105CABEEB00C48BE6 /* InfoPlist.strings in Resources */,
-				4818573205CABEEB00C48BE6 /* WalkerSaver.tz in Resources */,
 				4818578C05CABFE300C48BE6 /* classes in Resources */,
 				4868E6F7091423CC0045591F /* simulation.gif in Resources */,
 				4868E6FD091423F80045591F /* app_icon.tiff in Resources */,
 				F181872815A89324008A71FF /* breveCreatures.nib in Resources */,
+				F14FDA2E15B6779D0058C097 /* Creatures2.tz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -631,6 +738,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F13FF79C15C378D1006E67C6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F13FF7CC15C38B6D006E67C6 /* breveSuperDuperWalker.nib in Resources */,
+				F13FF7CD15C38B6D006E67C6 /* SuperDuperWalker.tz in Resources */,
+				F13FF79E15C378D1006E67C6 /* classes in Resources */,
+				F13FF79F15C378D1006E67C6 /* simulation.gif in Resources */,
+				F13FF7A015C378D1006E67C6 /* app_icon.tiff in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F18186FD15A89263008A71FF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -639,13 +758,22 @@
 				F181870115A89263008A71FF /* classes in Resources */,
 				F181870215A89263008A71FF /* simulation.gif in Resources */,
 				F181870315A89263008A71FF /* app_icon.tiff in Resources */,
-				F181873015A89520008A71FF /* SuperWalker.tz in Resources */,
+				F14FDA2715B6768A0058C097 /* Walker.tz in Resources */,
+				F14FDA2915B6768A0058C097 /* WalkerLib.tz in Resources */,
+				F163629315BBB0CA00657E5A /* SuperWalker.tz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXRezBuildPhase section */
+		F13FF7BA15C378D1006E67C6 /* Rez */ = {
+			isa = PBXRezBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F181871815A89263008A71FF /* Rez */ = {
 			isa = PBXRezBuildPhase;
 			buildActionMask = 2147483647;
@@ -662,6 +790,7 @@
 			files = (
 				4818571405CABEEB00C48BE6 /* slBreveSwarm.mm in Sources */,
 				4818571505CABEEB00C48BE6 /* slBreveSaver.mm in Sources */,
+				F13FF7C515C37958006E67C6 /* slBreveSuperDuperWalker.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -692,6 +821,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F13FF7A415C378D1006E67C6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F13FF7CB15C38B5A006E67C6 /* slBreveSuperDuperWalker.mm in Sources */,
+				F13FF7A515C378D1006E67C6 /* slBreveSaver.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F181870415A89263008A71FF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -718,6 +856,14 @@
 				48D90A3C06BFD26900FF529F /* English */,
 			);
 			name = brevePainter.nib;
+			sourceTree = "<group>";
+		};
+		F13FF7C615C37963006E67C6 /* breveSuperDuperWalker.nib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				F13FF7C715C37963006E67C6 /* English */,
+			);
+			name = breveSuperDuperWalker.nib;
 			sourceTree = "<group>";
 		};
 		F181872515A89314008A71FF /* breveCreatures.nib */ = {
@@ -773,9 +919,7 @@
 				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OPTIMIZATION_CFLAGS = "-O0";
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = (
-					"-bundle",
-				);
+				OTHER_LDFLAGS = "-bundle";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = breveSwarm;
 				SDKROOT = macosx;
@@ -816,9 +960,7 @@
 				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OPTIMIZATION_CFLAGS = "-O4";
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = (
-					"-bundle",
-				);
+				OTHER_LDFLAGS = "-bundle";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = breveSwarm;
 				SDKROOT = macosx;
@@ -856,9 +998,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
 				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = (
-					"-bundle",
-				);
+				OTHER_LDFLAGS = "-bundle";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = breveSwarm;
 				SDKROOT = macosx;
@@ -1246,6 +1386,124 @@
 			};
 			name = Default;
 		};
+		F13FF7BC15C378D1006E67C6 /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_ENABLE_OBJC_GC = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				HEADER_SEARCH_PATHS = (
+					../include/breve,
+					/usr/local/include,
+				);
+				INFOPLIST_FILE = "breveSuperDuperWalker-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Screen Savers";
+				LIBRARY_SEARCH_PATHS = (
+					../lib,
+					/usr/local/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-bundle";
+				PRODUCT_NAME = breveSuperDuperWalker;
+				SDKROOT = macosx;
+				SECTORDER_FLAGS = "";
+				USER_HEADER_SEARCH_PATHS = "../lib /usr/local/lib";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = saver;
+				ZERO_LINK = YES;
+			};
+			name = Development;
+		};
+		F13FF7BD15C378D1006E67C6 /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_ENABLE_OBJC_GC = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				HEADER_SEARCH_PATHS = (
+					../include/breve,
+					/usr/local/include,
+				);
+				INFOPLIST_FILE = "breveSuperDuperWalker-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Screen Savers";
+				LIBRARY_SEARCH_PATHS = (
+					../lib,
+					/usr/local/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				OPTIMIZATION_CFLAGS = "-O4";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-bundle";
+				PRODUCT_NAME = breveSuperDuperWalker;
+				SDKROOT = macosx;
+				SECTORDER_FLAGS = "";
+				USER_HEADER_SEARCH_PATHS = "../lib /usr/local/lib";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = saver;
+				ZERO_LINK = NO;
+			};
+			name = Deployment;
+		};
+		F13FF7BE15C378D1006E67C6 /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
+				COPY_PHASE_STRIP = NO;
+				GCC_ENABLE_OBJC_GC = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOSX;
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
+				HEADER_SEARCH_PATHS = (
+					../include/breve,
+					/usr/local/include,
+				);
+				INFOPLIST_FILE = "breveSuperDuperWalker-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Screen Savers";
+				LIBRARY_SEARCH_PATHS = (
+					../lib,
+					/usr/local/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-bundle";
+				PRODUCT_NAME = breveSuperDuperWalker;
+				SDKROOT = macosx;
+				SECTORDER_FLAGS = "";
+				USER_HEADER_SEARCH_PATHS = "../lib /usr/local/lib";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = saver;
+			};
+			name = Default;
+		};
 		F181871A15A89263008A71FF /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1413,6 +1671,16 @@
 				489B5F080AB79D2500244255 /* Development */,
 				489B5F090AB79D2500244255 /* Deployment */,
 				489B5F0A0AB79D2500244255 /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
+		F13FF7BB15C378D1006E67C6 /* Build configuration list for PBXNativeTarget "breveSuperDuperWalker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F13FF7BC15C378D1006E67C6 /* Development */,
+				F13FF7BD15C378D1006E67C6 /* Deployment */,
+				F13FF7BE15C378D1006E67C6 /* Default */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Default;
