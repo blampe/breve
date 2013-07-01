@@ -101,7 +101,7 @@
 
 		if(!disableFX) {
 			format = [ [ [ NSOpenGLPixelFormat alloc ] initWithAttributes: attribs ] autorelease ];
-			theView = [ [ [ NSOpenGLView alloc ] initWithFrame: NSZeroRect pixelFormat: format ] autorelease ]; 
+			theView = [ [ [ NSOpenGLView alloc ] initWithFrame: NSZeroRect pixelFormat: format ] autorelease ];
 		}
 
 		if(disableFX || !format || !theView) {
@@ -125,6 +125,9 @@
 			}
 		}
 
+    if ([theView respondsToSelector:@selector(setWantsBestResolutionOpenGLSurface:)]) {
+      [theView setWantsBestResolutionOpenGLSurface:YES];
+    }
 		[self addSubview: theView];
 	} else {
 		NSLog(@"breveSaver error during superview initialization");
@@ -259,11 +262,16 @@
 	[super setFrameSize:newSize];
 	[theView setFrameSize:newSize];
 
+  NSSize backingSize = newSize;
+  if (NSEqualSizes(NSZeroSize, newSize) == NO && [self respondsToSelector:@selector(convertSizeToBacking:)]) {
+    backingSize = [self convertSizeToBacking:newSize];
+  }
+  
 	if( !viewEngine ) return;
 	
 	camera = brEngineGetCamera( viewEngine );
 
-	camera->setBounds( newSize.width, newSize.height );
+	camera->setBounds( backingSize.width, backingSize.height );
 }
 
 - (void)startAnimation {
