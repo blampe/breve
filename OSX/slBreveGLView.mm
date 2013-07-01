@@ -45,6 +45,10 @@ enum {
 	return YES;
 }
 
+- (BOOL) wantsBestResolutionOpenGLSurface {
+  return YES;
+}
+
 - (void)initGL {
 	if(viewEngine) slInitGL(world, camera);
   
@@ -97,7 +101,10 @@ enum {
 	NSRect bounds;
 	int x, y;
   
-	bounds = [self bounds];
+  bounds = [self bounds];
+  if (NSEqualRects(NSZeroRect, bounds) == NO && [self respondsToSelector:@selector(convertRectToBacking:)]) {
+    bounds = [self convertRectToBacking:bounds];
+  }
   
 	if(!pixelBuffer || !tempPixelBuffer) {
 		pixelBuffer = (unsigned char*)slMalloc( (int)( bounds.size.width * bounds.size.height * 4 ) );
@@ -394,7 +401,11 @@ enum {
 }
 
 - (unsigned char*)updateRGBPixels {
-	NSRect bounds = [self bounds];
+	NSRect bounds;
+  bounds = [self bounds];
+  if (NSEqualRects(NSZeroRect, bounds) == NO && [self respondsToSelector:@selector(convertRectToBacking:)]) {
+    bounds = [self convertRectToBacking:bounds];
+  }
   
 	if(!pixelBuffer || !tempPixelBuffer) [self updateSize: self];
   
@@ -435,7 +446,10 @@ enum {
 	NSRect bounds;
 	int x, y;
   
-	bounds = [self bounds];
+  bounds = [self bounds];
+  if (NSEqualRects(NSZeroRect, bounds) == NO && [self respondsToSelector:@selector(convertRectToBacking:)]) {
+    bounds = [self convertRectToBacking:bounds];
+  }
   
 	x = (int)bounds.size.width;
 	y = (int)bounds.size.height;
@@ -509,7 +523,13 @@ enum {
   
   image = [[NSImage alloc] initWithData: imageData];
   
-  b = [self bounds];
+  NSRect bounds;
+  bounds = [self bounds];
+  if (NSEqualRects(NSZeroRect, bounds) == NO && [self respondsToSelector:@selector(convertRectToBacking:)]) {
+    bounds = [self convertRectToBacking:bounds];
+  }
+
+  b = bounds;
   b.origin.x = -b.size.width - 100;
   b.origin.y = -b.size.height - 100;
   
@@ -528,7 +548,7 @@ enum {
   
   [printView lockFocus];
   [image lockFocus];
-  [image drawAtPoint: NSMakePoint(0, 0) fromRect: [self bounds] operation: NSCompositeCopy fraction: 1.0];
+  [image drawAtPoint: NSMakePoint(0, 0) fromRect: bounds operation: NSCompositeCopy fraction: 1.0];
   [image unlockFocus];
   [printView unlockFocus];
   
