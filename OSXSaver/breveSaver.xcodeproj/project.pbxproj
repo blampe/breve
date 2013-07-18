@@ -122,7 +122,6 @@
 		F13FF7CD15C38B6D006E67C6 /* SuperDuperWalker.tz in Resources */ = {isa = PBXBuildFile; fileRef = F13FF7C915C37972006E67C6 /* SuperDuperWalker.tz */; };
 		F13FF7CE15C38B78006E67C6 /* slBreveSuperDuperWalker.h in Headers */ = {isa = PBXBuildFile; fileRef = F13FF7C215C37958006E67C6 /* slBreveSuperDuperWalker.h */; };
 		F14FDA2715B6768A0058C097 /* Walker.tz in Resources */ = {isa = PBXBuildFile; fileRef = F14FDA2415B6768A0058C097 /* Walker.tz */; };
-		F14FDA2915B6768A0058C097 /* WalkerLib.tz in Resources */ = {isa = PBXBuildFile; fileRef = F14FDA2615B6768A0058C097 /* WalkerLib.tz */; };
 		F14FDA2E15B6779D0058C097 /* Creatures2.tz in Resources */ = {isa = PBXBuildFile; fileRef = F14FDA2C15B676F50058C097 /* Creatures2.tz */; };
 		F151C77C15A8EA9100B88E13 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77A15A8EA9100B88E13 /* libjpeg.a */; };
 		F151C77D15A8EA9100B88E13 /* libpng12.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F151C77B15A8EA9100B88E13 /* libpng12.a */; };
@@ -211,7 +210,6 @@
 		F13FF7C715C37963006E67C6 /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/breveSuperDuperWalker.nib; sourceTree = "<group>"; };
 		F13FF7C915C37972006E67C6 /* SuperDuperWalker.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SuperDuperWalker.tz; sourceTree = "<group>"; };
 		F14FDA2415B6768A0058C097 /* Walker.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Walker.tz; sourceTree = "<group>"; };
-		F14FDA2615B6768A0058C097 /* WalkerLib.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = WalkerLib.tz; sourceTree = "<group>"; };
 		F14FDA2C15B676F50058C097 /* Creatures2.tz */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Creatures2.tz; sourceTree = "<group>"; };
 		F151C77A15A8EA9100B88E13 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /usr/local/lib/libjpeg.a; sourceTree = "<absolute>"; };
 		F151C77B15A8EA9100B88E13 /* libpng12.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng12.a; path = /usr/local/lib/libpng12.a; sourceTree = "<absolute>"; };
@@ -423,7 +421,6 @@
 				F5175CB20169B8F6010BE436 /* SwarmSaver.tz */,
 				F163629215BBB0CA00657E5A /* SuperWalker.tz */,
 				F14FDA2415B6768A0058C097 /* Walker.tz */,
-				F14FDA2615B6768A0058C097 /* WalkerLib.tz */,
 				F13FF7C915C37972006E67C6 /* SuperDuperWalker.tz */,
 				4868E6F6091423CC0045591F /* simulation.gif */,
 				4868E6FC091423F80045591F /* app_icon.tiff */,
@@ -759,7 +756,6 @@
 				F181870215A89263008A71FF /* simulation.gif in Resources */,
 				F181870315A89263008A71FF /* app_icon.tiff in Resources */,
 				F14FDA2715B6768A0058C097 /* Walker.tz in Resources */,
-				F14FDA2915B6768A0058C097 /* WalkerLib.tz in Resources */,
 				F163629315BBB0CA00657E5A /* SuperWalker.tz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
