@@ -1,3 +1,4 @@
+SHELL := bash
 CC			= @CC@
 CXX			= @CXX@
 JAR			= @JAR@
