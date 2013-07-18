@@ -205,7 +205,7 @@
 		48BB26B20B2285DF006FA9E9 /* libpython.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpython.dylib; path = /usr/lib/libpython.dylib; sourceTree = "<absolute>"; };
 		48D90A3C06BFD26900FF529F /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/brevePainter.nib; sourceTree = "<group>"; };
 		F13FF7BF15C378D1006E67C6 /* breveSuperDuperWalker.saver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = breveSuperDuperWalker.saver; sourceTree = BUILT_PRODUCTS_DIR; };
-		F13FF7C015C378D1006E67C6 /* breveSuperDuperWalker-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "breveSuperDuperWalker-Info.plist"; path = "/Users/swhite/Projects/breve/OSXSaver/breveSuperDuperWalker-Info.plist"; sourceTree = "<absolute>"; };
+		F13FF7C015C378D1006E67C6 /* breveSuperDuperWalker-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "breveSuperDuperWalker-Info.plist"; sourceTree = "<group>"; };
 		F13FF7C215C37958006E67C6 /* slBreveSuperDuperWalker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = slBreveSuperDuperWalker.h; sourceTree = "<group>"; };
 		F13FF7C315C37958006E67C6 /* slBreveSuperDuperWalker.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = slBreveSuperDuperWalker.mm; sourceTree = "<group>"; };
 		F13FF7C715C37963006E67C6 /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/breveSuperDuperWalker.nib; sourceTree = "<group>"; };
