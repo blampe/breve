@@ -13,7 +13,7 @@ YACC		= @YACC@
 VERSION		= @VERSION@
 
 CFLAGS		= @CFLAGS@
-CPPFLAGS	= @CPPFLAGS@ -Iinclude/breve @DEFS@
+CPPFLAGS	= @CPPFLAGS@ -Iinclude/breve @DEFS@ -DdSINGLE
 LDFLAGS		= @LDFLAGS@
 
 EXTRACFLAGS	= -g
@@ -152,7 +152,7 @@ else
 	make WX_release
 endif
 
-OSX_release: 
+OSX_release:
 	$(MAKE) documentation
 	$(MAKE) OSX_build
 	rm -f $(DMG_FILE)
