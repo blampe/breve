@@ -33,7 +33,7 @@ brSoundMixer::brSoundMixer() {
 	_streamShouldEnd = false;
 	_stream = NULL;
 
-	error = Pa_OpenDefaultStream( &_stream, 0, 2, paFloat32, MIXER_SAMPLE_RATE, 256, 0, brPASoundCallback, this );
+	error = Pa_OpenDefaultStream( &_stream, 0, 2, paFloat32, MIXER_SAMPLE_RATE, 256, brPASoundCallback, this );
 
 	if ( error )
 		slMessage( DEBUG_ALL, "Error (%d) opening new sound stream!\n", error );
@@ -44,7 +44,7 @@ brSoundMixer::~brSoundMixer() {
 
 	Pa_StopStream( _stream );
 
-	while ( _stream && Pa_StreamActive( _stream ) );
+	while ( _stream && Pa_IsStreamActive( _stream ) );
 
 	if ( _stream ) Pa_CloseStream( _stream );
 
@@ -81,7 +81,7 @@ brSoundPlayer *brSoundMixer::NextPlayer() {
 }
 
 bool brSoundMixer::StartStream() {
-	if ( !Pa_StreamActive( _stream ) ) {
+	if ( !Pa_IsStreamActive( _stream ) ) {
 		Pa_StartStream( _stream );
 #ifdef WINDOWS
 		SetPriorityClass( GetCurrentProcess(), NORMAL_PRIORITY_CLASS );
@@ -188,7 +188,7 @@ void brFreeSoundData( brSoundData *data ) {
 	delete data;
 }
 
-int brPASoundCallback( void *ibuf, void *obuf, unsigned long fbp, PaTimestamp outTime, void *data ) {
+int brPASoundCallback( void *ibuf, void *obuf, unsigned long fbp, PaTime outTime, void *data ) {
 	brSoundMixer *mixer = ( brSoundMixer* )data;
 	brSoundPlayer *player;
 	unsigned int n, p;

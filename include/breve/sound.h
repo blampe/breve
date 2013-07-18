@@ -38,7 +38,7 @@ class brSoundMixer {
 
 
 		std::vector< brSoundPlayer* > 	_players;
-		PortAudioStream 		*_stream;
+		PaStream			*_stream;
 		bool 				_streamShouldEnd;
 
 	private:
@@ -66,6 +66,6 @@ float *brSampleUp( float *in, long frames );
 brSoundData *brLoadSound(char *file);
 void brFreeSoundData(brSoundData *data);
 
-int brPASoundCallback(void *ibuf, void *obuf, unsigned long fbp, PaTimestamp outTime, void *data);
+int brPASoundCallback(void *ibuf, void *obuf, unsigned long fbp, PaTime outTime, void *data);
 
 #endif
